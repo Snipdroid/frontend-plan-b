@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { UserProfile } from "@/components/UserProfile"
 import type { SortOption } from "@/types"
 
 export function HomePage() {
@@ -45,12 +46,15 @@ export function HomePage() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">AppTracker</h1>
-        <p className="text-muted-foreground">
-          Search for Android app metadata by name, package name, or main activity.
-        </p>
-      </div>
+      <header className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">AppTracker</h1>
+          <p className="text-muted-foreground">
+            Search for Android app metadata by name, package name, or main activity.
+          </p>
+        </div>
+        <UserProfile />
+      </header>
 
       <div className="mb-6 flex flex-col sm:flex-row gap-2">
         <Select value={sortBy} onValueChange={handleSortChange}>

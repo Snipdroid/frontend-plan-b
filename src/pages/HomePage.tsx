@@ -1,24 +1,16 @@
 import { useEffect, useState } from "react"
 import { useSearchTags, useAppSearch } from "@/hooks"
-import {
-  SearchTagInput,
-  AppInfoTable,
-  AppInfoTablePagination,
-} from "@/components/search"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { SearchTagInput, AppInfoTable } from "@/components/search"
+import { Button } from "@/components/ui/button"
 import type { SortOption } from "@/types"
 
 export function HomePage() {
   const { tags, inputValue, setInputValue, addTag, removeTag, hasTagType } =
     useSearchTags()
-  const { results, isLoading, error, search } = useAppSearch()
+  const { accumulatedItems, isLoading, error, search, loadMore, hasMore } =
+    useAppSearch()
   const [sortBy, setSortBy] = useState<SortOption>("relevance")
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   // Fetch initial unfiltered list on mount
   useEffect(() => {
@@ -26,11 +18,10 @@ export function HomePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const handleSortChange = (value: string) => {
-    const sortOption = value as SortOption
-    setSortBy(sortOption)
+  const handleSortChange = (newSort: SortOption) => {
+    setSortBy(newSort)
     const query = inputValue.trim() || undefined
-    search(tags, 1, undefined, query, sortOption)
+    search(tags, 1, undefined, query, newSort)
   }
 
   const handleSearch = () => {
@@ -38,35 +29,24 @@ export function HomePage() {
     search(tags, 1, undefined, query, sortBy)
   }
 
-  const handlePageChange = (page: number) => {
+  const handleLoadMore = () => {
     const query = inputValue.trim() || undefined
-    search(tags, page, undefined, query, sortBy)
+    loadMore(tags, query, sortBy)
   }
 
   return (
     <div className="container mx-auto py-10 px-4">
-      <div className="mb-6 flex flex-col sm:flex-row gap-2">
-        <Select value={sortBy} onValueChange={handleSortChange}>
-          <SelectTrigger className="w-full sm:w-[140px]">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="relevance">Relevance</SelectItem>
-            <SelectItem value="count">Count</SelectItem>
-          </SelectContent>
-        </Select>
-        <div className="flex-1">
-          <SearchTagInput
-            tags={tags}
-            inputValue={inputValue}
-            onInputChange={setInputValue}
-            onAddTag={addTag}
-            onRemoveTag={removeTag}
-            onSearch={handleSearch}
-            isLoading={isLoading}
-            hasTagType={hasTagType}
-          />
-        </div>
+      <div className="mb-6">
+        <SearchTagInput
+          tags={tags}
+          inputValue={inputValue}
+          onInputChange={setInputValue}
+          onAddTag={addTag}
+          onRemoveTag={removeTag}
+          onSearch={handleSearch}
+          isLoading={isLoading}
+          hasTagType={hasTagType}
+        />
       </div>
 
       {error && (
@@ -75,14 +55,25 @@ export function HomePage() {
         </div>
       )}
 
-      <AppInfoTable data={results?.items ?? []} isLoading={isLoading} />
+      <AppInfoTable
+        data={accumulatedItems}
+        isLoading={isLoading}
+        sortBy={sortBy}
+        onSortChange={handleSortChange}
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
+      />
 
-      {results?.metadata && (
-        <AppInfoTablePagination
-          metadata={results.metadata}
-          onPageChange={handlePageChange}
-          isLoading={isLoading}
-        />
+      {hasMore && (
+        <div className="flex justify-center py-4">
+          <Button
+            variant="outline"
+            onClick={handleLoadMore}
+            disabled={isLoading}
+          >
+            {isLoading ? "Loading..." : "Load More"}
+          </Button>
+        </div>
       )}
     </div>
   )

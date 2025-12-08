@@ -7,6 +7,7 @@ export interface AppInfo {
   packageName: string
   mainActivity: string
   localizedNames: LocalizedName[]
+  count?: number
 }
 
 export interface PageMetadata {

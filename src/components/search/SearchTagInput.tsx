@@ -29,7 +29,7 @@ export function SearchTagInput({
 }: SearchTagInputProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [focusedTagIndex, setFocusedTagIndex] = useState<number | null>(null)
-  const [highlightedIndex, setHighlightedIndex] = useState(0)
+  const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
   const tagRefs = useRef<(HTMLDivElement | null)[]>([])
   const containerRef = useRef<HTMLDivElement>(null)
@@ -41,27 +41,6 @@ export function SearchTagInput({
   const availableOptions = FILTER_OPTIONS.filter(
     (opt) => !disabledTypes.includes(opt.type)
   )
-
-  const getFirstAvailableFilterType = useCallback((): SearchFilterType | null => {
-    for (const option of FILTER_OPTIONS) {
-      if (!hasTagType(option.type)) {
-        return option.type
-      }
-    }
-    return null
-  }, [hasTagType])
-
-  const handleSearchWithPendingInput = useCallback(() => {
-    if (inputValue.trim()) {
-      const availableType = getFirstAvailableFilterType()
-      if (availableType) {
-        onAddTag(availableType)
-      }
-    }
-    setTimeout(() => {
-      onSearch()
-    }, 0)
-  }, [inputValue, getFirstAvailableFilterType, onAddTag, onSearch])
 
   const focusInput = useCallback(() => {
     setFocusedTagIndex(null)
@@ -80,34 +59,27 @@ export function SearchTagInput({
 
     if (e.key === "Enter") {
       e.preventDefault()
-      if (dropdownOpen && availableOptions.length > 0) {
-        // Select the highlighted option
-        const selectedOption = availableOptions[highlightedIndex]
-        if (selectedOption) {
-          onAddTag(selectedOption.type)
-          setDropdownOpen(false)
-          setHighlightedIndex(0)
-        }
-      } else if (inputValue.trim()) {
-        setDropdownOpen(true)
-        setHighlightedIndex(0)
+      setDropdownOpen(false)
+      if (highlightedIndex >= 0 && availableOptions[highlightedIndex]) {
+        onAddTag(availableOptions[highlightedIndex].type)
+        setHighlightedIndex(-1)
       } else {
-        handleSearchWithPendingInput()
+        onSearch()
       }
     } else if (e.key === "ArrowDown") {
+      e.preventDefault()
       if (dropdownOpen && availableOptions.length > 0) {
-        e.preventDefault()
-        setHighlightedIndex((prev) =>
-          prev < availableOptions.length - 1 ? prev + 1 : 0
-        )
+        setHighlightedIndex((prev) => {
+          const nextIndex = prev < availableOptions.length - 1 ? prev + 1 : 0
+          return nextIndex
+        })
       } else if (inputValue.trim()) {
-        e.preventDefault()
         setDropdownOpen(true)
         setHighlightedIndex(0)
       }
     } else if (e.key === "ArrowUp") {
+      e.preventDefault()
       if (dropdownOpen && availableOptions.length > 0) {
-        e.preventDefault()
         setHighlightedIndex((prev) =>
           prev > 0 ? prev - 1 : availableOptions.length - 1
         )
@@ -152,7 +124,7 @@ export function SearchTagInput({
     onInputChange(value)
     if (value.trim().length > 0) {
       setDropdownOpen(true)
-      setHighlightedIndex(0)
+      setHighlightedIndex(-1)
     } else {
       setDropdownOpen(false)
     }
@@ -161,7 +133,7 @@ export function SearchTagInput({
   const handleSelectFilter = (type: SearchFilterType) => {
     onAddTag(type)
     setDropdownOpen(false)
-    setHighlightedIndex(0)
+    setHighlightedIndex(-1)
     focusInput()
   }
 
@@ -217,8 +189,8 @@ export function SearchTagInput({
         </div>
       </SearchFilterDropdown>
       <Button
-        onClick={handleSearchWithPendingInput}
-        disabled={isLoading || (tags.length === 0 && !inputValue.trim())}
+        onClick={onSearch}
+        disabled={isLoading}
       >
         <Search className="h-4 w-4 mr-2" />
         Search

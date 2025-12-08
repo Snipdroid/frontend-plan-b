@@ -21,6 +21,7 @@ export interface PageAppInfo {
 }
 
 export type SearchFilterType = "byName" | "byPackageName" | "byMainActivity"
+export type SortOption = "relevance" | "count"
 
 export interface SearchTag {
   type: SearchFilterType
@@ -29,9 +30,11 @@ export interface SearchTag {
 }
 
 export interface AppSearchParams {
+  query?: string | null
   byName?: string | null
   byPackageName?: string | null
   byMainActivity?: string | null
+  sortBy?: SortOption
   page?: number
   per?: number
 }

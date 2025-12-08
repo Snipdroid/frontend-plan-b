@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react"
-import type { SearchTag, PageAppInfo, AppSearchParams } from "@/types"
+import type { SearchTag, PageAppInfo, AppSearchParams, SortOption } from "@/types"
 import { searchAppInfo } from "@/services"
 
 const DEFAULT_PER_PAGE = 20
@@ -10,13 +10,27 @@ export function useAppSearch(defaultPerPage = DEFAULT_PER_PAGE) {
   const [error, setError] = useState<Error | null>(null)
 
   const search = useCallback(
-    async (tags: SearchTag[], page = 1, perPage = defaultPerPage) => {
+    async (
+      tags: SearchTag[],
+      page = 1,
+      perPage = defaultPerPage,
+      query?: string,
+      sortBy?: SortOption
+    ) => {
       setIsLoading(true)
       setError(null)
 
       const params: AppSearchParams = {
         page,
         per: perPage,
+      }
+
+      if (query?.trim()) {
+        params.query = query.trim()
+      }
+
+      if (sortBy) {
+        params.sortBy = sortBy
       }
 
       tags.forEach((tag) => {

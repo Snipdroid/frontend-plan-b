@@ -6,9 +6,11 @@ export async function searchAppInfo(
 ): Promise<PageAppInfo> {
   const searchParams = new URLSearchParams()
 
+  if (params.query) searchParams.set("query", params.query)
   if (params.byName) searchParams.set("byName", params.byName)
   if (params.byPackageName) searchParams.set("byPackageName", params.byPackageName)
   if (params.byMainActivity) searchParams.set("byMainActivity", params.byMainActivity)
+  if (params.sortBy) searchParams.set("sortBy", params.sortBy)
   if (params.page !== undefined) searchParams.set("page", String(params.page))
   if (params.per !== undefined) searchParams.set("per", String(params.per))
 

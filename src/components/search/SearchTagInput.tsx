@@ -159,9 +159,9 @@ export function SearchTagInput({
           ref={containerRef}
           onClick={handleContainerClick}
           className={cn(
-            "flex flex-1 flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent px-3 py-2",
+            "flex flex-1 flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent px-3 py-1.5",
             "ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
-            "min-h-10 cursor-text"
+            "min-h-9 cursor-text"
           )}
         >
           {tags.map((tag, index) => (

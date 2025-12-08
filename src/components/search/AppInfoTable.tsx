@@ -1,3 +1,4 @@
+import { useState } from "react"
 import {
   Table,
   TableBody,
@@ -8,7 +9,13 @@ import {
 } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useLocalizedName } from "@/hooks"
+import { API_BASE_URL } from "@/services/api"
 import type { AppInfo } from "@/types"
+
+function getAppIconUrl(packageName: string): string {
+  const base = API_BASE_URL || ""
+  return `${base}/app-icon?packageName=${encodeURIComponent(packageName)}`
+}
 
 interface AppInfoTableProps {
   data: AppInfo[]
@@ -17,13 +24,23 @@ interface AppInfoTableProps {
 
 function AppInfoRow({ app }: { app: AppInfo }) {
   const displayName = useLocalizedName(app.localizedNames)
+  const [iconError, setIconError] = useState(false)
 
   return (
     <TableRow>
       <TableCell>
-        <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground text-xs">
-          Icon
-        </div>
+        {iconError ? (
+          <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground text-xs">
+            ?
+          </div>
+        ) : (
+          <img
+            src={getAppIconUrl(app.packageName)}
+            alt={`${displayName} icon`}
+            className="h-10 w-10 rounded-lg object-cover"
+            onError={() => setIconError(true)}
+          />
+        )}
       </TableCell>
       <TableCell className="font-medium">{displayName}</TableCell>
       <TableCell className="font-mono text-sm">{app.packageName}</TableCell>

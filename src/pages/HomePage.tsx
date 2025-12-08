@@ -52,7 +52,16 @@ export function HomePage() {
         </p>
       </div>
 
-      <div className="mb-6 flex flex-col sm:flex-row gap-4">
+      <div className="mb-6 flex flex-col sm:flex-row gap-2">
+        <Select value={sortBy} onValueChange={handleSortChange}>
+          <SelectTrigger className="w-full sm:w-[140px]">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="relevance">Relevance</SelectItem>
+            <SelectItem value="count">Count</SelectItem>
+          </SelectContent>
+        </Select>
         <div className="flex-1">
           <SearchTagInput
             tags={tags}
@@ -65,15 +74,6 @@ export function HomePage() {
             hasTagType={hasTagType}
           />
         </div>
-        <Select value={sortBy} onValueChange={handleSortChange}>
-          <SelectTrigger className="w-full sm:w-[140px]">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="relevance">Relevance</SelectItem>
-            <SelectItem value="count">Count</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       {error && (

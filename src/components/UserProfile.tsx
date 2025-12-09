@@ -1,5 +1,6 @@
 import { useAuth } from "react-oidc-context"
-import { User } from "lucide-react"
+import { useNavigate } from "react-router"
+import { User, LayoutDashboard } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -15,6 +16,7 @@ import { saveReturnUrl } from "@/lib/auth-config"
 
 export function UserProfile() {
   const auth = useAuth()
+  const navigate = useNavigate()
 
   const handleLogin = () => {
     saveReturnUrl()
@@ -77,6 +79,11 @@ export function UserProfile() {
             )}
           </div>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => navigate("/dashboard")}>
+          <LayoutDashboard className="mr-2 h-4 w-4" />
+          Dashboard
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>Sign out</DropdownMenuItem>
       </DropdownMenuContent>

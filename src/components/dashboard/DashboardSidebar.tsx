@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react"
 import { useAuth } from "react-oidc-context"
 import { Link, useLocation } from "react-router"
 import {
@@ -35,18 +36,16 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { SidebarMenuSkeleton } from "@/components/ui/sidebar"
 import { extractUserProfile } from "@/types/user"
-
-// Placeholder data for icon packs (API not ready)
-const placeholderIconPacks = [
-  { id: "pack-1", name: "Material Icons" },
-  { id: "pack-2", name: "Fluent Design Pack" },
-  { id: "pack-3", name: "iOS Style Icons" },
-]
+import type { IconPackDTO } from "@/types/icon-pack"
+import { getIconPacks } from "@/services/icon-pack"
 
 export function DashboardSidebar() {
   const auth = useAuth()
   const location = useLocation()
+  const [iconPacks, setIconPacks] = useState<IconPackDTO[]>([])
+  const [isLoadingPacks, setIsLoadingPacks] = useState(true)
 
   const profile = auth.user
     ? extractUserProfile(auth.user.profile as Record<string, unknown>)
@@ -65,6 +64,23 @@ export function DashboardSidebar() {
   const handleLogout = () => {
     auth.signoutRedirect()
   }
+
+  useEffect(() => {
+    async function fetchIconPacks() {
+      if (!auth.user?.access_token) return
+
+      try {
+        const packs = await getIconPacks(auth.user.access_token)
+        setIconPacks(packs)
+      } catch (error) {
+        console.error("Failed to fetch icon packs:", error)
+      } finally {
+        setIsLoadingPacks(false)
+      }
+    }
+
+    fetchIconPacks()
+  }, [auth.user?.access_token])
 
   return (
     <Sidebar collapsible="icon">
@@ -116,19 +132,32 @@ export function DashboardSidebar() {
             <CollapsibleContent>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {placeholderIconPacks.map((pack) => (
-                    <SidebarMenuItem key={pack.id}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={isActive(`/dashboard/icon-pack/${pack.id}`)}
-                      >
-                        <Link to={`/dashboard/icon-pack/${pack.id}`}>
-                          <Package />
-                          <span>{pack.name}</span>
-                        </Link>
-                      </SidebarMenuButton>
+                  {isLoadingPacks ? (
+                    <>
+                      <SidebarMenuSkeleton showIcon />
+                      <SidebarMenuSkeleton showIcon />
+                    </>
+                  ) : iconPacks.length === 0 ? (
+                    <SidebarMenuItem>
+                      <span className="px-2 py-1.5 text-xs text-muted-foreground">
+                        No icon packs yet
+                      </span>
                     </SidebarMenuItem>
-                  ))}
+                  ) : (
+                    iconPacks.map((pack) => (
+                      <SidebarMenuItem key={pack.id}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={isActive(`/dashboard/icon-pack/${pack.id}`)}
+                        >
+                          <Link to={`/dashboard/icon-pack/${pack.id}`}>
+                            <Package />
+                            <span>{pack.name}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))
+                  )}
                 </SidebarMenu>
               </SidebarGroupContent>
             </CollapsibleContent>

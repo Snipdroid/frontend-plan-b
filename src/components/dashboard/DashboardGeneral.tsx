@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react"
+import { useAuth } from "react-oidc-context"
 import {
   Card,
   CardContent,
@@ -5,8 +7,31 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
+import { getIconPacks } from "@/services/icon-pack"
 
 export function DashboardGeneral() {
+  const auth = useAuth()
+  const [iconPackCount, setIconPackCount] = useState<number | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchStats() {
+      if (!auth.user?.access_token) return
+
+      try {
+        const packs = await getIconPacks(auth.user.access_token)
+        setIconPackCount(packs.length)
+      } catch (error) {
+        console.error("Failed to fetch stats:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchStats()
+  }, [auth.user?.access_token])
+
   return (
     <div className="space-y-6">
       <div>
@@ -22,7 +47,11 @@ export function DashboardGeneral() {
             <CardTitle className="text-sm font-medium">Total Icon Packs</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3</div>
+            {isLoading ? (
+              <Skeleton className="h-8 w-12" />
+            ) : (
+              <div className="text-2xl font-bold">{iconPackCount ?? 0}</div>
+            )}
             <p className="text-xs text-muted-foreground">Active icon packs</p>
           </CardContent>
         </Card>

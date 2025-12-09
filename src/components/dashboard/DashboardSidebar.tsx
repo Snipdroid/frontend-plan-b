@@ -9,6 +9,7 @@ import {
   Package,
   Settings,
   LogOut,
+  Plus,
 } from "lucide-react"
 
 import {
@@ -16,6 +17,7 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
+  SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
@@ -37,15 +39,18 @@ import {
 } from "@/components/ui/collapsible"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { SidebarMenuSkeleton } from "@/components/ui/sidebar"
+import { Button } from "@/components/ui/button"
 import { extractUserProfile } from "@/types/user"
 import type { IconPackDTO } from "@/types/icon-pack"
 import { getIconPacks } from "@/services/icon-pack"
+import { CreateIconPackDialog } from "./CreateIconPackDialog"
 
 export function DashboardSidebar() {
   const auth = useAuth()
   const location = useLocation()
   const [iconPacks, setIconPacks] = useState<IconPackDTO[]>([])
   const [isLoadingPacks, setIsLoadingPacks] = useState(true)
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
 
   const profile = auth.user
     ? extractUserProfile(auth.user.profile as Record<string, unknown>)
@@ -63,6 +68,10 @@ export function DashboardSidebar() {
 
   const handleLogout = () => {
     auth.signoutRedirect()
+  }
+
+  const handleIconPackCreated = (iconPack: IconPackDTO) => {
+    setIconPacks((prev) => [...prev, iconPack])
   }
 
   useEffect(() => {
@@ -129,6 +138,13 @@ export function DashboardSidebar() {
                 <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
               </CollapsibleTrigger>
             </SidebarGroupLabel>
+            <SidebarGroupAction
+              title="Create Icon Pack"
+              onClick={() => setShowCreateDialog(true)}
+            >
+              <Plus />
+              <span className="sr-only">Create Icon Pack</span>
+            </SidebarGroupAction>
             <CollapsibleContent>
               <SidebarGroupContent>
                 <SidebarMenu>
@@ -139,9 +155,15 @@ export function DashboardSidebar() {
                     </>
                   ) : iconPacks.length === 0 ? (
                     <SidebarMenuItem>
-                      <span className="px-2 py-1.5 text-xs text-muted-foreground">
-                        No icon packs yet
-                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start text-muted-foreground"
+                        onClick={() => setShowCreateDialog(true)}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Create your first icon pack
+                      </Button>
                     </SidebarMenuItem>
                   ) : (
                     iconPacks.map((pack) => (
@@ -220,6 +242,12 @@ export function DashboardSidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
+
+      <CreateIconPackDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onCreated={handleIconPackCreated}
+      />
     </Sidebar>
   )
 }

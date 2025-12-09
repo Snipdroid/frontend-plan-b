@@ -2,7 +2,8 @@ import type { AppSearchParams, PageAppInfo } from "@/types"
 import { fetchJson } from "./api"
 
 export async function searchAppInfo(
-  params: AppSearchParams
+  params: AppSearchParams,
+  signal?: AbortSignal
 ): Promise<PageAppInfo> {
   const searchParams = new URLSearchParams()
 
@@ -17,5 +18,5 @@ export async function searchAppInfo(
   const queryString = searchParams.toString()
   const endpoint = `/app-info/search${queryString ? `?${queryString}` : ""}`
 
-  return fetchJson<PageAppInfo>(endpoint)
+  return fetchJson<PageAppInfo>(endpoint, { signal })
 }

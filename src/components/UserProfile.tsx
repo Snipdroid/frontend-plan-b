@@ -30,7 +30,7 @@ export function UserProfile() {
   // Loading state
   if (auth.isLoading) {
     return (
-      <Avatar className="h-9 w-9">
+      <Avatar className="h-9 w-9 border">
         <AvatarFallback>
           <User className="h-4 w-4 animate-pulse" />
         </AvatarFallback>
@@ -38,16 +38,23 @@ export function UserProfile() {
     )
   }
 
-  // Not authenticated - show login button
+  // Not authenticated - show dropdown with sign in option
   if (!auth.isAuthenticated || !auth.user) {
     return (
-      <Button variant="ghost" size="icon" onClick={handleLogin} aria-label="Sign in">
-        <Avatar className="h-9 w-9">
-          <AvatarFallback>
-            <User className="h-4 w-4" />
-          </AvatarFallback>
-        </Avatar>
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="rounded-full">
+            <Avatar className="h-9 w-9 border">
+              <AvatarFallback>
+                <User className="h-4 w-4" />
+              </AvatarFallback>
+            </Avatar>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={handleLogin}>Sign in</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     )
   }
 
@@ -64,7 +71,7 @@ export function UserProfile() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="rounded-full">
-          <Avatar className="h-9 w-9">
+          <Avatar className="h-9 w-9 border">
             {profile.picture && <AvatarImage src={profile.picture} alt={profile.name} />}
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>

@@ -17,7 +17,6 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
@@ -138,13 +137,6 @@ export function DashboardSidebar() {
                 <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
               </CollapsibleTrigger>
             </SidebarGroupLabel>
-            <SidebarGroupAction
-              title="Create Icon Pack"
-              onClick={() => setShowCreateDialog(true)}
-            >
-              <Plus />
-              <span className="sr-only">Create Icon Pack</span>
-            </SidebarGroupAction>
             <CollapsibleContent>
               <SidebarGroupContent>
                 <SidebarMenu>
@@ -162,7 +154,7 @@ export function DashboardSidebar() {
                         onClick={() => setShowCreateDialog(true)}
                       >
                         <Plus className="mr-2 h-4 w-4" />
-                        Create your first icon pack
+                        Create an icon pack
                       </Button>
                     </SidebarMenuItem>
                   ) : (

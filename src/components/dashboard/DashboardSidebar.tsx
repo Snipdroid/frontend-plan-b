@@ -13,6 +13,7 @@ import {
   Sun,
   Moon,
 } from "lucide-react"
+import type { Theme } from "@/components/theme-provider"
 
 import {
   Sidebar,
@@ -210,7 +211,10 @@ export function DashboardSidebar() {
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" align="start">
-                <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
+                <DropdownMenuRadioGroup
+                  value={theme}
+                  onValueChange={(value) => setTheme(value as Theme)}
+                >
                   <DropdownMenuRadioItem value="light">Light</DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="dark">Dark</DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="system">System</DropdownMenuRadioItem>

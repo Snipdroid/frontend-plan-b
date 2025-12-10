@@ -10,6 +10,9 @@ import {
   Settings,
   LogOut,
   Plus,
+  Sun,
+  Moon,
+  Check,
 } from "lucide-react"
 
 import {
@@ -43,10 +46,12 @@ import { extractUserProfile } from "@/types/user"
 import type { IconPackDTO } from "@/types/icon-pack"
 import { getIconPacks } from "@/services/icon-pack"
 import { CreateIconPackDialog } from "./CreateIconPackDialog"
+import { useTheme } from "@/components/theme-provider"
 
 export function DashboardSidebar() {
   const auth = useAuth()
   const location = useLocation()
+  const { theme, setTheme } = useTheme()
   const [iconPacks, setIconPacks] = useState<IconPackDTO[]>([])
   const [isLoadingPacks, setIsLoadingPacks] = useState(true)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
@@ -189,6 +194,35 @@ export function DashboardSidebar() {
                 <span>Back to Home</span>
               </Link>
             </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+
+        {/* Theme toggle */}
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton>
+                  <Sun className="!size-4 scale-100 rotate-0 dark:scale-0 dark:-rotate-90" />
+                  <Moon className="absolute !size-4 scale-0 rotate-90 dark:scale-100 dark:rotate-0" />
+                  <span>Theme</span>
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="top" align="start">
+                <DropdownMenuItem onClick={() => setTheme("light")}>
+                  Light
+                  {theme === "light" && <Check className="ml-auto h-4 w-4" />}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("dark")}>
+                  Dark
+                  {theme === "dark" && <Check className="ml-auto h-4 w-4" />}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("system")}>
+                  System
+                  {theme === "system" && <Check className="ml-auto h-4 w-4" />}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
 

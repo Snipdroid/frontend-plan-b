@@ -1,5 +1,10 @@
 import { API_BASE_URL } from "./api"
-import type { IconPackDTO } from "@/types/icon-pack"
+import type {
+  IconPackDTO,
+  IconPackVersionDTO,
+  IconPackVersionTokenRequest,
+  IconPackVersionTokenResponse,
+} from "@/types/icon-pack"
 
 export async function getIconPacks(accessToken: string): Promise<IconPackDTO[]> {
   const response = await fetch(`${API_BASE_URL}/icon-pack`, {
@@ -50,4 +55,92 @@ export async function deleteIconPack(
   if (!response.ok) {
     throw new Error(`API Error: ${response.status} ${response.statusText}`)
   }
+}
+
+export async function getIconPack(
+  accessToken: string,
+  iconPackId: string
+): Promise<IconPackDTO> {
+  const response = await fetch(`${API_BASE_URL}/icon-pack/${iconPackId}`, {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`)
+  }
+
+  return response.json()
+}
+
+export async function getIconPackVersions(
+  accessToken: string,
+  iconPackId: string
+): Promise<IconPackVersionDTO[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/icon-pack/${iconPackId}/versions`,
+    {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`)
+  }
+
+  return response.json()
+}
+
+export async function createIconPackVersion(
+  accessToken: string,
+  iconPackId: string,
+  versionString: string
+): Promise<IconPackVersionDTO> {
+  const response = await fetch(
+    `${API_BASE_URL}/icon-pack/${iconPackId}/version/create`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ versionString }),
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`)
+  }
+
+  return response.json()
+}
+
+export async function createVersionAccessToken(
+  accessToken: string,
+  iconPackId: string,
+  versionId: string,
+  expireAt: string
+): Promise<IconPackVersionTokenResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/icon-pack/${iconPackId}/version/${versionId}/token`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ expireAt } as IconPackVersionTokenRequest),
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`)
+  }
+
+  return response.json()
 }

@@ -18,9 +18,15 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
-import { deleteIconPack, getIconPack, getIconPackVersions } from "@/services/icon-pack"
+import {
+  deleteIconPack,
+  deleteIconPackVersion,
+  getIconPack,
+  getIconPackVersions,
+} from "@/services/icon-pack"
 import { CreateVersionDialog } from "./CreateVersionDialog"
 import { CreateAccessTokenDialog } from "./CreateAccessTokenDialog"
+import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog"
 import type { IconPackDTO, IconPackVersionDTO } from "@/types/icon-pack"
 
 export function IconPackManage() {
@@ -28,6 +34,7 @@ export function IconPackManage() {
   const navigate = useNavigate()
   const auth = useAuth()
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isDeletingVersion, setIsDeletingVersion] = useState(false)
   const [iconPack, setIconPack] = useState<IconPackDTO | null>(null)
   const [versions, setVersions] = useState<IconPackVersionDTO[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -35,7 +42,10 @@ export function IconPackManage() {
 
   const [createVersionOpen, setCreateVersionOpen] = useState(false)
   const [tokenDialogOpen, setTokenDialogOpen] = useState(false)
-  const [selectedVersion, setSelectedVersion] = useState<IconPackVersionDTO | null>(null)
+  const [deletePackDialogOpen, setDeletePackDialogOpen] = useState(false)
+  const [deleteVersionDialogOpen, setDeleteVersionDialogOpen] = useState(false)
+  const [selectedVersion, setSelectedVersion] =
+    useState<IconPackVersionDTO | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,7 +62,9 @@ export function IconPackManage() {
         setIconPack(iconPackData)
         setVersions(versionsData)
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load icon pack")
+        setError(
+          err instanceof Error ? err.message : "Failed to load icon pack"
+        )
       } finally {
         setIsLoading(false)
       }
@@ -61,9 +73,8 @@ export function IconPackManage() {
     fetchData()
   }, [packId, auth.user?.access_token])
 
-  const handleDelete = async () => {
+  const handleDeletePack = async () => {
     if (!packId || !auth.user?.access_token) return
-    if (!confirm("Delete this icon pack?")) return
 
     setIsDeleting(true)
     try {
@@ -71,9 +82,31 @@ export function IconPackManage() {
       navigate("/dashboard")
     } catch (error) {
       console.error("Failed to delete:", error)
-      alert("Failed to delete icon pack")
+      setError("Failed to delete icon pack")
     } finally {
       setIsDeleting(false)
+      setDeletePackDialogOpen(false)
+    }
+  }
+
+  const handleDeleteVersion = async () => {
+    if (!packId || !auth.user?.access_token || !selectedVersion?.id) return
+
+    setIsDeletingVersion(true)
+    try {
+      await deleteIconPackVersion(
+        auth.user.access_token,
+        packId,
+        selectedVersion.id
+      )
+      setVersions((prev) => prev.filter((v) => v.id !== selectedVersion.id))
+      setDeleteVersionDialogOpen(false)
+      setSelectedVersion(null)
+    } catch (error) {
+      console.error("Failed to delete version:", error)
+      setError("Failed to delete version")
+    } finally {
+      setIsDeletingVersion(false)
     }
   }
 
@@ -84,6 +117,11 @@ export function IconPackManage() {
   const handleCreateToken = (version: IconPackVersionDTO) => {
     setSelectedVersion(version)
     setTokenDialogOpen(true)
+  }
+
+  const handleDeleteVersionClick = (version: IconPackVersionDTO) => {
+    setSelectedVersion(version)
+    setDeleteVersionDialogOpen(true)
   }
 
   const formatDate = (dateString?: string) => {
@@ -159,13 +197,20 @@ export function IconPackManage() {
                       {version.versionString}
                     </TableCell>
                     <TableCell>{formatDate(version.createdAt)}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right space-x-2">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleCreateToken(version)}
                       >
                         Create Access Token
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteVersionClick(version)}
+                      >
+                        Delete
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -187,10 +232,10 @@ export function IconPackManage() {
         <CardContent>
           <Button
             variant="destructive"
-            onClick={handleDelete}
+            onClick={() => setDeletePackDialogOpen(true)}
             disabled={isDeleting}
           >
-            {isDeleting ? "Deleting..." : "Delete Icon Pack"}
+            Delete Icon Pack
           </Button>
         </CardContent>
       </Card>
@@ -211,6 +256,30 @@ export function IconPackManage() {
           iconPackId={packId}
           versionId={selectedVersion.id}
           versionString={selectedVersion.versionString}
+        />
+      )}
+
+      {iconPack?.name && (
+        <ConfirmDeleteDialog
+          open={deletePackDialogOpen}
+          onOpenChange={setDeletePackDialogOpen}
+          title="Delete Icon Pack"
+          description={`This action cannot be undone. This will permanently delete the icon pack "${iconPack.name}" and all its versions.`}
+          confirmText={iconPack.name}
+          onConfirm={handleDeletePack}
+          isDeleting={isDeleting}
+        />
+      )}
+
+      {selectedVersion && (
+        <ConfirmDeleteDialog
+          open={deleteVersionDialogOpen}
+          onOpenChange={setDeleteVersionDialogOpen}
+          title="Delete Version"
+          description={`This action cannot be undone. This will permanently delete version "${selectedVersion.versionString}".`}
+          confirmText={selectedVersion.versionString}
+          onConfirm={handleDeleteVersion}
+          isDeleting={isDeletingVersion}
         />
       )}
     </div>

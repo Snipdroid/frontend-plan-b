@@ -144,3 +144,25 @@ export async function createVersionAccessToken(
 
   return response.json()
 }
+
+export async function deleteIconPackVersion(
+  accessToken: string,
+  iconPackId: string,
+  versionId: string
+): Promise<IconPackVersionDTO> {
+  const response = await fetch(
+    `${API_BASE_URL}/icon-pack/${iconPackId}/version/${versionId}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`)
+  }
+
+  return response.json()
+}

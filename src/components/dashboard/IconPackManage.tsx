@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { useParams, useNavigate } from "react-router"
+import { useParams, useNavigate, Link } from "react-router"
 import { useAuth } from "react-oidc-context"
 import {
   Card,
@@ -194,7 +194,16 @@ export function IconPackManage() {
                 {versions.map((version) => (
                   <TableRow key={version.id}>
                     <TableCell className="font-medium">
-                      {version.versionString}
+                      <Link
+                        to={`/dashboard/icon-pack/${packId}/version/${version.id}`}
+                        state={{
+                          iconPackName: iconPack?.name,
+                          versionString: version.versionString,
+                        }}
+                        className="hover:underline"
+                      >
+                        {version.versionString}
+                      </Link>
                     </TableCell>
                     <TableCell>{formatDate(version.createdAt)}</TableCell>
                     <TableCell className="text-right space-x-2">

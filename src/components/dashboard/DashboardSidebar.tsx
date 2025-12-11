@@ -171,7 +171,10 @@ export function DashboardSidebar() {
                           asChild
                           isActive={isActive(`/dashboard/icon-pack/${pack.id}`)}
                         >
-                          <Link to={`/dashboard/icon-pack/${pack.id}`}>
+                          <Link
+                            to={`/dashboard/icon-pack/${pack.id}`}
+                            state={{ iconPackName: pack.name }}
+                          >
                             <Package />
                             <span>{pack.name}</span>
                           </Link>

@@ -5,6 +5,7 @@ import type {
   IconPackVersionTokenRequest,
   IconPackVersionTokenResponse,
   PageIconPackVersionDTO,
+  PageRequestRecordDTO,
 } from "@/types/icon-pack"
 
 export async function getIconPacks(accessToken: string): Promise<IconPackDTO[]> {
@@ -166,6 +167,34 @@ export async function deleteIconPackVersion(
       },
     }
   )
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`)
+  }
+
+  return response.json()
+}
+
+export async function getVersionRequests(
+  accessToken: string,
+  iconPackId: string,
+  versionId: string,
+  page?: number,
+  per?: number
+): Promise<PageRequestRecordDTO> {
+  const params = new URLSearchParams()
+  if (page !== undefined) params.set("page", String(page))
+  if (per !== undefined) params.set("per", String(per))
+
+  const queryString = params.toString()
+  const url = `${API_BASE_URL}/icon-pack/${iconPackId}/version/${versionId}/requests${queryString ? `?${queryString}` : ""}`
+
+  const response = await fetch(url, {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
 
   if (!response.ok) {
     throw new Error(`API Error: ${response.status} ${response.statusText}`)

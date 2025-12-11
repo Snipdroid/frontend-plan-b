@@ -194,19 +194,25 @@ export function IconPackManage() {
                 {versions.map((version) => (
                   <TableRow key={version.id}>
                     <TableCell className="font-medium">
-                      <Link
-                        to={`/dashboard/icon-pack/${packId}/version/${version.id}`}
-                        state={{
-                          iconPackName: iconPack?.name,
-                          versionString: version.versionString,
-                        }}
-                        className="hover:underline"
-                      >
-                        {version.versionString}
-                      </Link>
+                      {version.versionString}
                     </TableCell>
                     <TableCell>{formatDate(version.createdAt)}</TableCell>
                     <TableCell className="text-right space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        asChild
+                      >
+                        <Link
+                          to={`/dashboard/icon-pack/${packId}/version/${version.id}`}
+                          state={{
+                            iconPackName: iconPack?.name,
+                            versionString: version.versionString,
+                          }}
+                        >
+                          View
+                        </Link>
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"

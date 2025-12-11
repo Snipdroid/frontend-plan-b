@@ -55,12 +55,12 @@ export function IconPackManage() {
       setError(null)
 
       try {
-        const [iconPackData, versionsData] = await Promise.all([
+        const [iconPackData, versionsResponse] = await Promise.all([
           getIconPack(auth.user.access_token, packId),
           getIconPackVersions(auth.user.access_token, packId),
         ])
         setIconPack(iconPackData)
-        setVersions(versionsData)
+        setVersions(versionsResponse.items)
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to load icon pack"

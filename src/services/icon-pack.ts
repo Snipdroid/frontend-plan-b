@@ -4,6 +4,7 @@ import type {
   IconPackVersionDTO,
   IconPackVersionTokenRequest,
   IconPackVersionTokenResponse,
+  PageIconPackVersionDTO,
 } from "@/types/icon-pack"
 
 export async function getIconPacks(accessToken: string): Promise<IconPackDTO[]> {
@@ -77,17 +78,23 @@ export async function getIconPack(
 
 export async function getIconPackVersions(
   accessToken: string,
-  iconPackId: string
-): Promise<IconPackVersionDTO[]> {
-  const response = await fetch(
-    `${API_BASE_URL}/icon-pack/${iconPackId}/versions`,
-    {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }
-  )
+  iconPackId: string,
+  page?: number,
+  per?: number
+): Promise<PageIconPackVersionDTO> {
+  const params = new URLSearchParams()
+  if (page !== undefined) params.set("page", String(page))
+  if (per !== undefined) params.set("per", String(per))
+
+  const queryString = params.toString()
+  const url = `${API_BASE_URL}/icon-pack/${iconPackId}/versions${queryString ? `?${queryString}` : ""}`
+
+  const response = await fetch(url, {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
 
   if (!response.ok) {
     throw new Error(`API Error: ${response.status} ${response.statusText}`)

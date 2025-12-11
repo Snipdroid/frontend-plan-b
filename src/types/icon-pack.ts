@@ -13,6 +13,17 @@ export interface IconPackVersionDTO {
   iconPack?: IconPackDTO
 }
 
+export interface PageMetadata {
+  page: number
+  per: number
+  total: number
+}
+
+export interface PageIconPackVersionDTO {
+  items: IconPackVersionDTO[]
+  metadata: PageMetadata
+}
+
 export interface IconPackVersionTokenRequest {
   expireAt: string // ISO 8601 date-time format
 }

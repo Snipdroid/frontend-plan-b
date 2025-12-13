@@ -9,10 +9,12 @@ import {
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getIconPacks } from "@/services/icon-pack"
+import { getDesignerRequests } from "@/services/designer"
 
 export function DashboardGeneral() {
   const auth = useAuth()
   const [iconPackCount, setIconPackCount] = useState<number | null>(null)
+  const [totalRequests, setTotalRequests] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -20,8 +22,12 @@ export function DashboardGeneral() {
       if (!auth.user?.access_token) return
 
       try {
-        const packs = await getIconPacks(auth.user.access_token)
+        const [packs, requestsResponse] = await Promise.all([
+          getIconPacks(auth.user.access_token),
+          getDesignerRequests(auth.user.access_token, 1, 1),
+        ])
         setIconPackCount(packs.length)
+        setTotalRequests(requestsResponse.metadata.total)
       } catch (error) {
         console.error("Failed to fetch stats:", error)
       } finally {
@@ -61,8 +67,12 @@ export function DashboardGeneral() {
             <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">--</div>
-            <p className="text-xs text-muted-foreground">Pending icon requests</p>
+            {isLoading ? (
+              <Skeleton className="h-8 w-12" />
+            ) : (
+              <div className="text-2xl font-bold">{totalRequests ?? 0}</div>
+            )}
+            <p className="text-xs text-muted-foreground">Unique apps requested</p>
           </CardContent>
         </Card>
 

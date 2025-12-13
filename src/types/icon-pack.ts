@@ -46,6 +46,16 @@ export interface PageRequestRecordDTO {
   metadata: PageMetadata
 }
 
+export interface AppInfoWithRequestCount {
+  appInfo: AppInfoDTO
+  count: number
+}
+
+export interface PageAppInfoWithRequestCount {
+  items: AppInfoWithRequestCount[]
+  metadata: PageMetadata
+}
+
 export interface IconPackVersionTokenRequest {
   expireAt: string // ISO 8601 date-time format
 }

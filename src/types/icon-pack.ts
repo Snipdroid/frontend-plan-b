@@ -63,3 +63,15 @@ export interface IconPackVersionTokenRequest {
 export interface IconPackVersionTokenResponse {
   token: string
 }
+
+export interface IconPackMarkAppAsAdaptedRequest {
+  appInfoIDs: string[]
+  adapted: boolean
+}
+
+export interface IconPackAppDTO {
+  id?: string
+  createdAt?: string
+  appInfo?: AppInfoDTO
+  iconPack?: IconPackDTO
+}

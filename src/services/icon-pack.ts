@@ -6,6 +6,7 @@ import type {
   IconPackVersionTokenResponse,
   PageIconPackVersionDTO,
   PageRequestRecordDTO,
+  IconPackAppDTO,
 } from "@/types/icon-pack"
 
 export async function getIconPacks(accessToken: string): Promise<IconPackDTO[]> {
@@ -180,11 +181,13 @@ export async function getVersionRequests(
   iconPackId: string,
   versionId: string,
   page?: number,
-  per?: number
+  per?: number,
+  includingAdapted?: boolean
 ): Promise<PageRequestRecordDTO> {
   const params = new URLSearchParams()
   if (page !== undefined) params.set("page", String(page))
   if (per !== undefined) params.set("per", String(per))
+  if (includingAdapted !== undefined) params.set("includingAdapted", String(includingAdapted))
 
   const queryString = params.toString()
   const url = `${API_BASE_URL}/icon-pack/${iconPackId}/version/${versionId}/requests${queryString ? `?${queryString}` : ""}`
@@ -194,6 +197,28 @@ export async function getVersionRequests(
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
     },
+  })
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`)
+  }
+
+  return response.json()
+}
+
+export async function markAppsAsAdapted(
+  accessToken: string,
+  iconPackId: string,
+  appInfoIDs: string[],
+  adapted: boolean
+): Promise<IconPackAppDTO[]> {
+  const response = await fetch(`${API_BASE_URL}/icon-pack/${iconPackId}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ appInfoIDs, adapted }),
   })
 
   if (!response.ok) {

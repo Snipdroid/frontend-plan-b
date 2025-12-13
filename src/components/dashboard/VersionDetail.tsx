@@ -26,7 +26,10 @@ import {
   PaginationPrevious,
   PaginationEllipsis,
 } from "@/components/ui/pagination"
-import { getVersionRequests } from "@/services/icon-pack"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+import { getVersionRequests, markAppsAsAdapted } from "@/services/icon-pack"
 import type { RequestRecordDTO } from "@/types/icon-pack"
 
 const PER_PAGE = 10
@@ -39,39 +42,62 @@ export function VersionDetail() {
   const [error, setError] = useState<string | null>(null)
   const [total, setTotal] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
+  const [includingAdapted, setIncludingAdapted] = useState(false)
+  const [isMarking, setIsMarking] = useState(false)
 
   const totalPages = Math.ceil(total / PER_PAGE)
 
-  useEffect(() => {
-    const fetchRequests = async () => {
-      if (!packId || !versionId || !auth.user?.access_token) return
+  const fetchRequests = async () => {
+    if (!packId || !versionId || !auth.user?.access_token) return
 
-      setIsLoading(true)
-      setError(null)
+    setIsLoading(true)
+    setError(null)
 
-      try {
-        const response = await getVersionRequests(
-          auth.user.access_token,
-          packId,
-          versionId,
-          currentPage,
-          PER_PAGE
-        )
-        setRequests(response.items)
-        setTotal(response.metadata.total)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load requests")
-      } finally {
-        setIsLoading(false)
-      }
+    try {
+      const response = await getVersionRequests(
+        auth.user.access_token,
+        packId,
+        versionId,
+        currentPage,
+        PER_PAGE,
+        includingAdapted
+      )
+      setRequests(response.items)
+      setTotal(response.metadata.total)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load requests")
+    } finally {
+      setIsLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchRequests()
-  }, [packId, versionId, auth.user?.access_token, currentPage])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [packId, versionId, auth.user?.access_token, currentPage, includingAdapted])
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page)
+    }
+  }
+
+  const handleFilterChange = (checked: boolean) => {
+    setIncludingAdapted(checked)
+    setCurrentPage(1)
+  }
+
+  const handleMarkAsAdapted = async (appInfoId: string) => {
+    if (!packId || !auth.user?.access_token) return
+
+    setIsMarking(true)
+    try {
+      await markAppsAsAdapted(auth.user.access_token, packId, [appInfoId], true)
+      await fetchRequests()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to mark as adapted")
+    } finally {
+      setIsMarking(false)
     }
   }
 
@@ -120,10 +146,26 @@ export function VersionDetail() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Requests</CardTitle>
-          <CardDescription>
-            {total} request{total !== 1 ? "s" : ""} for this version.
-          </CardDescription>
+          <div className="flex flex-row items-start justify-between">
+            <div>
+              <CardTitle>Requests</CardTitle>
+              <CardDescription>
+                {total} request{total !== 1 ? "s" : ""} for this version.
+              </CardDescription>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="show-adapted"
+                checked={includingAdapted}
+                onCheckedChange={(checked) =>
+                  handleFilterChange(checked === true)
+                }
+              />
+              <Label htmlFor="show-adapted" className="text-sm font-normal">
+                Show adapted apps
+              </Label>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -143,6 +185,7 @@ export function VersionDetail() {
                     <TableHead>Package Name</TableHead>
                     <TableHead>Main Activity</TableHead>
                     <TableHead>Requested</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -158,6 +201,19 @@ export function VersionDetail() {
                         {request.appInfo?.mainActivity ?? "-"}
                       </TableCell>
                       <TableCell>{formatDate(request.createdAt)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            request.appInfo?.id &&
+                            handleMarkAsAdapted(request.appInfo.id)
+                          }
+                          disabled={isMarking || !request.appInfo?.id}
+                        >
+                          Mark as Adapted
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

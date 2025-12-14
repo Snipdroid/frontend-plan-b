@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router"
 import { Header } from "@/components/Header"
 import { HomePage } from "@/pages/HomePage"
+import { UploadPage } from "@/pages/UploadPage"
 import { DashboardPage } from "@/pages/DashboardPage"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 
@@ -15,6 +16,19 @@ function App() {
             <Header />
             <main className="flex-1">
               <HomePage />
+            </main>
+          </div>
+        }
+      />
+
+      {/* Upload page - public but enhanced when authenticated */}
+      <Route
+        path="/upload"
+        element={
+          <div className="min-h-screen flex flex-col">
+            <Header />
+            <main className="flex-1">
+              <UploadPage />
             </main>
           </div>
         }

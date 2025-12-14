@@ -1,4 +1,6 @@
-import { Package } from "lucide-react"
+import { Link } from "react-router"
+import { Package, Upload } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserProfile } from "@/components/UserProfile"
 
@@ -13,6 +15,12 @@ export function Header() {
           </a>
         </div>
         <div className="flex items-center gap-4">
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/upload">
+              <Upload className="mr-2 h-4 w-4" />
+              Upload
+            </Link>
+          </Button>
           <ThemeToggle />
           <UserProfile />
         </div>

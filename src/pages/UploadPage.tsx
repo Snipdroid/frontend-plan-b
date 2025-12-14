@@ -59,6 +59,7 @@ export function UploadPage() {
   const [uploadStatus, setUploadStatus] = useState<string>("")
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [uploadedCount, setUploadedCount] = useState(0)
 
   // Icon pack selection (for authenticated users)
   const [iconPacks, setIconPacks] = useState<IconPackDTO[]>([])
@@ -206,6 +207,7 @@ export function UploadPage() {
         }
       }
 
+      setUploadedCount(entries.length)
       setSubmitSuccess(true)
       setUploadStatus("Upload complete!")
       // Clear files after successful upload
@@ -396,7 +398,7 @@ export function UploadPage() {
               <Card className="border-green-500">
                 <CardContent className="pt-6">
                   <p className="text-sm text-green-600">
-                    Successfully uploaded {entries.length} app entries!
+                    Successfully uploaded {uploadedCount} app entries!
                   </p>
                 </CardContent>
               </Card>
@@ -465,7 +467,7 @@ export function UploadPage() {
                 <Card className="border-green-500">
                   <CardContent className="pt-6">
                     <p className="text-sm text-green-600">
-                      Successfully uploaded {entries.length} app entries!
+                      Successfully uploaded {uploadedCount} app entries!
                     </p>
                   </CardContent>
                 </Card>

@@ -1,9 +1,26 @@
+import { Suspense, lazy } from "react"
 import { Routes, Route } from "react-router"
 import { Header } from "@/components/Header"
-import { HomePage } from "@/pages/HomePage"
-import { UploadPage } from "@/pages/UploadPage"
-import { DashboardPage } from "@/pages/DashboardPage"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
+
+// Lazy load pages for code splitting
+const HomePage = lazy(() =>
+  import("@/pages/HomePage").then((m) => ({ default: m.HomePage }))
+)
+const UploadPage = lazy(() =>
+  import("@/pages/UploadPage").then((m) => ({ default: m.UploadPage }))
+)
+const DashboardPage = lazy(() =>
+  import("@/pages/DashboardPage").then((m) => ({ default: m.DashboardPage }))
+)
+
+function PageLoader() {
+  return (
+    <div className="flex h-[50vh] items-center justify-center">
+      <div className="text-muted-foreground">Loading...</div>
+    </div>
+  )
+}
 
 function App() {
   return (
@@ -15,7 +32,9 @@ function App() {
           <div className="min-h-screen flex flex-col">
             <Header />
             <main className="flex-1">
-              <HomePage />
+              <Suspense fallback={<PageLoader />}>
+                <HomePage />
+              </Suspense>
             </main>
           </div>
         }
@@ -28,7 +47,9 @@ function App() {
           <div className="min-h-screen flex flex-col">
             <Header />
             <main className="flex-1">
-              <UploadPage />
+              <Suspense fallback={<PageLoader />}>
+                <UploadPage />
+              </Suspense>
             </main>
           </div>
         }
@@ -41,7 +62,9 @@ function App() {
           <div className="min-h-screen flex flex-col">
             <Header />
             <main className="flex-1">
-              <HomePage />
+              <Suspense fallback={<PageLoader />}>
+                <HomePage />
+              </Suspense>
             </main>
           </div>
         }
@@ -52,7 +75,9 @@ function App() {
         path="/dashboard/*"
         element={
           <ProtectedRoute>
-            <DashboardPage />
+            <Suspense fallback={<PageLoader />}>
+              <DashboardPage />
+            </Suspense>
           </ProtectedRoute>
         }
       />

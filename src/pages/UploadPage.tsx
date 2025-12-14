@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react"
 import { useAuth } from "react-oidc-context"
+import { useIsMobile } from "@/hooks/use-mobile"
 import {
   Card,
   CardContent,
@@ -17,9 +18,12 @@ import {
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
+import { Separator } from "@/components/ui/separator"
 import { FileDropZone } from "@/components/upload/FileDropZone"
 import { FileList } from "@/components/upload/FileList"
 import { AppPreviewList } from "@/components/upload/AppPreviewList"
+import { UploadSidebar } from "@/components/upload/UploadSidebar"
+import { SelectedFilesCard } from "@/components/upload/SelectedFilesCard"
 import {
   parseMultipleZipFiles,
   revokeEntryUrls,
@@ -41,6 +45,7 @@ import type { AppInfoCreateSingleRequest } from "@/types/app-info"
 export function UploadPage() {
   const auth = useAuth()
   const isAuthenticated = auth.isAuthenticated
+  const isMobile = useIsMobile()
 
   const [files, setFiles] = useState<UploadedFile[]>([])
   const [entries, setEntries] = useState<ParsedAppEntry[]>([])
@@ -141,6 +146,14 @@ export function UploadPage() {
     setFiles([])
   }, [])
 
+  const handlePackClear = useCallback(() => {
+    setSelectedPackId("")
+  }, [])
+
+  const handleVersionClear = useCallback(() => {
+    setSelectedVersionId("")
+  }, [])
+
   const handleSubmit = useCallback(async () => {
     if (entries.length === 0) return
 
@@ -219,7 +232,7 @@ export function UploadPage() {
     : 0
 
   return (
-    <div className="container mx-auto max-w-4xl py-8 px-4">
+    <div className="container mx-auto max-w-6xl py-8 px-4">
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
@@ -231,156 +244,287 @@ export function UploadPage() {
           </p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Select Files</CardTitle>
-            <CardDescription>
-              Upload ZIP files containing appfilter.xml files and PNG icons.
-              Multiple files can be uploaded at once.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <FileDropZone
-              onFilesAdded={handleFilesAdded}
-              disabled={isParsing}
-            />
-            <FileList
+        {isMobile ? (
+          // Mobile Layout
+          <>
+            <Card>
+              <CardHeader>
+                <CardTitle>Select Files</CardTitle>
+                <CardDescription>
+                  Upload ZIP files containing appfilter.xml files and PNG icons.
+                  Multiple files can be uploaded at once.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FileDropZone
+                  onFilesAdded={handleFilesAdded}
+                  disabled={isParsing}
+                />
+                {isParsing && (
+                  <p className="text-sm text-muted-foreground">Parsing files...</p>
+                )}
+                {parseError && (
+                  <p className="text-sm text-destructive">{parseError}</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <SelectedFilesCard
               files={files}
-              onRemove={handleRemoveFile}
+              onRemoveFile={handleRemoveFile}
               onClearAll={handleClearAll}
             />
-            {isParsing && (
-              <p className="text-sm text-muted-foreground">Parsing files...</p>
-            )}
-            {parseError && (
-              <p className="text-sm text-destructive">{parseError}</p>
-            )}
-          </CardContent>
-        </Card>
 
-        {entries.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Preview</CardTitle>
-              <CardDescription>
-                Review the parsed app entries before submitting.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AppPreviewList entries={entries} />
-            </CardContent>
-          </Card>
-        )}
+            {isAuthenticated && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Icon Pack Selection (Optional)</CardTitle>
+                  <CardDescription>
+                    Optionally associate these app entries with one of your icon
+                    packs. If not selected, the entries will be added to the
+                    database without an icon pack association.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="icon-pack">Icon Pack</Label>
+                        {selectedPackId && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handlePackClear}
+                            className="h-auto py-0 px-2 text-xs text-muted-foreground hover:text-foreground"
+                          >
+                            Clear
+                          </Button>
+                        )}
+                      </div>
+                      <Select
+                        value={selectedPackId}
+                        onValueChange={setSelectedPackId}
+                        disabled={isLoadingPacks}
+                      >
+                        <SelectTrigger id="icon-pack">
+                          <SelectValue
+                            placeholder={
+                              isLoadingPacks ? "Loading..." : "Select icon pack"
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {iconPacks.map((pack) => (
+                            <SelectItem key={pack.id} value={pack.id ?? ""}>
+                              {pack.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="version">Version</Label>
+                        {selectedVersionId && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleVersionClear}
+                            className="h-auto py-0 px-2 text-xs text-muted-foreground hover:text-foreground"
+                          >
+                            Clear
+                          </Button>
+                        )}
+                      </div>
+                      <Select
+                        value={selectedVersionId}
+                        onValueChange={setSelectedVersionId}
+                        disabled={!selectedPackId || isLoadingVersions}
+                      >
+                        <SelectTrigger id="version">
+                          <SelectValue
+                            placeholder={
+                              isLoadingVersions
+                                ? "Loading..."
+                                : selectedPackId
+                                  ? "Select version"
+                                  : "Select icon pack first"
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {versions.map((version) => (
+                            <SelectItem key={version.id} value={version.id ?? ""}>
+                              {version.versionString}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-        {isAuthenticated && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Icon Pack Selection (Optional)</CardTitle>
-              <CardDescription>
-                Optionally associate these app entries with one of your icon
-                packs. If not selected, the entries will be added to the
-                database without an icon pack association.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="icon-pack">Icon Pack</Label>
-                  <Select
-                    value={selectedPackId}
-                    onValueChange={setSelectedPackId}
-                    disabled={isLoadingPacks}
-                  >
-                    <SelectTrigger id="icon-pack">
-                      <SelectValue
-                        placeholder={
-                          isLoadingPacks ? "Loading..." : "Select icon pack"
+            {entries.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Preview</CardTitle>
+                  <CardDescription>
+                    Review the parsed app entries before submitting.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="overflow-x-auto">
+                  <AppPreviewList entries={entries} />
+                </CardContent>
+              </Card>
+            )}
+
+            {isSubmitting && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Uploading...</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Progress value={progressPercent} />
+                  <p className="text-sm text-muted-foreground">{uploadStatus}</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {submitSuccess && !isSubmitting && (
+              <Card className="border-green-500">
+                <CardContent className="pt-6">
+                  <p className="text-sm text-green-600">
+                    Successfully uploaded {entries.length} app entries!
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {submitError && (
+              <Card className="border-destructive">
+                <CardContent className="pt-6">
+                  <p className="text-sm text-destructive">{submitError}</p>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="flex justify-end">
+              <Button
+                size="lg"
+                onClick={handleSubmit}
+                disabled={!canSubmit}
+              >
+                {isSubmitting ? "Uploading..." : "Submit"}
+              </Button>
+            </div>
+          </>
+        ) : (
+          // Desktop Layout
+          <div className="flex gap-6 lg:gap-8">
+            {/* Main content area */}
+            <div className="flex-1 min-w-0 space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Select Files</CardTitle>
+                  <CardDescription>
+                    Upload ZIP files containing appfilter.xml files and PNG icons.
+                    Multiple files can be uploaded at once.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FileDropZone
+                    onFilesAdded={handleFilesAdded}
+                    disabled={isParsing}
+                  />
+                  {isParsing && (
+                    <p className="text-sm text-muted-foreground">Parsing files...</p>
+                  )}
+                  {parseError && (
+                    <p className="text-sm text-destructive">{parseError}</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {entries.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Preview</CardTitle>
+                    <CardDescription>
+                      Review the parsed app entries before submitting.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="overflow-x-auto">
+                    <AppPreviewList entries={entries} />
+                  </CardContent>
+                </Card>
+              )}
+
+              {isSubmitting && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Uploading...</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Progress value={progressPercent} />
+                    <p className="text-sm text-muted-foreground">{uploadStatus}</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {submitSuccess && !isSubmitting && (
+                <Card className="border-green-500">
+                  <CardContent className="pt-6">
+                    <p className="text-sm text-green-600">
+                      Successfully uploaded {entries.length} app entries!
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {submitError && (
+                <Card className="border-destructive">
+                  <CardContent className="pt-6">
+                    <p className="text-sm text-destructive">{submitError}</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Right sidebar */}
+            <div className="w-80 shrink-0">
+              <div className="sticky top-24">
+                <UploadSidebar
+                  fileList={{
+                    files,
+                    onRemoveFile: handleRemoveFile,
+                    onClearAllFiles: handleClearAll,
+                  }}
+                  iconPackSelection={
+                    isAuthenticated
+                      ? {
+                          iconPacks,
+                          selectedPackId,
+                          onPackChange: setSelectedPackId,
+                          onPackClear: handlePackClear,
+                          isLoadingPacks,
+                          versions,
+                          selectedVersionId,
+                          onVersionChange: setSelectedVersionId,
+                          onVersionClear: handleVersionClear,
+                          isLoadingVersions,
                         }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {iconPacks.map((pack) => (
-                        <SelectItem key={pack.id} value={pack.id ?? ""}>
-                          {pack.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="version">Version</Label>
-                  <Select
-                    value={selectedVersionId}
-                    onValueChange={setSelectedVersionId}
-                    disabled={!selectedPackId || isLoadingVersions}
-                  >
-                    <SelectTrigger id="version">
-                      <SelectValue
-                        placeholder={
-                          isLoadingVersions
-                            ? "Loading..."
-                            : selectedPackId
-                              ? "Select version"
-                              : "Select icon pack first"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {versions.map((version) => (
-                        <SelectItem key={version.id} value={version.id ?? ""}>
-                          {version.versionString}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                      : undefined
+                  }
+                  canSubmit={canSubmit}
+                  isSubmitting={isSubmitting}
+                  onSubmit={handleSubmit}
+                />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
-
-        {/* Upload progress */}
-        {isSubmitting && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Uploading...</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Progress value={progressPercent} />
-              <p className="text-sm text-muted-foreground">{uploadStatus}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Success message */}
-        {submitSuccess && !isSubmitting && (
-          <Card className="border-green-500">
-            <CardContent className="pt-6">
-              <p className="text-sm text-green-600">
-                Successfully uploaded {entries.length} app entries!
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Error message */}
-        {submitError && (
-          <Card className="border-destructive">
-            <CardContent className="pt-6">
-              <p className="text-sm text-destructive">{submitError}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        <div className="flex justify-end">
-          <Button
-            size="lg"
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-          >
-            {isSubmitting ? "Uploading..." : "Submit"}
-          </Button>
-        </div>
       </div>
     </div>
   )

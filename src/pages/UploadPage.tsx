@@ -40,6 +40,16 @@ import type { ParsedAppEntry, UploadedFile } from "@/types/upload"
 import type { IconPackDTO, IconPackVersionDTO } from "@/types/icon-pack"
 import type { AppInfoCreateSingleRequest } from "@/types/app-info"
 
+const BATCH_SIZE = 25
+
+function chunkArray<T>(array: T[], size: number): T[][] {
+  const chunks: T[][] = []
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size))
+  }
+  return chunks
+}
+
 export function UploadPage() {
   const auth = useAuth()
   const isAuthenticated = auth.isAuthenticated
@@ -159,14 +169,13 @@ export function UploadPage() {
     setIsSubmitting(true)
     setSubmitError(null)
     setSubmitSuccess(false)
-    setUploadProgress({ current: 0, total: entries.length })
 
     try {
       // Step 1: Generate temporary token if icon pack is selected
       let accessToken: string | undefined
       if (selectedPackId && selectedVersionId && auth.user?.access_token) {
         setUploadStatus("Generating access token...")
-        const tokenValiditySeconds = entries.length * 20
+        const tokenValiditySeconds = Math.max(entries.length * 20, 300)
         const expireAt = new Date(Date.now() + tokenValiditySeconds * 1000).toISOString()
         const tokenResponse = await createVersionAccessToken(
           auth.user.access_token,
@@ -177,8 +186,7 @@ export function UploadPage() {
         accessToken = tokenResponse.token
       }
 
-      // Step 2: Create app info entries
-      setUploadStatus("Creating app entries...")
+      // Step 2: Create app info entries in batches
       const appInfoRequests: AppInfoCreateSingleRequest[] = entries.map((entry) => ({
         packageName: entry.packageName,
         mainActivity: entry.mainActivity,
@@ -187,13 +195,22 @@ export function UploadPage() {
         languageCode: "--",
       }))
 
-      await createAppInfo(appInfoRequests, accessToken)
+      const batches = chunkArray(appInfoRequests, BATCH_SIZE)
+      const entriesWithIcons = entries.filter((entry) => entry.iconBlob)
+      const totalSteps = batches.length + entriesWithIcons.length
+
+      setUploadProgress({ current: 0, total: totalSteps })
+
+      for (let i = 0; i < batches.length; i++) {
+        setUploadStatus(`Creating app entries (batch ${i + 1}/${batches.length})...`)
+        await createAppInfo(batches[i], accessToken)
+        setUploadProgress({ current: i + 1, total: totalSteps })
+      }
 
       // Step 3: Upload icons
-      const entriesWithIcons = entries.filter((entry) => entry.iconBlob)
       for (let i = 0; i < entriesWithIcons.length; i++) {
         const entry = entriesWithIcons[i]
-        setUploadProgress({ current: i + 1, total: entriesWithIcons.length })
+        setUploadProgress({ current: batches.length + i + 1, total: totalSteps })
         setUploadStatus(`Uploading icon ${i + 1} of ${entriesWithIcons.length}...`)
 
         try {

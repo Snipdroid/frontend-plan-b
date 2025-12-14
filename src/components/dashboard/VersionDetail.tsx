@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { useParams } from "react-router"
 import { useAuth } from "react-oidc-context"
+import { ImageOff, Plus, Minus } from "lucide-react"
 import {
   Card,
   CardContent,
@@ -30,6 +31,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { getVersionRequests, markAppsAsAdapted } from "@/services/icon-pack"
+import { API_BASE_URL } from "@/services/api"
 import type { IconPackVersionRequestRecordResponse } from "@/types/icon-pack"
 
 const PER_PAGE = 10
@@ -137,6 +139,11 @@ export function VersionDetail() {
     return new Date(dateString).toLocaleDateString()
   }
 
+  const getIconUrl = (packageName?: string) => {
+    if (!packageName) return null
+    return `${API_BASE_URL}/app-icon?packageName=${encodeURIComponent(packageName)}`
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -181,6 +188,7 @@ export function VersionDetail() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">Icon</TableHead>
                     <TableHead>App Name</TableHead>
                     <TableHead>Package Name</TableHead>
                     <TableHead>Main Activity</TableHead>
@@ -192,8 +200,25 @@ export function VersionDetail() {
                   {requests.map((item) => {
                     const request = item.requestRecord
                     const isAdapted = !!item.iconPackApp
+                    const iconUrl = getIconUrl(request.appInfo?.packageName)
                     return (
                       <TableRow key={request.id}>
+                        <TableCell>
+                          {iconUrl ? (
+                            <img
+                              src={iconUrl}
+                              alt={request.appInfo?.defaultName ?? "App icon"}
+                              className="h-8 w-8 rounded object-contain"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none"
+                                e.currentTarget.nextElementSibling?.classList.remove("hidden")
+                              }}
+                            />
+                          ) : null}
+                          <div className={`${iconUrl ? "hidden" : ""} flex h-8 w-8 items-center justify-center rounded bg-muted`}>
+                            <ImageOff className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </TableCell>
                         <TableCell className="font-medium">
                           {request.appInfo?.defaultName ?? "-"}
                         </TableCell>
@@ -207,7 +232,7 @@ export function VersionDetail() {
                         <TableCell className="text-right">
                           {isAdapted ? (
                             <Button
-                              variant="outline"
+                              variant="destructive"
                               size="sm"
                               onClick={() =>
                                 request.appInfo?.id &&
@@ -215,7 +240,8 @@ export function VersionDetail() {
                               }
                               disabled={isMarking || !request.appInfo?.id}
                             >
-                              Remove Mark
+                              <Minus className="h-4 w-4 mr-1" />
+                              Remove
                             </Button>
                           ) : (
                             <Button
@@ -227,7 +253,8 @@ export function VersionDetail() {
                               }
                               disabled={isMarking || !request.appInfo?.id}
                             >
-                              Mark as Adapted
+                              <Plus className="h-4 w-4 mr-1" />
+                              Add
                             </Button>
                           )}
                         </TableCell>

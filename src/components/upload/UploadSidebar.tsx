@@ -48,6 +48,9 @@ interface UploadSidebarProps {
   onSubmit: () => void
   uploadProgress: { current: number; total: number }
   uploadStatus: string
+  submitSuccess: boolean
+  submitError: string | null
+  uploadedCount: number
 }
 
 export function UploadSidebar({
@@ -58,6 +61,9 @@ export function UploadSidebar({
   onSubmit,
   uploadProgress,
   uploadStatus,
+  submitSuccess,
+  submitError,
+  uploadedCount,
 }: UploadSidebarProps) {
   const progressPercent =
     uploadProgress.total > 0
@@ -186,14 +192,26 @@ export function UploadSidebar({
 
         {/* Submit Button */}
         <Separator />
-        <Button
-          size="lg"
-          onClick={onSubmit}
-          disabled={!canSubmit}
-          className="w-full"
-        >
-          {isSubmitting ? "Uploading..." : "Submit"}
-        </Button>
+        <div className="space-y-2">
+          <Button
+            size="lg"
+            onClick={onSubmit}
+            disabled={!canSubmit}
+            className="w-full"
+          >
+            {isSubmitting ? "Uploading..." : "Submit"}
+          </Button>
+
+          {/* Success/Error Messages */}
+          {submitSuccess && !isSubmitting && (
+            <p className="text-sm text-green-600 text-center">
+              Successfully uploaded {uploadedCount} app entries!
+            </p>
+          )}
+          {submitError && (
+            <p className="text-sm text-destructive text-center">{submitError}</p>
+          )}
+        </div>
       </CardContent>
     </Card>
   )

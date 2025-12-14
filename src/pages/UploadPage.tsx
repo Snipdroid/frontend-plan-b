@@ -394,32 +394,25 @@ export function UploadPage() {
               </Card>
             )}
 
-            {submitSuccess && !isSubmitting && (
-              <Card className="border-green-500">
-                <CardContent className="pt-6">
-                  <p className="text-sm text-green-600">
-                    Successfully uploaded {uploadedCount} app entries!
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-
-            {submitError && (
-              <Card className="border-destructive">
-                <CardContent className="pt-6">
-                  <p className="text-sm text-destructive">{submitError}</p>
-                </CardContent>
-              </Card>
-            )}
-
-            <div className="flex justify-end">
+            <div className="space-y-2">
               <Button
                 size="lg"
                 onClick={handleSubmit}
                 disabled={!canSubmit}
+                className="w-full"
               >
                 {isSubmitting ? "Uploading..." : "Submit"}
               </Button>
+
+              {/* Success/Error Messages */}
+              {submitSuccess && !isSubmitting && (
+                <p className="text-sm text-green-600 text-center">
+                  Successfully uploaded {uploadedCount} app entries!
+                </p>
+              )}
+              {submitError && (
+                <p className="text-sm text-destructive text-center">{submitError}</p>
+              )}
             </div>
           </>
         ) : (
@@ -462,24 +455,6 @@ export function UploadPage() {
                   </CardContent>
                 </Card>
               )}
-
-              {submitSuccess && !isSubmitting && (
-                <Card className="border-green-500">
-                  <CardContent className="pt-6">
-                    <p className="text-sm text-green-600">
-                      Successfully uploaded {uploadedCount} app entries!
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-
-              {submitError && (
-                <Card className="border-destructive">
-                  <CardContent className="pt-6">
-                    <p className="text-sm text-destructive">{submitError}</p>
-                  </CardContent>
-                </Card>
-              )}
             </div>
 
             {/* Right sidebar */}
@@ -512,6 +487,9 @@ export function UploadPage() {
                   onSubmit={handleSubmit}
                   uploadProgress={uploadProgress}
                   uploadStatus={uploadStatus}
+                  submitSuccess={submitSuccess}
+                  submitError={submitError}
+                  uploadedCount={uploadedCount}
                 />
               </div>
             </div>

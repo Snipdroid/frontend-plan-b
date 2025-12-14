@@ -49,6 +49,7 @@ export interface PageRequestRecordDTO {
 export interface AppInfoWithRequestCount {
   appInfo: AppInfoDTO
   count: number
+  iconPackApp?: IconPackAppDTO
 }
 
 export interface PageAppInfoWithRequestCount {

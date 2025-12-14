@@ -6,6 +6,7 @@ import type {
   IconPackVersionTokenResponse,
   PageIconPackVersionDTO,
   PageIconPackVersionRequestRecordResponse,
+  PageAppInfoWithRequestCount,
   IconPackAppDTO,
 } from "@/types/icon-pack"
 
@@ -191,6 +192,35 @@ export async function getVersionRequests(
 
   const queryString = params.toString()
   const url = `${API_BASE_URL}/icon-pack/${iconPackId}/version/${versionId}/requests${queryString ? `?${queryString}` : ""}`
+
+  const response = await fetch(url, {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`)
+  }
+
+  return response.json()
+}
+
+export async function getIconPackRequests(
+  accessToken: string,
+  iconPackId: string,
+  page?: number,
+  per?: number,
+  includingAdapted?: boolean
+): Promise<PageAppInfoWithRequestCount> {
+  const params = new URLSearchParams()
+  if (page !== undefined) params.set("page", String(page))
+  if (per !== undefined) params.set("per", String(per))
+  if (includingAdapted !== undefined) params.set("includingAdapted", String(includingAdapted))
+
+  const queryString = params.toString()
+  const url = `${API_BASE_URL}/icon-pack/${iconPackId}/requests${queryString ? `?${queryString}` : ""}`
 
   const response = await fetch(url, {
     headers: {

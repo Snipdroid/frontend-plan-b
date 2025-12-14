@@ -75,3 +75,13 @@ export interface IconPackAppDTO {
   appInfo?: AppInfoDTO
   iconPack?: IconPackDTO
 }
+
+export interface IconPackVersionRequestRecordResponse {
+  requestRecord: RequestRecordDTO
+  iconPackApp?: IconPackAppDTO
+}
+
+export interface PageIconPackVersionRequestRecordResponse {
+  items: IconPackVersionRequestRecordResponse[]
+  metadata: PageMetadata
+}

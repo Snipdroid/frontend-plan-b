@@ -5,7 +5,7 @@ import type {
   IconPackVersionTokenRequest,
   IconPackVersionTokenResponse,
   PageIconPackVersionDTO,
-  PageRequestRecordDTO,
+  PageIconPackVersionRequestRecordResponse,
   IconPackAppDTO,
 } from "@/types/icon-pack"
 
@@ -183,7 +183,7 @@ export async function getVersionRequests(
   page?: number,
   per?: number,
   includingAdapted?: boolean
-): Promise<PageRequestRecordDTO> {
+): Promise<PageIconPackVersionRequestRecordResponse> {
   const params = new URLSearchParams()
   if (page !== undefined) params.set("page", String(page))
   if (per !== undefined) params.set("per", String(per))

@@ -30,14 +30,14 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { getVersionRequests, markAppsAsAdapted } from "@/services/icon-pack"
-import type { RequestRecordDTO } from "@/types/icon-pack"
+import type { IconPackVersionRequestRecordResponse } from "@/types/icon-pack"
 
 const PER_PAGE = 10
 
 export function VersionDetail() {
   const { packId, versionId } = useParams()
   const auth = useAuth()
-  const [requests, setRequests] = useState<RequestRecordDTO[]>([])
+  const [requests, setRequests] = useState<IconPackVersionRequestRecordResponse[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [total, setTotal] = useState(0)
@@ -87,15 +87,15 @@ export function VersionDetail() {
     setCurrentPage(1)
   }
 
-  const handleMarkAsAdapted = async (appInfoId: string) => {
+  const handleToggleAdapted = async (appInfoId: string, adapted: boolean) => {
     if (!packId || !auth.user?.access_token) return
 
     setIsMarking(true)
     try {
-      await markAppsAsAdapted(auth.user.access_token, packId, [appInfoId], true)
+      await markAppsAsAdapted(auth.user.access_token, packId, [appInfoId], adapted)
       await fetchRequests()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to mark as adapted")
+      setError(err instanceof Error ? err.message : "Failed to update adapted status")
     } finally {
       setIsMarking(false)
     }
@@ -189,33 +189,51 @@ export function VersionDetail() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {requests.map((request) => (
-                    <TableRow key={request.id}>
-                      <TableCell className="font-medium">
-                        {request.appInfo?.defaultName ?? "-"}
-                      </TableCell>
-                      <TableCell className="font-mono text-sm">
-                        {request.appInfo?.packageName ?? "-"}
-                      </TableCell>
-                      <TableCell className="font-mono text-sm">
-                        {request.appInfo?.mainActivity ?? "-"}
-                      </TableCell>
-                      <TableCell>{formatDate(request.createdAt)}</TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            request.appInfo?.id &&
-                            handleMarkAsAdapted(request.appInfo.id)
-                          }
-                          disabled={isMarking || !request.appInfo?.id}
-                        >
-                          Mark as Adapted
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {requests.map((item) => {
+                    const request = item.requestRecord
+                    const isAdapted = !!item.iconPackApp
+                    return (
+                      <TableRow key={request.id}>
+                        <TableCell className="font-medium">
+                          {request.appInfo?.defaultName ?? "-"}
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {request.appInfo?.packageName ?? "-"}
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {request.appInfo?.mainActivity ?? "-"}
+                        </TableCell>
+                        <TableCell>{formatDate(request.createdAt)}</TableCell>
+                        <TableCell className="text-right">
+                          {isAdapted ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                request.appInfo?.id &&
+                                handleToggleAdapted(request.appInfo.id, false)
+                              }
+                              disabled={isMarking || !request.appInfo?.id}
+                            >
+                              Remove Mark
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                request.appInfo?.id &&
+                                handleToggleAdapted(request.appInfo.id, true)
+                              }
+                              disabled={isMarking || !request.appInfo?.id}
+                            >
+                              Mark as Adapted
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
                 </TableBody>
               </Table>
               {totalPages > 1 && (

@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
+import { Progress } from "@/components/ui/progress"
 import { FileDropZone } from "@/components/upload/FileDropZone"
 import { FileList } from "@/components/upload/FileList"
 import { AppPreviewList } from "@/components/upload/AppPreviewList"
@@ -23,9 +24,19 @@ import {
   parseMultipleZipFiles,
   revokeEntryUrls,
 } from "@/lib/appfilter-parser"
-import { getIconPacks, getIconPackVersions } from "@/services/icon-pack"
+import {
+  getIconPacks,
+  getIconPackVersions,
+  createVersionAccessToken,
+} from "@/services/icon-pack"
+import {
+  createAppInfo,
+  getIconUploadUrl,
+  uploadIconToS3,
+} from "@/services/app-info"
 import type { ParsedAppEntry, UploadedFile } from "@/types/upload"
 import type { IconPackDTO, IconPackVersionDTO } from "@/types/icon-pack"
+import type { AppInfoCreateSingleRequest } from "@/types/app-info"
 
 export function UploadPage() {
   const auth = useAuth()
@@ -36,6 +47,13 @@ export function UploadPage() {
   const [isParsing, setIsParsing] = useState(false)
   const [parseError, setParseError] = useState<string | null>(null)
   const entriesRef = useRef<ParsedAppEntry[]>([])
+
+  // Upload state
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 })
+  const [uploadStatus, setUploadStatus] = useState<string>("")
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [submitSuccess, setSubmitSuccess] = useState(false)
 
   // Icon pack selection (for authenticated users)
   const [iconPacks, setIconPacks] = useState<IconPackDTO[]>([])
@@ -123,14 +141,69 @@ export function UploadPage() {
     setFiles([])
   }, [])
 
-  const handleSubmit = useCallback(() => {
-    // TODO: Implement network upload
-    console.log("Submit:", {
-      entries,
-      selectedPackId,
-      selectedVersionId,
-    })
-  }, [entries, selectedPackId, selectedVersionId])
+  const handleSubmit = useCallback(async () => {
+    if (entries.length === 0) return
+
+    setIsSubmitting(true)
+    setSubmitError(null)
+    setSubmitSuccess(false)
+    setUploadProgress({ current: 0, total: entries.length })
+
+    try {
+      // Step 1: Generate temporary token if icon pack is selected
+      let accessToken: string | undefined
+      if (selectedPackId && selectedVersionId && auth.user?.access_token) {
+        setUploadStatus("Generating access token...")
+        const tokenValiditySeconds = entries.length * 20
+        const expireAt = new Date(Date.now() + tokenValiditySeconds * 1000).toISOString()
+        const tokenResponse = await createVersionAccessToken(
+          auth.user.access_token,
+          selectedPackId,
+          selectedVersionId,
+          expireAt
+        )
+        accessToken = tokenResponse.token
+      }
+
+      // Step 2: Create app info entries
+      setUploadStatus("Creating app entries...")
+      const appInfoRequests: AppInfoCreateSingleRequest[] = entries.map((entry) => ({
+        packageName: entry.packageName,
+        mainActivity: entry.mainActivity,
+        defaultName: entry.drawableName,
+        localizedName: entry.drawableName,
+        languageCode: "--",
+      }))
+
+      await createAppInfo(appInfoRequests, accessToken)
+
+      // Step 3: Upload icons
+      const entriesWithIcons = entries.filter((entry) => entry.iconBlob)
+      for (let i = 0; i < entriesWithIcons.length; i++) {
+        const entry = entriesWithIcons[i]
+        setUploadProgress({ current: i + 1, total: entriesWithIcons.length })
+        setUploadStatus(`Uploading icon ${i + 1} of ${entriesWithIcons.length}...`)
+
+        try {
+          const { uploadURL } = await getIconUploadUrl(entry.packageName)
+          await uploadIconToS3(uploadURL, entry.iconBlob!)
+        } catch (err) {
+          console.error(`Failed to upload icon for ${entry.packageName}:`, err)
+          // Continue with other icons even if one fails
+        }
+      }
+
+      setSubmitSuccess(true)
+      setUploadStatus("Upload complete!")
+      // Clear files after successful upload
+      setFiles([])
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Upload failed")
+      setUploadStatus("")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }, [entries, selectedPackId, selectedVersionId, auth.user?.access_token])
 
   // Cleanup object URLs on unmount
   useEffect(() => {
@@ -139,7 +212,11 @@ export function UploadPage() {
     }
   }, [])
 
-  const canSubmit = entries.length > 0
+  const canSubmit = entries.length > 0 && !isSubmitting
+
+  const progressPercent = uploadProgress.total > 0
+    ? (uploadProgress.current / uploadProgress.total) * 100
+    : 0
 
   return (
     <div className="container mx-auto max-w-4xl py-8 px-4">
@@ -262,13 +339,46 @@ export function UploadPage() {
           </Card>
         )}
 
+        {/* Upload progress */}
+        {isSubmitting && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Uploading...</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Progress value={progressPercent} />
+              <p className="text-sm text-muted-foreground">{uploadStatus}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Success message */}
+        {submitSuccess && !isSubmitting && (
+          <Card className="border-green-500">
+            <CardContent className="pt-6">
+              <p className="text-sm text-green-600">
+                Successfully uploaded {entries.length} app entries!
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Error message */}
+        {submitError && (
+          <Card className="border-destructive">
+            <CardContent className="pt-6">
+              <p className="text-sm text-destructive">{submitError}</p>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="flex justify-end">
           <Button
             size="lg"
             onClick={handleSubmit}
             disabled={!canSubmit}
           >
-            Submit
+            {isSubmitting ? "Uploading..." : "Submit"}
           </Button>
         </div>
       </div>

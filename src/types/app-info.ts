@@ -39,3 +39,24 @@ export interface AppSearchParams {
   page?: number
   per?: number
 }
+
+export interface AppInfoCreateSingleRequest {
+  packageName: string
+  mainActivity: string
+  defaultName: string
+  localizedName: string
+  languageCode: string
+}
+
+export interface AppInfoDTO {
+  id?: string
+  packageName: string
+  mainActivity: string
+  defaultName: string
+  count: number
+  createdAt?: string
+}
+
+export interface AppIconGenerateUploadURLResponse {
+  uploadURL: string
+}

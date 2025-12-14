@@ -1,5 +1,11 @@
-import type { AppSearchParams, PageAppInfo } from "@/types"
-import { fetchJson } from "./api"
+import type {
+  AppSearchParams,
+  PageAppInfo,
+  AppInfoCreateSingleRequest,
+  AppInfoDTO,
+  AppIconGenerateUploadURLResponse,
+} from "@/types/app-info"
+import { API_BASE_URL, fetchJson } from "./api"
 
 export async function searchAppInfo(
   params: AppSearchParams,
@@ -19,4 +25,55 @@ export async function searchAppInfo(
   const endpoint = `/app-info/search${queryString ? `?${queryString}` : ""}`
 
   return fetchJson<PageAppInfo>(endpoint, { signal })
+}
+
+export async function createAppInfo(
+  entries: AppInfoCreateSingleRequest[],
+  accessToken?: string
+): Promise<AppInfoDTO[]> {
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  }
+
+  if (accessToken) {
+    headers["Authorization"] = `Bearer ${accessToken}`
+  }
+
+  const response = await fetch(`${API_BASE_URL}/app-info/create`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(entries),
+  })
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`)
+  }
+
+  return response.json()
+}
+
+export async function getIconUploadUrl(
+  packageName: string
+): Promise<AppIconGenerateUploadURLResponse> {
+  const params = new URLSearchParams({ packageName })
+  return fetchJson<AppIconGenerateUploadURLResponse>(
+    `/app-icon/generate-upload-url?${params.toString()}`
+  )
+}
+
+export async function uploadIconToS3(
+  uploadUrl: string,
+  iconBlob: Blob
+): Promise<void> {
+  const response = await fetch(uploadUrl, {
+    method: "PUT",
+    body: iconBlob,
+    headers: {
+      "Content-Type": iconBlob.type || "image/png",
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`S3 Upload Error: ${response.status} ${response.statusText}`)
+  }
 }

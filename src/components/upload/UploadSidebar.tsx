@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
+import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { FileList } from "@/components/upload/FileList"
 import type { UploadedFile } from "@/types/upload"
@@ -45,6 +46,8 @@ interface UploadSidebarProps {
   canSubmit: boolean
   isSubmitting: boolean
   onSubmit: () => void
+  uploadProgress: { current: number; total: number }
+  uploadStatus: string
 }
 
 export function UploadSidebar({
@@ -53,7 +56,13 @@ export function UploadSidebar({
   canSubmit,
   isSubmitting,
   onSubmit,
+  uploadProgress,
+  uploadStatus,
 }: UploadSidebarProps) {
+  const progressPercent =
+    uploadProgress.total > 0
+      ? (uploadProgress.current / uploadProgress.total) * 100
+      : 0
   return (
     <Card className="max-h-[calc(100vh-8rem)] overflow-y-auto">
       <CardHeader>
@@ -98,7 +107,7 @@ export function UploadSidebar({
                   onValueChange={iconPackSelection.onPackChange}
                   disabled={iconPackSelection.isLoadingPacks}
                 >
-                  <SelectTrigger id="sidebar-icon-pack">
+                  <SelectTrigger id="sidebar-icon-pack" className="w-full">
                     <SelectValue
                       placeholder={
                         iconPackSelection.isLoadingPacks
@@ -140,7 +149,7 @@ export function UploadSidebar({
                     iconPackSelection.isLoadingVersions
                   }
                 >
-                  <SelectTrigger id="sidebar-version">
+                  <SelectTrigger id="sidebar-version" className="w-full">
                     <SelectValue
                       placeholder={
                         iconPackSelection.isLoadingVersions
@@ -160,6 +169,17 @@ export function UploadSidebar({
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+          </>
+        )}
+
+        {/* Upload Progress */}
+        {isSubmitting && (
+          <>
+            <Separator />
+            <div className="space-y-2">
+              <Progress value={progressPercent} />
+              <p className="text-xs text-muted-foreground">{uploadStatus}</p>
             </div>
           </>
         )}

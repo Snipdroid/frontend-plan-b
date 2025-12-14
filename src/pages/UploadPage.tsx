@@ -461,18 +461,6 @@ export function UploadPage() {
                 </Card>
               )}
 
-              {isSubmitting && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Uploading...</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <Progress value={progressPercent} />
-                    <p className="text-sm text-muted-foreground">{uploadStatus}</p>
-                  </CardContent>
-                </Card>
-              )}
-
               {submitSuccess && !isSubmitting && (
                 <Card className="border-green-500">
                   <CardContent className="pt-6">
@@ -520,6 +508,8 @@ export function UploadPage() {
                   canSubmit={canSubmit}
                   isSubmitting={isSubmitting}
                   onSubmit={handleSubmit}
+                  uploadProgress={uploadProgress}
+                  uploadStatus={uploadStatus}
                 />
               </div>
             </div>

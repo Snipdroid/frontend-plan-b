@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useSearchTags, useAppSearch, useMediaQuery } from "@/hooks"
 import {
   SearchTagInput,
@@ -22,6 +22,11 @@ export function HomePage() {
   const [detailSheetOpen, setDetailSheetOpen] = useState(false)
 
   const isMobile = useMediaQuery("(max-width: 767px)")
+
+  const selectedApps = useMemo(
+    () => accumulatedItems.filter((app) => selectedIds.has(getRowKey(app))),
+    [accumulatedItems, selectedIds]
+  )
 
   // Fetch initial unfiltered list on mount
   useEffect(() => {
@@ -58,10 +63,6 @@ export function HomePage() {
   }
 
   const handleCopySelected = async () => {
-    const selectedApps = accumulatedItems.filter((app) =>
-      selectedIds.has(getRowKey(app))
-    )
-
     if (selectedApps.length === 0) return
 
     const text = selectedApps
@@ -106,7 +107,7 @@ export function HomePage() {
 
       {/* Action Bar - Sticky */}
       <ActionBar
-        selectedCount={selectedIds.size}
+        selectedApps={selectedApps}
         sortBy={sortBy}
         onSortChange={handleSortChange}
         onCopySelected={handleCopySelected}

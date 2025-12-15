@@ -17,7 +17,11 @@ import { registerLeafLanguage, leafLanguageId } from "@/lib/leaf-language"
 import type { AppInfo } from "@/types"
 
 const DEFAULT_TEMPLATE = `#for(app in apps):
-ComponentInfo(#(app.packageName)/#(app.mainActivity))
+  #for(name in app.localizedNames):
+    #if(name.languageCode == "--"):
+      <item ComponentInfo={#(app.packageName)/#(app.mainActivity)} drawable="#(name.name)"/>
+    #endif
+  #endfor
 #endfor`
 
 interface CustomTemplateDialogProps {
@@ -35,8 +39,8 @@ export function CustomTemplateDialog({
   const [preview, setPreview] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [trimWhitespace, setTrimWhitespace] = useState(false)
-  const [removeEmptyLines, setRemoveEmptyLines] = useState(false)
+  const [trimWhitespace, setTrimWhitespace] = useState(true)
+  const [removeEmptyLines, setRemoveEmptyLines] = useState(true)
   const debounceRef = useRef<NodeJS.Timeout>(undefined)
   const { theme } = useTheme()
 
@@ -129,7 +133,16 @@ export function CustomTemplateDialog({
         <DialogHeader>
           <DialogTitle>Custom Template</DialogTitle>
           <DialogDescription>
-            Write a Leaf template to render your selected apps. Use{" "}
+            Write a{" "}
+            <a
+              href="https://docs.vapor.codes/leaf/overview/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-foreground"
+            >
+              Leaf template
+            </a>{" "}
+            to render your selected apps. Use{" "}
             <code className="text-xs bg-muted px-1 py-0.5 rounded">
               #for(app in apps):
             </code>{" "}

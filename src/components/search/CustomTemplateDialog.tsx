@@ -1,5 +1,6 @@
-import { useState, useCallback, useEffect, useRef } from "react"
+import { useState, useCallback, useEffect, useRef, useMemo } from "react"
 import { Copy, Loader2 } from "lucide-react"
+import Editor, { type OnMount } from "@monaco-editor/react"
 import {
   Dialog,
   DialogContent,
@@ -9,7 +10,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import { useTheme } from "@/components/theme-provider"
 import { renderLeafTemplate } from "@/services/render"
+import { registerLeafLanguage, leafLanguageId } from "@/lib/leaf-language"
 import type { AppInfo } from "@/types"
 
 const DEFAULT_TEMPLATE = `#for(app in apps):
@@ -31,7 +35,42 @@ export function CustomTemplateDialog({
   const [preview, setPreview] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [trimWhitespace, setTrimWhitespace] = useState(false)
+  const [removeEmptyLines, setRemoveEmptyLines] = useState(false)
   const debounceRef = useRef<NodeJS.Timeout>(undefined)
+  const { theme } = useTheme()
+
+  // Process preview with options
+  const processedPreview = useMemo(() => {
+    if (!preview) return ""
+    let result = preview
+    if (trimWhitespace) {
+      result = result
+        .split("\n")
+        .map((line) => line.trim())
+        .join("\n")
+    }
+    if (removeEmptyLines) {
+      result = result
+        .split("\n")
+        .filter((line) => line.trim() !== "")
+        .join("\n")
+    }
+    return result
+  }, [preview, trimWhitespace, removeEmptyLines])
+
+  // Resolve "system" theme to actual theme
+  const resolvedTheme =
+    theme === "system"
+      ? window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light"
+      : theme
+  const monacoTheme = resolvedTheme === "dark" ? "vs-dark" : "light"
+
+  const handleEditorMount: OnMount = useCallback((_editor, monaco) => {
+    registerLeafLanguage(monaco)
+  }, [])
 
   // Debounced auto-render
   useEffect(() => {
@@ -65,13 +104,13 @@ export function CustomTemplateDialog({
   }, [template, apps, open])
 
   const handleCopy = useCallback(async () => {
-    if (!preview) return
+    if (!processedPreview) return
     try {
-      await navigator.clipboard.writeText(preview)
+      await navigator.clipboard.writeText(processedPreview)
     } catch {
       // Clipboard API failed, ignore
     }
-  }, [preview])
+  }, [processedPreview])
 
   const handleOpenChange = useCallback(
     (newOpen: boolean) => {
@@ -86,7 +125,7 @@ export function CustomTemplateDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh]">
+      <DialogContent className="sm:max-w-3xl md:max-w-5xl lg:max-w-6xl h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Custom Template</DialogTitle>
           <DialogDescription>
@@ -98,20 +137,56 @@ export function CustomTemplateDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[300px]">
-          <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-4 flex-1 min-h-0">
+          <div className="flex flex-col gap-2 h-1/2">
             <label className="text-sm font-medium">Template</label>
-            <textarea
-              value={template}
-              onChange={(e) => setTemplate(e.target.value)}
-              className="flex-1 min-h-[200px] p-3 font-mono text-sm border rounded-md resize-none bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-              placeholder="Enter your Leaf template..."
-            />
+            <div className="flex-1 border rounded-md overflow-hidden">
+              <Editor
+                height="100%"
+                language={leafLanguageId}
+                value={template}
+                onChange={(value) => setTemplate(value ?? "")}
+                onMount={handleEditorMount}
+                theme={monacoTheme}
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 13,
+                  lineNumbers: "off",
+                  scrollBeyondLastLine: false,
+                  wordWrap: "on",
+                  automaticLayout: true,
+                  tabSize: 2,
+                  padding: { top: 12, bottom: 12 },
+                }}
+              />
+            </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium">Preview</label>
-            <div className="flex-1 min-h-[200px] p-3 font-mono text-sm border rounded-md bg-muted/50 overflow-auto whitespace-pre-wrap">
+          <div className="flex flex-col gap-2 h-1/2">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium">Preview</label>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={trimWhitespace}
+                    onCheckedChange={(checked) =>
+                      setTrimWhitespace(checked === true)
+                    }
+                  />
+                  Trim whitespace
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={removeEmptyLines}
+                    onCheckedChange={(checked) =>
+                      setRemoveEmptyLines(checked === true)
+                    }
+                  />
+                  Remove empty lines
+                </label>
+              </div>
+            </div>
+            <div className="flex-1 p-3 font-mono text-sm border rounded-md bg-muted/50 overflow-auto whitespace-pre-wrap">
               {error ? (
                 <span className="text-destructive">{error}</span>
               ) : isLoading ? (
@@ -119,8 +194,8 @@ export function CustomTemplateDialog({
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Rendering...
                 </span>
-              ) : preview ? (
-                preview
+              ) : processedPreview ? (
+                processedPreview
               ) : (
                 <span className="text-muted-foreground">
                   Start typing to see preview
@@ -134,7 +209,7 @@ export function CustomTemplateDialog({
           <div className="text-sm text-muted-foreground mr-auto">
             {apps.length} app{apps.length !== 1 ? "s" : ""} selected
           </div>
-          <Button onClick={handleCopy} disabled={!preview || isLoading}>
+          <Button onClick={handleCopy} disabled={!processedPreview || isLoading}>
             <Copy className="h-4 w-4 mr-2" />
             Copy
           </Button>

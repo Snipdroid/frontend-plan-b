@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { useParams } from "react-router"
 import { useAuth } from "react-oidc-context"
-import { ImageOff, Plus, Minus } from "lucide-react"
+import { ImageOff, Plus, Minus, Settings } from "lucide-react"
 import {
   Card,
   CardContent,
@@ -204,19 +204,26 @@ export function VersionDetail() {
                     return (
                       <TableRow key={request.id}>
                         <TableCell>
-                          {iconUrl ? (
-                            <img
-                              src={iconUrl}
-                              alt={request.appInfo?.defaultName ?? "App icon"}
-                              className="h-8 w-8 rounded object-contain"
-                              onError={(e) => {
-                                e.currentTarget.style.display = "none"
-                                e.currentTarget.nextElementSibling?.classList.remove("hidden")
-                              }}
-                            />
-                          ) : null}
-                          <div className={`${iconUrl ? "hidden" : ""} flex h-8 w-8 items-center justify-center rounded bg-muted`}>
-                            <ImageOff className="h-4 w-4 text-muted-foreground" />
+                          <div className="relative inline-block">
+                            {iconUrl ? (
+                              <img
+                                src={iconUrl}
+                                alt={request.appInfo?.defaultName ?? "App icon"}
+                                className="h-8 w-8 rounded object-contain"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = "none"
+                                  e.currentTarget.nextElementSibling?.classList.remove("hidden")
+                                }}
+                              />
+                            ) : null}
+                            <div className={`${iconUrl ? "hidden" : ""} flex h-8 w-8 items-center justify-center rounded bg-muted`}>
+                              <ImageOff className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                            {request.isSystemApp && (
+                              <div className="absolute -bottom-1 -right-1 bg-background border rounded-full p-0.5">
+                                <Settings className="h-3 w-3 text-muted-foreground" />
+                              </div>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell className="font-medium">

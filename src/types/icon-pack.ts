@@ -28,6 +28,7 @@ export interface RequestRecordDTO {
   deletedAt?: string | null
   iconPackVersion?: IconPackVersionDTO
   appInfo?: AppInfoDTO
+  isSystemApp?: boolean | null
 }
 
 export interface PageMetadata {

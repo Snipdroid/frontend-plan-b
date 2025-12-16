@@ -64,7 +64,42 @@ export function ExportButtonGroup({
 
   return (
     <>
-      <div className="inline-flex">
+      {/* Mobile: Single dropdown with all options */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className="md:hidden"
+            disabled={disabled}
+          >
+            Copy
+            <ChevronDown className="ml-1 h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onSelect={handleCopyAppfilter}>
+            Appfilter
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={handleCopyDrawable}>
+            Drawable
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={handleCopy}>
+            Plain Text
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault()
+              setCustomDialogOpen(true)
+            }}
+          >
+            Custom
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Desktop: Button group with dropdown */}
+      <div className="hidden md:inline-flex">
         <Button
           variant="outline"
           size="sm"

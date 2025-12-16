@@ -6,6 +6,7 @@ import './index.css'
 import App from './App.tsx'
 import { oidcConfig } from './lib/auth-config'
 import { ThemeProvider } from './components/theme-provider'
+import { Toaster } from './components/ui/sonner'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -15,6 +16,7 @@ createRoot(document.getElementById('root')!).render(
           <App />
         </BrowserRouter>
       </AuthProvider>
+      <Toaster />
     </ThemeProvider>
   </StrictMode>,
 )

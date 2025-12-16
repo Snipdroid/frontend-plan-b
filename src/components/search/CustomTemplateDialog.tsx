@@ -19,7 +19,7 @@ import type { AppInfo } from "@/types"
 const DEFAULT_TEMPLATE = `#for(app in apps):
   #for(name in app.localizedNames):
     #if(name.languageCode == "--"):
-      <item ComponentInfo={#(app.packageName)/#(app.mainActivity)} drawable="#(name.name)"/>
+      <item component="ComponentInfo{#(app.packageName)/#(app.mainActivity)}" drawable="#(name.autoDrawable)"/>
     #endif
   #endfor
 #endfor`

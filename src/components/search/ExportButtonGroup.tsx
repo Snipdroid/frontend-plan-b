@@ -1,5 +1,6 @@
 import { useState } from "react"
-import { ChevronDown, Copy } from "lucide-react"
+import { ChevronDown } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -8,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { CustomTemplateDialog } from "./CustomTemplateDialog"
+import { getBestDrawableName } from "@/lib/drawable"
 import type { AppInfo } from "@/types"
 
 interface ExportButtonGroupProps {
@@ -23,6 +25,43 @@ export function ExportButtonGroup({
 }: ExportButtonGroupProps) {
   const [customDialogOpen, setCustomDialogOpen] = useState(false)
 
+  const handleCopyAppfilter = async () => {
+    const text = apps
+      .map((app) => {
+        const drawable = getBestDrawableName(app)
+        return `<item component="ComponentInfo{${app.packageName}/${app.mainActivity}}" drawable="${drawable}"/>`
+      })
+      .join("\n")
+
+    try {
+      await navigator.clipboard.writeText(text)
+      toast.success("Appfilter copied to clipboard")
+    } catch {
+      toast.error("Failed to copy to clipboard")
+    }
+  }
+
+  const handleCopyDrawable = async () => {
+    const text = apps
+      .map((app) => {
+        const drawable = getBestDrawableName(app)
+        return `<item drawable="${drawable}" />`
+      })
+      .join("\n")
+
+    try {
+      await navigator.clipboard.writeText(text)
+      toast.success("Drawable copied to clipboard")
+    } catch {
+      toast.error("Failed to copy to clipboard")
+    }
+  }
+
+  const handleCopy = async () => {
+    onCopy()
+    toast.success("Copied to clipboard")
+  }
+
   return (
     <>
       <div className="inline-flex">
@@ -31,6 +70,7 @@ export function ExportButtonGroup({
           size="sm"
           className="rounded-r-none border-r-0"
           disabled={disabled}
+          onClick={handleCopyAppfilter}
         >
           Appfilter
         </Button>
@@ -39,6 +79,7 @@ export function ExportButtonGroup({
           size="sm"
           className="rounded-none border-r-0"
           disabled={disabled}
+          onClick={handleCopyDrawable}
         >
           Drawable
         </Button>
@@ -54,9 +95,8 @@ export function ExportButtonGroup({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onSelect={onCopy}>
-              <Copy className="h-4 w-4 mr-2" />
-              Copy
+            <DropdownMenuItem onSelect={handleCopy}>
+              Plain Text
             </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={(e) => {

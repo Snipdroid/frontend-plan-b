@@ -6,6 +6,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { useTranslation } from "react-i18next"
 import type { ParsedAppEntry } from "@/types/upload"
 import { ImageOff } from "lucide-react"
 
@@ -14,10 +15,12 @@ interface AppPreviewListProps {
 }
 
 export function AppPreviewList({ entries }: AppPreviewListProps) {
+  const { t } = useTranslation()
+
   if (entries.length === 0) {
     return (
       <p className="text-center text-sm text-muted-foreground py-8">
-        No app entries parsed yet. Upload ZIP files containing appfilter.xml.
+        {t("upload.noEntriesParsed")}
       </p>
     )
   }
@@ -25,17 +28,17 @@ export function AppPreviewList({ entries }: AppPreviewListProps) {
   return (
     <div className="space-y-2">
       <p className="text-sm text-muted-foreground">
-        {entries.length} app{entries.length !== 1 ? "s" : ""} found
+        {t("upload.filesFound", { count: entries.length })}
       </p>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-12">Icon</TableHead>
-              <TableHead>Package Name</TableHead>
-              <TableHead>Main Activity</TableHead>
-              <TableHead>Drawable</TableHead>
-              <TableHead>Source</TableHead>
+              <TableHead className="w-12">{t("iconPack.icon")}</TableHead>
+              <TableHead>{t("iconPack.packageName")}</TableHead>
+              <TableHead>{t("iconPack.mainActivity")}</TableHead>
+              <TableHead>{t("upload.drawable")}</TableHead>
+              <TableHead>{t("upload.source")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

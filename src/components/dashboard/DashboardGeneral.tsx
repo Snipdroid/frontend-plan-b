@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "react-oidc-context"
+import { useTranslation } from "react-i18next"
 import {
   Card,
   CardContent,
@@ -13,6 +14,7 @@ import { getDesignerRequests } from "@/services/designer"
 
 export function DashboardGeneral() {
   const auth = useAuth()
+  const { t } = useTranslation()
   const [iconPackCount, setIconPackCount] = useState<number | null>(null)
   const [totalRequests, setTotalRequests] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -41,16 +43,16 @@ export function DashboardGeneral() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Overview</h2>
+        <h2 className="text-2xl font-bold tracking-tight">{t("dashboard.overview")}</h2>
         <p className="text-muted-foreground">
-          View your icon pack statistics and activity.
+          {t("dashboard.overviewDesc")}
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Icon Packs</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("dashboard.totalIconPacks")}</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -58,13 +60,13 @@ export function DashboardGeneral() {
             ) : (
               <div className="text-2xl font-bold">{iconPackCount ?? 0}</div>
             )}
-            <p className="text-xs text-muted-foreground">Active icon packs</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.activeIconPacks")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("dashboard.totalRequests")}</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -72,41 +74,41 @@ export function DashboardGeneral() {
             ) : (
               <div className="text-2xl font-bold">{totalRequests ?? 0}</div>
             )}
-            <p className="text-xs text-muted-foreground">Unique apps requested</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.uniqueAppsRequested")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Apps Supported</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("dashboard.appsSupported")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">--</div>
-            <p className="text-xs text-muted-foreground">Total apps covered</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.totalAppsCovered")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Last Updated</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("dashboard.lastUpdated")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">--</div>
-            <p className="text-xs text-muted-foreground">Days ago</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.daysAgo")}</p>
           </CardContent>
         </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
+          <CardTitle>{t("dashboard.recentActivity")}</CardTitle>
           <CardDescription>
-            Your recent icon pack requests and updates.
+            {t("dashboard.recentActivityDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground text-sm">
-            Activity data will be available when the API is ready.
+            {t("dashboard.activityNotReady")}
           </p>
         </CardContent>
       </Card>

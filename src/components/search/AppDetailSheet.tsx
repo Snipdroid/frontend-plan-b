@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import {
   Sheet,
   SheetContent,
@@ -22,6 +23,7 @@ interface AppDetailSheetProps {
 }
 
 export function AppDetailSheet({ app, open, onOpenChange }: AppDetailSheetProps) {
+  const { t } = useTranslation()
   const displayName = useLocalizedName(app?.localizedNames ?? [])
   const [iconError, setIconError] = useState(false)
 
@@ -59,23 +61,23 @@ export function AppDetailSheet({ app, open, onOpenChange }: AppDetailSheetProps)
 
           <div className="space-y-3 text-sm">
             <div>
-              <div className="text-muted-foreground mb-1">Package</div>
+              <div className="text-muted-foreground mb-1">{t("appDetail.package")}</div>
               <div className="font-mono break-all">{app.packageName}</div>
             </div>
             <div>
-              <div className="text-muted-foreground mb-1">Activity</div>
+              <div className="text-muted-foreground mb-1">{t("appDetail.activity")}</div>
               <div className="font-mono break-all">{app.mainActivity}</div>
             </div>
             {app.count !== undefined && (
               <div>
-                <div className="text-muted-foreground mb-1">Count</div>
+                <div className="text-muted-foreground mb-1">{t("appDetail.count")}</div>
                 <div className="tabular-nums">{app.count}</div>
               </div>
             )}
           </div>
 
           <div className="border-t pt-4">
-            <h4 className="text-sm font-medium mb-3">Localized Names</h4>
+            <h4 className="text-sm font-medium mb-3">{t("appDetail.localizedNames")}</h4>
             <LocalizedNamesList localizedNames={app.localizedNames} />
           </div>
         </div>

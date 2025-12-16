@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button"
 import { formatFileSize } from "@/lib/appfilter-parser"
+import { useTranslation } from "react-i18next"
 import type { UploadedFile } from "@/types/upload"
 import { FileArchive, X } from "lucide-react"
 
@@ -10,6 +11,8 @@ interface FileListProps {
 }
 
 export function FileList({ files, onRemove, onClearAll }: FileListProps) {
+  const { t } = useTranslation()
+
   if (files.length === 0) {
     return null
   }
@@ -18,7 +21,7 @@ export function FileList({ files, onRemove, onClearAll }: FileListProps) {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium">
-          {files.length} file{files.length !== 1 ? "s" : ""} selected
+          {t("upload.filesSelected", { count: files.length })}
         </p>
         <Button
           variant="ghost"
@@ -26,7 +29,7 @@ export function FileList({ files, onRemove, onClearAll }: FileListProps) {
           onClick={onClearAll}
           className="text-muted-foreground hover:text-foreground"
         >
-          Clear all
+          {t("upload.clearAll")}
         </Button>
       </div>
       <div className="space-y-1">

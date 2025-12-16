@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react"
+import { useTranslation, Trans } from "react-i18next"
 import { Copy, Loader2 } from "lucide-react"
 import Editor, { type OnMount } from "@monaco-editor/react"
 import {
@@ -35,6 +36,7 @@ export function CustomTemplateDialog({
   onOpenChange,
   apps,
 }: CustomTemplateDialogProps) {
+  const { t } = useTranslation()
   const [template, setTemplate] = useState(DEFAULT_TEMPLATE)
   const [preview, setPreview] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -131,28 +133,30 @@ export function CustomTemplateDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-3xl md:max-w-5xl lg:max-w-6xl h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Custom Template</DialogTitle>
+          <DialogTitle>{t("customTemplate.title")}</DialogTitle>
           <DialogDescription>
-            Write a{" "}
-            <a
-              href="https://docs.vapor.codes/leaf/overview/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-foreground"
-            >
-              Leaf template
-            </a>{" "}
-            to render your selected apps. Use{" "}
-            <code className="text-xs bg-muted px-1 py-0.5 rounded">
-              #for(app in apps):
-            </code>{" "}
-            to iterate.
+            <Trans
+              i18nKey="customTemplate.description"
+              components={{
+                link: (
+                  <a
+                    href="https://docs.vapor.codes/leaf/overview/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-foreground"
+                  />
+                ),
+                code: (
+                  <code className="text-xs bg-muted px-1 py-0.5 rounded" />
+                ),
+              }}
+            />
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-4 flex-1 min-h-0">
           <div className="flex flex-col gap-2 h-1/2">
-            <label className="text-sm font-medium">Template</label>
+            <label className="text-sm font-medium">{t("customTemplate.template")}</label>
             <div className="flex-1 border rounded-md overflow-hidden">
               <Editor
                 height="100%"
@@ -177,7 +181,7 @@ export function CustomTemplateDialog({
 
           <div className="flex flex-col gap-2 h-1/2">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium">Preview</label>
+              <label className="text-sm font-medium">{t("customTemplate.preview")}</label>
               <div className="flex items-center gap-4">
                 <label className="flex items-center gap-2 text-sm">
                   <Checkbox
@@ -186,7 +190,7 @@ export function CustomTemplateDialog({
                       setTrimWhitespace(checked === true)
                     }
                   />
-                  Trim whitespace
+                  {t("customTemplate.trimWhitespace")}
                 </label>
                 <label className="flex items-center gap-2 text-sm">
                   <Checkbox
@@ -195,7 +199,7 @@ export function CustomTemplateDialog({
                       setRemoveEmptyLines(checked === true)
                     }
                   />
-                  Remove empty lines
+                  {t("customTemplate.removeEmptyLines")}
                 </label>
               </div>
             </div>
@@ -205,13 +209,13 @@ export function CustomTemplateDialog({
               ) : isLoading ? (
                 <span className="text-muted-foreground flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Rendering...
+                  {t("customTemplate.rendering")}
                 </span>
               ) : processedPreview ? (
                 processedPreview
               ) : (
                 <span className="text-muted-foreground">
-                  Start typing to see preview
+                  {t("customTemplate.startTyping")}
                 </span>
               )}
             </div>
@@ -220,11 +224,11 @@ export function CustomTemplateDialog({
 
         <DialogFooter>
           <div className="text-sm text-muted-foreground mr-auto">
-            {apps.length} app{apps.length !== 1 ? "s" : ""} selected
+            {t("customTemplate.appsSelected", { count: apps.length })}
           </div>
           <Button onClick={handleCopy} disabled={!processedPreview || isLoading}>
             <Copy className="h-4 w-4 mr-2" />
-            Copy
+            {t("common.copy")}
           </Button>
         </DialogFooter>
       </DialogContent>

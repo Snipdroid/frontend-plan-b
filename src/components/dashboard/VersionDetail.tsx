@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { useParams } from "react-router"
 import { useAuth } from "react-oidc-context"
+import { useTranslation } from "react-i18next"
 import { ImageOff, Plus, Minus, Settings } from "lucide-react"
 import {
   Card,
@@ -39,6 +40,7 @@ const PER_PAGE = 10
 export function VersionDetail() {
   const { packId, versionId } = useParams()
   const auth = useAuth()
+  const { t } = useTranslation()
   const [requests, setRequests] = useState<IconPackVersionRequestRecordResponse[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -67,7 +69,7 @@ export function VersionDetail() {
       setRequests(response.items)
       setTotal(response.metadata.total)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load requests")
+      setError(err instanceof Error ? err.message : t("errors.loadRequests"))
     } finally {
       setIsLoading(false)
     }
@@ -97,7 +99,7 @@ export function VersionDetail() {
       await markAppsAsAdapted(auth.user.access_token, packId, [appInfoId], adapted)
       await fetchRequests()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update adapted status")
+      setError(err instanceof Error ? err.message : t("errors.updateAdaptedStatus"))
     } finally {
       setIsMarking(false)
     }
@@ -147,17 +149,17 @@ export function VersionDetail() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Version Details</h2>
-        <p className="text-muted-foreground">Manage version: {versionId}</p>
+        <h2 className="text-2xl font-bold tracking-tight">{t("iconPack.versionDetail")}</h2>
+        <p className="text-muted-foreground">{t("iconPack.manageVersion", { version: versionId })}</p>
       </div>
 
       <Card>
         <CardHeader>
           <div className="flex flex-row items-start justify-between">
             <div>
-              <CardTitle>Requests</CardTitle>
+              <CardTitle>{t("iconPack.requests")}</CardTitle>
               <CardDescription>
-                {total} request{total !== 1 ? "s" : ""} for this version.
+                {t("iconPack.requestCount", { count: total })}
               </CardDescription>
             </div>
             <div className="flex items-center space-x-2">
@@ -169,7 +171,7 @@ export function VersionDetail() {
                 }
               />
               <Label htmlFor="show-adapted" className="text-sm font-normal">
-                Show adapted apps
+                {t("iconPack.showAdaptedApps")}
               </Label>
             </div>
           </div>
@@ -188,12 +190,12 @@ export function VersionDetail() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-12">Icon</TableHead>
-                    <TableHead>App Name</TableHead>
-                    <TableHead>Package Name</TableHead>
-                    <TableHead>Main Activity</TableHead>
-                    <TableHead>Requested</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="w-12">{t("iconPack.icon")}</TableHead>
+                    <TableHead>{t("iconPack.appName")}</TableHead>
+                    <TableHead>{t("iconPack.packageName")}</TableHead>
+                    <TableHead>{t("iconPack.mainActivity")}</TableHead>
+                    <TableHead>{t("iconPack.requested")}</TableHead>
+                    <TableHead className="text-right">{t("iconPack.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -248,7 +250,7 @@ export function VersionDetail() {
                               disabled={isMarking || !request.appInfo?.id}
                             >
                               <Minus className="h-4 w-4 mr-1" />
-                              Remove
+                              {t("common.remove")}
                             </Button>
                           ) : (
                             <Button
@@ -261,7 +263,7 @@ export function VersionDetail() {
                               disabled={isMarking || !request.appInfo?.id}
                             >
                               <Plus className="h-4 w-4 mr-1" />
-                              Add
+                              {t("common.add")}
                             </Button>
                           )}
                         </TableCell>
@@ -307,7 +309,7 @@ export function VersionDetail() {
               )}
             </div>
           ) : (
-            <p className="text-muted-foreground">No requests yet.</p>
+            <p className="text-muted-foreground">{t("iconPack.noRequests")}</p>
           )}
         </CardContent>
       </Card>

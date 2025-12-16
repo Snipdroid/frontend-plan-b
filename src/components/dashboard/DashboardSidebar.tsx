@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "react-oidc-context"
+import { useTranslation } from "react-i18next"
 import { Link, useLocation } from "react-router"
 import {
   ChevronRight,
@@ -53,6 +54,7 @@ import { useTheme } from "@/components/theme-provider"
 export function DashboardSidebar() {
   const auth = useAuth()
   const location = useLocation()
+  const { t } = useTranslation()
   const { theme, setTheme } = useTheme()
   const [iconPacks, setIconPacks] = useState<IconPackDTO[]>([])
   const [isLoadingPacks, setIsLoadingPacks] = useState(true)
@@ -108,8 +110,8 @@ export function DashboardSidebar() {
                   <Package className="size-4" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold">AppTracker</span>
-                  <span className="text-xs text-muted-foreground">Dashboard</span>
+                  <span className="font-semibold">{t("common.appName")}</span>
+                  <span className="text-xs text-muted-foreground">{t("nav.dashboard")}</span>
                 </div>
               </Link>
             </SidebarMenuButton>
@@ -120,14 +122,14 @@ export function DashboardSidebar() {
       <SidebarContent>
         {/* General Section */}
         <SidebarGroup>
-          <SidebarGroupLabel>General</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("dashboard.general")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={isActive("/dashboard")}>
                   <Link to="/dashboard">
                     <BarChart3 />
-                    <span>Statistics</span>
+                    <span>{t("dashboard.statistics")}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -140,7 +142,7 @@ export function DashboardSidebar() {
           <Collapsible defaultOpen className="group/collapsible">
             <SidebarGroupLabel asChild>
               <CollapsibleTrigger className="flex w-full items-center">
-                Icon Packs
+                {t("dashboard.iconPacks")}
                 <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
               </CollapsibleTrigger>
             </SidebarGroupLabel>
@@ -161,7 +163,7 @@ export function DashboardSidebar() {
                         onClick={() => setShowCreateDialog(true)}
                       >
                         <Plus className="mr-2 h-4 w-4" />
-                        Create an icon pack
+                        {t("dashboard.createIconPack")}
                       </Button>
                     </SidebarMenuItem>
                   ) : (
@@ -196,7 +198,7 @@ export function DashboardSidebar() {
             <SidebarMenuButton asChild>
               <Link to="/">
                 <Home className="!size-4" />
-                <span>Back to Home</span>
+                <span>{t("nav.backToHome")}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -210,7 +212,7 @@ export function DashboardSidebar() {
                 <SidebarMenuButton>
                   <Sun className="!size-4 scale-100 rotate-0 dark:scale-0 dark:-rotate-90" />
                   <Moon className="absolute !size-4 scale-0 rotate-90 dark:scale-100 dark:rotate-0" />
-                  <span>Theme</span>
+                  <span>{t("theme.toggle")}</span>
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" align="start">
@@ -218,9 +220,9 @@ export function DashboardSidebar() {
                   value={theme}
                   onValueChange={(value) => setTheme(value as Theme)}
                 >
-                  <DropdownMenuRadioItem value="light">Light</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="dark">Dark</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="system">System</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="light">{t("theme.light")}</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="dark">{t("theme.dark")}</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="system">{t("theme.system")}</DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -256,13 +258,13 @@ export function DashboardSidebar() {
                     rel="noopener noreferrer"
                   >
                     <Settings />
-                    Account management
+                    {t("nav.accountManagement")}
                   </a>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut />
-                  Sign out
+                  {t("nav.signOut")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

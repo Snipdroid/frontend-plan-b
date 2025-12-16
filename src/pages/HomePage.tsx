@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react"
+import { useTranslation } from "react-i18next"
 import { useSearchTags, useAppSearch, useMediaQuery } from "@/hooks"
 import {
   SearchTagInput,
@@ -12,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import type { AppInfo, SortOption } from "@/types"
 
 export function HomePage() {
+  const { t } = useTranslation()
   const { tags, inputValue, setInputValue, addTag, removeTag, hasTagType } =
     useSearchTags()
   const { accumulatedItems, isLoading, error, search, loadMore, hasMore } =
@@ -133,7 +135,7 @@ export function HomePage() {
                 onClick={handleLoadMore}
                 disabled={isLoading}
               >
-                {isLoading ? "Loading..." : "Load More"}
+                {isLoading ? t("common.loading") : t("search.loadMore")}
               </Button>
             </div>
           )}

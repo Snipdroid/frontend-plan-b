@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useAuth } from "react-oidc-context"
+import { useTranslation } from "react-i18next"
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,7 @@ export function CreateVersionDialog({
   onCreated,
 }: CreateVersionDialogProps) {
   const auth = useAuth()
+  const { t } = useTranslation()
   const [versionString, setVersionString] = useState("")
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -68,18 +70,22 @@ export function CreateVersionDialog({
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Create Version</DialogTitle>
+            <DialogTitle>{t("dialogs.createVersion.title")}</DialogTitle>
             <DialogDescription>
-              Enter a version string for this icon pack (e.g., 1.0.0).
+              {t("dialogs.createVersion.description")}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
+            <label className="text-sm font-medium">
+              {t("dialogs.createVersion.versionLabel")}
+            </label>
             <Input
-              placeholder="Version string"
+              placeholder={t("dialogs.createVersion.versionPlaceholder")}
               value={versionString}
               onChange={(e) => setVersionString(e.target.value)}
               disabled={isCreating}
               autoFocus
+              className="mt-1.5"
             />
             {error && (
               <p className="mt-2 text-sm text-destructive">{error}</p>
@@ -92,10 +98,10 @@ export function CreateVersionDialog({
               onClick={() => handleOpenChange(false)}
               disabled={isCreating}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="submit" disabled={!versionString.trim() || isCreating}>
-              {isCreating ? "Creating..." : "Create"}
+              {isCreating ? t("dialogs.createVersion.creating") : t("common.create")}
             </Button>
           </DialogFooter>
         </form>

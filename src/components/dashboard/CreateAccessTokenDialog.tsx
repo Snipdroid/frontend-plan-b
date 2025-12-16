@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useAuth } from "react-oidc-context"
+import { useTranslation } from "react-i18next"
 import {
   Dialog,
   DialogContent,
@@ -28,6 +29,7 @@ export function CreateAccessTokenDialog({
   versionString,
 }: CreateAccessTokenDialogProps) {
   const auth = useAuth()
+  const { t } = useTranslation()
   const [days, setDays] = useState(90)
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -88,14 +90,14 @@ export function CreateAccessTokenDialog({
         {!token ? (
           <form onSubmit={handleSubmit}>
             <DialogHeader>
-              <DialogTitle>Create Access Token</DialogTitle>
+              <DialogTitle>{t("dialogs.createToken.title")}</DialogTitle>
               <DialogDescription>
-                Generate an access token for version {versionString}.
+                {t("dialogs.createToken.description", { version: versionString })}
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
               <label className="text-sm font-medium">
-                Token expires in (days)
+                {t("dialogs.createToken.expiresIn")}
               </label>
               <Input
                 type="number"
@@ -116,19 +118,19 @@ export function CreateAccessTokenDialog({
                 onClick={() => handleOpenChange(false)}
                 disabled={isCreating}
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button type="submit" disabled={days <= 0 || isCreating}>
-                {isCreating ? "Creating..." : "Create Token"}
+                {isCreating ? t("dialogs.createToken.generating") : t("dialogs.createToken.generate")}
               </Button>
             </DialogFooter>
           </form>
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>Access Token Created</DialogTitle>
+              <DialogTitle>{t("dialogs.createToken.tokenGenerated")}</DialogTitle>
               <DialogDescription>
-                This token will only be shown once. Copy it now.
+                {t("dialogs.createToken.copyWarning")}
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
@@ -143,15 +145,15 @@ export function CreateAccessTokenDialog({
                   variant="outline"
                   onClick={handleCopy}
                 >
-                  {copied ? "Copied!" : "Copy"}
+                  {copied ? t("dialogs.createToken.copied") : t("common.copy")}
                 </Button>
               </div>
               <p className="mt-3 text-sm text-muted-foreground">
-                Store this token securely. You can create a new token at any time.
+                {t("dialogs.createToken.storeSecurely")}
               </p>
             </div>
             <DialogFooter>
-              <Button onClick={() => handleOpenChange(false)}>Done</Button>
+              <Button onClick={() => handleOpenChange(false)}>{t("common.close")}</Button>
             </DialogFooter>
           </>
         )}

@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { FileList } from "@/components/upload/FileList"
+import { useTranslation } from "react-i18next"
 import type { UploadedFile } from "@/types/upload"
 import type { IconPackDTO, IconPackVersionDTO } from "@/types/icon-pack"
 
@@ -65,6 +66,7 @@ export function UploadSidebar({
   submitError,
   uploadedCount,
 }: UploadSidebarProps) {
+  const { t } = useTranslation()
   const progressPercent =
     uploadProgress.total > 0
       ? (uploadProgress.current / uploadProgress.total) * 100
@@ -72,11 +74,11 @@ export function UploadSidebar({
   return (
     <Card className="max-h-[calc(100vh-8rem)] overflow-y-auto">
       <CardHeader>
-        <CardTitle>Upload Details</CardTitle>
+        <CardTitle>{t("upload.uploadDetails")}</CardTitle>
         <CardDescription>
           {iconPackSelection
-            ? "Selected files and icon pack association"
-            : "Selected files for upload"}
+            ? t("upload.selectedFilesAssociation")
+            : t("upload.selectedFilesOnly")}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -96,7 +98,7 @@ export function UploadSidebar({
               {/* Icon Pack Select */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="sidebar-icon-pack">Icon Pack (optional)</Label>
+                  <Label htmlFor="sidebar-icon-pack">{t("upload.iconPackOptional")}</Label>
                   {iconPackSelection.selectedPackId && (
                     <Button
                       variant="ghost"
@@ -104,7 +106,7 @@ export function UploadSidebar({
                       onClick={iconPackSelection.onPackClear}
                       className="h-auto py-0 px-2 text-xs text-muted-foreground hover:text-foreground"
                     >
-                      Clear
+                      {t("common.clear")}
                     </Button>
                   )}
                 </div>
@@ -117,8 +119,8 @@ export function UploadSidebar({
                     <SelectValue
                       placeholder={
                         iconPackSelection.isLoadingPacks
-                          ? "Loading..."
-                          : "Select icon pack"
+                          ? t("common.loading")
+                          : t("upload.selectIconPack")
                       }
                     />
                   </SelectTrigger>
@@ -135,7 +137,7 @@ export function UploadSidebar({
               {/* Version Select */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="sidebar-version">Version</Label>
+                  <Label htmlFor="sidebar-version">{t("upload.version")}</Label>
                   {iconPackSelection.selectedVersionId && (
                     <Button
                       variant="ghost"
@@ -143,7 +145,7 @@ export function UploadSidebar({
                       onClick={iconPackSelection.onVersionClear}
                       className="h-auto py-0 px-2 text-xs text-muted-foreground hover:text-foreground"
                     >
-                      Clear
+                      {t("common.clear")}
                     </Button>
                   )}
                 </div>
@@ -159,10 +161,10 @@ export function UploadSidebar({
                     <SelectValue
                       placeholder={
                         iconPackSelection.isLoadingVersions
-                          ? "Loading..."
+                          ? t("common.loading")
                           : iconPackSelection.selectedPackId
-                            ? "Select version"
-                            : "Select icon pack first"
+                            ? t("upload.selectVersion")
+                            : t("upload.selectIconPackFirst")
                       }
                     />
                   </SelectTrigger>
@@ -199,13 +201,13 @@ export function UploadSidebar({
             disabled={!canSubmit}
             className="w-full"
           >
-            {isSubmitting ? "Uploading..." : "Submit"}
+            {isSubmitting ? t("upload.uploading") : t("common.submit")}
           </Button>
 
           {/* Success/Error Messages */}
           {submitSuccess && !isSubmitting && (
             <p className="text-sm text-green-600 text-center">
-              Successfully uploaded {uploadedCount} app entries!
+              {t("upload.successMessage", { count: uploadedCount })}
             </p>
           )}
           {submitError && (

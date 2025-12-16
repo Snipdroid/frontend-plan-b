@@ -6,6 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { FileList } from "@/components/upload/FileList"
+import { useTranslation } from "react-i18next"
 import type { UploadedFile } from "@/types/upload"
 
 interface SelectedFilesCardProps {
@@ -19,6 +20,8 @@ export function SelectedFilesCard({
   onRemoveFile,
   onClearAll,
 }: SelectedFilesCardProps) {
+  const { t } = useTranslation()
+
   if (files.length === 0) {
     return null
   }
@@ -26,9 +29,9 @@ export function SelectedFilesCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Selected Files</CardTitle>
+        <CardTitle>{t("upload.selectedFiles")}</CardTitle>
         <CardDescription>
-          {files.length} file{files.length !== 1 ? "s" : ""} ready for upload
+          {t("upload.filesReadyForUpload", { count: files.length })}
         </CardDescription>
       </CardHeader>
       <CardContent>

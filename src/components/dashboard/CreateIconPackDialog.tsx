@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useAuth } from "react-oidc-context"
+import { useTranslation } from "react-i18next"
 import {
   Dialog,
   DialogContent,
@@ -25,6 +26,7 @@ export function CreateIconPackDialog({
   onCreated,
 }: CreateIconPackDialogProps) {
   const auth = useAuth()
+  const { t } = useTranslation()
   const [name, setName] = useState("")
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -62,18 +64,22 @@ export function CreateIconPackDialog({
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Create Icon Pack</DialogTitle>
+            <DialogTitle>{t("dialogs.createIconPack.title")}</DialogTitle>
             <DialogDescription>
-              Enter a name for your new icon pack.
+              {t("dialogs.createIconPack.description")}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
+            <label className="text-sm font-medium">
+              {t("dialogs.createIconPack.nameLabel")}
+            </label>
             <Input
-              placeholder="Icon pack name"
+              placeholder={t("dialogs.createIconPack.namePlaceholder")}
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={isCreating}
               autoFocus
+              className="mt-1.5"
             />
             {error && (
               <p className="mt-2 text-sm text-destructive">{error}</p>
@@ -86,10 +92,10 @@ export function CreateIconPackDialog({
               onClick={() => handleOpenChange(false)}
               disabled={isCreating}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="submit" disabled={!name.trim() || isCreating}>
-              {isCreating ? "Creating..." : "Create"}
+              {isCreating ? t("dialogs.createIconPack.creating") : t("common.create")}
             </Button>
           </DialogFooter>
         </form>

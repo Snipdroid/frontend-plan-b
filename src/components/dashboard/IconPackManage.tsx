@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { useParams, useNavigate, Link } from "react-router"
 import { useAuth } from "react-oidc-context"
+import { useTranslation } from "react-i18next"
 import { ImageOff, Plus, Minus } from "lucide-react"
 import {
   Card,
@@ -50,6 +51,7 @@ export function IconPackManage() {
   const { packId } = useParams()
   const navigate = useNavigate()
   const auth = useAuth()
+  const { t } = useTranslation()
   const [isDeleting, setIsDeleting] = useState(false)
   const [isDeletingVersion, setIsDeletingVersion] = useState(false)
   const [iconPack, setIconPack] = useState<IconPackDTO | null>(null)
@@ -90,7 +92,7 @@ export function IconPackManage() {
         setVersions(versionsResponse.items)
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Failed to load icon pack"
+          err instanceof Error ? err.message : t("errors.loadIconPack")
         )
       } finally {
         setIsLoading(false)
@@ -116,7 +118,7 @@ export function IconPackManage() {
       setRequests(response.items)
       setRequestsTotal(response.metadata.total)
     } catch (err) {
-      console.error("Failed to load requests:", err)
+      console.error(t("errors.loadRequests"), err)
     } finally {
       setIsLoadingRequests(false)
     }
@@ -146,7 +148,7 @@ export function IconPackManage() {
       await markAppsAsAdapted(auth.user.access_token, packId, [appInfoId], adapted)
       await fetchRequests()
     } catch (err) {
-      console.error("Failed to update adapted status:", err)
+      console.error(t("errors.updateAdaptedStatus"), err)
     } finally {
       setIsMarking(false)
     }
@@ -196,8 +198,8 @@ export function IconPackManage() {
       await deleteIconPack(auth.user.access_token, packId)
       navigate("/dashboard")
     } catch (error) {
-      console.error("Failed to delete:", error)
-      setError("Failed to delete icon pack")
+      console.error(t("errors.deleteIconPack"), error)
+      setError(t("errors.deleteIconPack"))
     } finally {
       setIsDeleting(false)
       setDeletePackDialogOpen(false)
@@ -218,8 +220,8 @@ export function IconPackManage() {
       setDeleteVersionDialogOpen(false)
       setSelectedVersion(null)
     } catch (error) {
-      console.error("Failed to delete version:", error)
-      setError("Failed to delete version")
+      console.error(t("errors.deleteVersion"), error)
+      setError(t("errors.deleteVersion"))
     } finally {
       setIsDeletingVersion(false)
     }
@@ -267,7 +269,7 @@ export function IconPackManage() {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Error</h2>
+          <h2 className="text-2xl font-bold tracking-tight">{t("common.error")}</h2>
           <p className="text-destructive">{error}</p>
         </div>
       </div>
@@ -278,21 +280,21 @@ export function IconPackManage() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">
-          {iconPack?.name || "Icon Pack Management"}
+          {iconPack?.name || t("iconPack.management")}
         </h2>
-        <p className="text-muted-foreground">Manage icon pack: {packId}</p>
+        <p className="text-muted-foreground">{t("iconPack.manageDesc", { id: packId })}</p>
       </div>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Versions</CardTitle>
+            <CardTitle>{t("iconPack.versions")}</CardTitle>
             <CardDescription>
-              Manage versions and access tokens for this icon pack.
+              {t("iconPack.versionsDesc")}
             </CardDescription>
           </div>
           <Button onClick={() => setCreateVersionOpen(true)}>
-            New Version
+            {t("iconPack.newVersion")}
           </Button>
         </CardHeader>
         <CardContent>
@@ -301,8 +303,8 @@ export function IconPackManage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Version</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t("iconPack.created")}</TableHead>
+                  <TableHead className="text-right">{t("iconPack.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -325,7 +327,7 @@ export function IconPackManage() {
                             versionString: version.versionString,
                           }}
                         >
-                          View
+                          {t("common.view")}
                         </Link>
                       </Button>
                       <Button
@@ -333,14 +335,14 @@ export function IconPackManage() {
                         size="sm"
                         onClick={() => handleCreateToken(version)}
                       >
-                        Create Access Token
+                        {t("iconPack.createAccessToken")}
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleDeleteVersionClick(version)}
                       >
-                        Delete
+                        {t("common.delete")}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -349,7 +351,7 @@ export function IconPackManage() {
             </Table>
           ) : (
             <p className="text-muted-foreground">
-              No versions yet. Create one to get started.
+              {t("iconPack.noVersions")}
             </p>
           )}
         </CardContent>
@@ -359,9 +361,9 @@ export function IconPackManage() {
         <CardHeader>
           <div className="flex flex-row items-start justify-between">
             <div>
-              <CardTitle>Requests</CardTitle>
+              <CardTitle>{t("iconPack.requests")}</CardTitle>
               <CardDescription>
-                {requestsTotal} request{requestsTotal !== 1 ? "s" : ""} for this icon pack.
+                {t("iconPack.requestsCount", { count: requestsTotal })}
               </CardDescription>
             </div>
             <div className="flex items-center space-x-2">
@@ -373,7 +375,7 @@ export function IconPackManage() {
                 }
               />
               <Label htmlFor="show-adapted" className="text-sm font-normal">
-                Show adapted apps
+                {t("iconPack.showAdaptedApps")}
               </Label>
             </div>
           </div>
@@ -390,12 +392,12 @@ export function IconPackManage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-12">Icon</TableHead>
-                    <TableHead>App Name</TableHead>
-                    <TableHead>Package Name</TableHead>
-                    <TableHead>Main Activity</TableHead>
-                    <TableHead>Count</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="w-12">{t("iconPack.icon")}</TableHead>
+                    <TableHead>{t("iconPack.appName")}</TableHead>
+                    <TableHead>{t("iconPack.packageName")}</TableHead>
+                    <TableHead>{t("iconPack.mainActivity")}</TableHead>
+                    <TableHead>{t("iconPack.count")}</TableHead>
+                    <TableHead className="text-right">{t("iconPack.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -442,7 +444,7 @@ export function IconPackManage() {
                               disabled={isMarking || !item.appInfo?.id}
                             >
                               <Minus className="h-4 w-4 mr-1" />
-                              Remove
+                              {t("common.remove")}
                             </Button>
                           ) : (
                             <Button
@@ -455,7 +457,7 @@ export function IconPackManage() {
                               disabled={isMarking || !item.appInfo?.id}
                             >
                               <Plus className="h-4 w-4 mr-1" />
-                              Add
+                              {t("common.add")}
                             </Button>
                           )}
                         </TableCell>
@@ -501,14 +503,14 @@ export function IconPackManage() {
               )}
             </div>
           ) : (
-            <p className="text-muted-foreground">No requests yet.</p>
+            <p className="text-muted-foreground">{t("iconPack.noRequests")}</p>
           )}
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Danger Zone</CardTitle>
+          <CardTitle>{t("iconPack.dangerZone")}</CardTitle>
         </CardHeader>
         <CardContent>
           <Button
@@ -516,7 +518,7 @@ export function IconPackManage() {
             onClick={() => setDeletePackDialogOpen(true)}
             disabled={isDeleting}
           >
-            Delete Icon Pack
+            {t("iconPack.deleteIconPack")}
           </Button>
         </CardContent>
       </Card>
@@ -544,8 +546,8 @@ export function IconPackManage() {
         <ConfirmDeleteDialog
           open={deletePackDialogOpen}
           onOpenChange={setDeletePackDialogOpen}
-          title="Delete Icon Pack"
-          description={`This action cannot be undone. This will permanently delete the icon pack "${iconPack.name}" and all its versions.`}
+          title={t("iconPack.deleteIconPack")}
+          description={t("iconPack.deletePackConfirm", { name: iconPack.name })}
           confirmText={iconPack.name}
           onConfirm={handleDeletePack}
           isDeleting={isDeleting}
@@ -556,8 +558,8 @@ export function IconPackManage() {
         <ConfirmDeleteDialog
           open={deleteVersionDialogOpen}
           onOpenChange={setDeleteVersionDialogOpen}
-          title="Delete Version"
-          description={`This action cannot be undone. This will permanently delete version "${selectedVersion.versionString}".`}
+          title={t("iconPack.deleteVersion")}
+          description={t("iconPack.deleteVersionConfirm", { version: selectedVersion.versionString })}
           confirmText={selectedVersion.versionString}
           onConfirm={handleDeleteVersion}
           isDeleting={isDeletingVersion}

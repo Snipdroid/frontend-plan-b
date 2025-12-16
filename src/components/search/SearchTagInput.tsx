@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import { Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SearchTag } from "./SearchTag"
@@ -27,6 +28,7 @@ export function SearchTagInput({
   isLoading,
   hasTagType,
 }: SearchTagInputProps) {
+  const { t } = useTranslation()
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [focusedTagIndex, setFocusedTagIndex] = useState<number | null>(null)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
@@ -179,7 +181,7 @@ export function SearchTagInput({
           <input
             ref={inputRef}
             type="text"
-            placeholder={tags.length === 0 ? "Type to search..." : ""}
+            placeholder={tags.length === 0 ? t("search.placeholder") : ""}
             value={inputValue}
             onChange={handleInputChange}
             onKeyDown={handleInputKeyDown}
@@ -193,7 +195,7 @@ export function SearchTagInput({
         disabled={isLoading}
       >
         <Search className="h-4 w-4 mr-2" />
-        Search
+        {t("search.search")}
       </Button>
     </div>
   )

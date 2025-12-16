@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react"
 import { useAuth } from "react-oidc-context"
+import { useTranslation } from "react-i18next"
 import { useIsMobile } from "@/hooks/use-mobile"
 import {
   Card,
@@ -52,6 +53,7 @@ function chunkArray<T>(array: T[], size: number): T[][] {
 
 export function UploadPage() {
   const auth = useAuth()
+  const { t } = useTranslation()
   const isAuthenticated = auth.isAuthenticated
   const isMobile = useIsMobile()
 
@@ -253,11 +255,10 @@ export function UploadPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Upload App Information
+            {t("upload.title")}
           </h1>
           <p className="text-muted-foreground mt-2">
-            Upload ZIP files containing appfilter.xml and icon PNGs to add app
-            information to the database.
+            {t("upload.subtitle")}
           </p>
         </div>
 
@@ -266,10 +267,9 @@ export function UploadPage() {
           <>
             <Card>
               <CardHeader>
-                <CardTitle>Select Files</CardTitle>
+                <CardTitle>{t("upload.selectFiles")}</CardTitle>
                 <CardDescription>
-                  Upload ZIP files containing appfilter.xml files and PNG icons.
-                  Multiple files can be uploaded at once.
+                  {t("upload.selectFilesDesc")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -278,7 +278,7 @@ export function UploadPage() {
                   disabled={isParsing}
                 />
                 {isParsing && (
-                  <p className="text-sm text-muted-foreground">Parsing files...</p>
+                  <p className="text-sm text-muted-foreground">{t("upload.parsing")}</p>
                 )}
                 {parseError && (
                   <p className="text-sm text-destructive">{parseError}</p>
@@ -295,18 +295,16 @@ export function UploadPage() {
             {isAuthenticated && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Icon Pack Selection (Optional)</CardTitle>
+                  <CardTitle>{t("upload.iconPackSelection")}</CardTitle>
                   <CardDescription>
-                    Optionally associate these app entries with one of your icon
-                    packs. If not selected, the entries will be added to the
-                    database without an icon pack association.
+                    {t("upload.iconPackSelectionDesc")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <Label htmlFor="icon-pack">Icon Pack</Label>
+                        <Label htmlFor="icon-pack">{t("upload.iconPack")}</Label>
                         {selectedPackId && (
                           <Button
                             variant="ghost"
@@ -314,7 +312,7 @@ export function UploadPage() {
                             onClick={handlePackClear}
                             className="h-auto py-0 px-2 text-xs text-muted-foreground hover:text-foreground"
                           >
-                            Clear
+                            {t("common.clear")}
                           </Button>
                         )}
                       </div>
@@ -326,7 +324,7 @@ export function UploadPage() {
                         <SelectTrigger id="icon-pack">
                           <SelectValue
                             placeholder={
-                              isLoadingPacks ? "Loading..." : "Select icon pack"
+                              isLoadingPacks ? t("common.loading") : t("upload.selectIconPack")
                             }
                           />
                         </SelectTrigger>
@@ -341,7 +339,7 @@ export function UploadPage() {
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <Label htmlFor="version">Version</Label>
+                        <Label htmlFor="version">{t("upload.version")}</Label>
                         {selectedVersionId && (
                           <Button
                             variant="ghost"
@@ -349,7 +347,7 @@ export function UploadPage() {
                             onClick={handleVersionClear}
                             className="h-auto py-0 px-2 text-xs text-muted-foreground hover:text-foreground"
                           >
-                            Clear
+                            {t("common.clear")}
                           </Button>
                         )}
                       </div>
@@ -362,10 +360,10 @@ export function UploadPage() {
                           <SelectValue
                             placeholder={
                               isLoadingVersions
-                                ? "Loading..."
+                                ? t("common.loading")
                                 : selectedPackId
-                                  ? "Select version"
-                                  : "Select icon pack first"
+                                  ? t("upload.selectVersion")
+                                  : t("upload.selectIconPackFirst")
                             }
                           />
                         </SelectTrigger>
@@ -386,9 +384,9 @@ export function UploadPage() {
             {entries.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Preview</CardTitle>
+                  <CardTitle>{t("upload.preview")}</CardTitle>
                   <CardDescription>
-                    Review the parsed app entries before submitting.
+                    {t("upload.previewDesc")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="overflow-x-auto">
@@ -400,7 +398,7 @@ export function UploadPage() {
             {isSubmitting && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Uploading...</CardTitle>
+                  <CardTitle>{t("upload.uploading")}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Progress value={progressPercent} />
@@ -416,13 +414,13 @@ export function UploadPage() {
                 disabled={!canSubmit}
                 className="w-full"
               >
-                {isSubmitting ? "Uploading..." : "Submit"}
+                {isSubmitting ? t("upload.uploading") : t("common.submit")}
               </Button>
 
               {/* Success/Error Messages */}
               {submitSuccess && !isSubmitting && (
                 <p className="text-sm text-green-600 text-center">
-                  Successfully uploaded {uploadedCount} app entries!
+                  {t("upload.successMessage", { count: uploadedCount })}
                 </p>
               )}
               {submitError && (
@@ -437,10 +435,9 @@ export function UploadPage() {
             <div className="flex-1 min-w-0 space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Select Files</CardTitle>
+                  <CardTitle>{t("upload.selectFiles")}</CardTitle>
                   <CardDescription>
-                    Upload ZIP files containing appfilter.xml files and PNG icons.
-                    Multiple files can be uploaded at once.
+                    {t("upload.selectFilesDesc")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -449,7 +446,7 @@ export function UploadPage() {
                     disabled={isParsing}
                   />
                   {isParsing && (
-                    <p className="text-sm text-muted-foreground">Parsing files...</p>
+                    <p className="text-sm text-muted-foreground">{t("upload.parsing")}</p>
                   )}
                   {parseError && (
                     <p className="text-sm text-destructive">{parseError}</p>
@@ -460,9 +457,9 @@ export function UploadPage() {
               {entries.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Preview</CardTitle>
+                    <CardTitle>{t("upload.preview")}</CardTitle>
                     <CardDescription>
-                      Review the parsed app entries before submitting.
+                      {t("upload.previewDesc")}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="overflow-x-auto">

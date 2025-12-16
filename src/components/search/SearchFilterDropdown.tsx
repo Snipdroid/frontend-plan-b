@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import {
   Popover,
   PopoverContent,
@@ -8,25 +9,25 @@ import type { SearchFilterType } from "@/types"
 
 interface FilterOption {
   type: SearchFilterType
-  label: string
-  description: string
+  labelKey: string
+  descriptionKey: string
 }
 
 const FILTER_OPTIONS: FilterOption[] = [
   {
     type: "byName",
-    label: "By Name",
-    description: "Search by app name",
+    labelKey: "search.byName",
+    descriptionKey: "search.byNameDesc",
   },
   {
     type: "byPackageName",
-    label: "By Package Name",
-    description: "Search by package name",
+    labelKey: "search.byPackageName",
+    descriptionKey: "search.byPackageNameDesc",
   },
   {
     type: "byMainActivity",
-    label: "By Main Activity",
-    description: "Search by main activity",
+    labelKey: "search.byMainActivity",
+    descriptionKey: "search.byMainActivityDesc",
   },
 ]
 
@@ -47,6 +48,7 @@ export function SearchFilterDropdown({
   highlightedIndex,
   children,
 }: SearchFilterDropdownProps) {
+  const { t } = useTranslation()
   const availableOptions = FILTER_OPTIONS.filter(
     (opt) => !disabledTypes.includes(opt.type)
   )
@@ -61,7 +63,7 @@ export function SearchFilterDropdown({
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
         <div className="text-xs font-medium text-muted-foreground px-2 py-1.5">
-          Filter by
+          {t("search.filterBy")}
         </div>
         {availableOptions.map((option, index) => (
           <div
@@ -74,16 +76,16 @@ export function SearchFilterDropdown({
             )}
           >
             <div>
-              <div className="font-medium">{option.label}</div>
+              <div className="font-medium">{t(option.labelKey)}</div>
               <div className="text-xs text-muted-foreground">
-                {option.description}
+                {t(option.descriptionKey)}
               </div>
             </div>
           </div>
         ))}
         {availableOptions.length === 0 && (
           <div className="px-2 py-1.5 text-sm text-muted-foreground">
-            All filters applied
+            {t("search.allFiltersApplied")}
           </div>
         )}
       </PopoverContent>

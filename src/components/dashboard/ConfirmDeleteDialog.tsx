@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,7 @@ export function ConfirmDeleteDialog({
   onConfirm,
   isDeleting,
 }: ConfirmDeleteDialogProps) {
+  const { t } = useTranslation()
   const [inputValue, setInputValue] = useState("")
 
   const isConfirmEnabled = inputValue === confirmText
@@ -56,8 +58,7 @@ export function ConfirmDeleteDialog({
           </DialogHeader>
           <div className="py-4">
             <label className="text-sm font-medium">
-              Type <span className="font-mono font-bold">{confirmText}</span> to
-              confirm:
+              {t("dialogs.confirmDelete.typeToConfirm", { text: confirmText })}
             </label>
             <Input
               value={inputValue}
@@ -74,14 +75,14 @@ export function ConfirmDeleteDialog({
               onClick={() => handleOpenChange(false)}
               disabled={isDeleting}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               type="submit"
               variant="destructive"
               disabled={!isConfirmEnabled || isDeleting}
             >
-              {isDeleting ? "Deleting..." : "Delete"}
+              {isDeleting ? t("dialogs.confirmDelete.deleting") : t("common.delete")}
             </Button>
           </DialogFooter>
         </form>

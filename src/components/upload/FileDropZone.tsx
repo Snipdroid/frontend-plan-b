@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 import { Upload } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 interface FileDropZoneProps {
   onFilesAdded: (files: File[]) => void
@@ -15,6 +16,7 @@ export function FileDropZone({
   disabled = false,
   className,
 }: FileDropZoneProps) {
+  const { t } = useTranslation()
   const [isDragOver, setIsDragOver] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -92,10 +94,10 @@ export function FileDropZone({
       <Upload className="h-10 w-10 text-muted-foreground" />
       <div className="text-center">
         <p className="text-sm font-medium">
-          Drag and drop ZIP files here
+          {t("upload.dragDropHint")}
         </p>
         <p className="text-sm text-muted-foreground">
-          or click to select files
+          {t("upload.clickToSelect")}
         </p>
       </div>
       <input

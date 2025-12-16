@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { ChevronDown } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -23,6 +24,7 @@ export function ExportButtonGroup({
   disabled,
   onCopy,
 }: ExportButtonGroupProps) {
+  const { t } = useTranslation()
   const [customDialogOpen, setCustomDialogOpen] = useState(false)
 
   const handleCopyAppfilter = async () => {
@@ -35,9 +37,9 @@ export function ExportButtonGroup({
 
     try {
       await navigator.clipboard.writeText(text)
-      toast.success("Appfilter copied to clipboard")
+      toast.success(t("export.appfilterCopied"))
     } catch {
-      toast.error("Failed to copy to clipboard")
+      toast.error(t("export.copyFailed"))
     }
   }
 
@@ -51,15 +53,15 @@ export function ExportButtonGroup({
 
     try {
       await navigator.clipboard.writeText(text)
-      toast.success("Drawable copied to clipboard")
+      toast.success(t("export.drawableCopied"))
     } catch {
-      toast.error("Failed to copy to clipboard")
+      toast.error(t("export.copyFailed"))
     }
   }
 
   const handleCopy = async () => {
     onCopy()
-    toast.success("Copied to clipboard")
+    toast.success(t("export.copied"))
   }
 
   return (
@@ -73,19 +75,19 @@ export function ExportButtonGroup({
             className="md:hidden"
             disabled={disabled}
           >
-            Copy
+            {t("export.copy")}
             <ChevronDown className="ml-1 h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={handleCopyAppfilter}>
-            Appfilter
+            {t("export.appfilter")}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={handleCopyDrawable}>
-            Drawable
+            {t("export.drawable")}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={handleCopy}>
-            Plain Text
+            {t("export.plainText")}
           </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={(e) => {
@@ -93,7 +95,7 @@ export function ExportButtonGroup({
               setCustomDialogOpen(true)
             }}
           >
-            Custom
+            {t("export.custom")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -107,7 +109,7 @@ export function ExportButtonGroup({
           disabled={disabled}
           onClick={handleCopyAppfilter}
         >
-          Appfilter
+          {t("export.appfilter")}
         </Button>
         <Button
           variant="outline"
@@ -116,7 +118,7 @@ export function ExportButtonGroup({
           disabled={disabled}
           onClick={handleCopyDrawable}
         >
-          Drawable
+          {t("export.drawable")}
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -131,7 +133,7 @@ export function ExportButtonGroup({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onSelect={handleCopy}>
-              Plain Text
+              {t("export.plainText")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={(e) => {
@@ -139,7 +141,7 @@ export function ExportButtonGroup({
                 setCustomDialogOpen(true)
               }}
             >
-              Custom
+              {t("export.custom")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

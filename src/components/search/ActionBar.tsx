@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import { ArrowUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -24,13 +25,14 @@ export function ActionBar({
   onSortChange,
   onCopySelected,
 }: ActionBarProps) {
+  const { t } = useTranslation()
   const selectedCount = selectedApps.length
 
   return (
     <div className="sticky top-0 z-10 bg-background py-3 border-b mb-4">
       <div className="flex justify-end items-center gap-2">
         {selectedCount > 0 && (
-          <Badge variant="secondary">{selectedCount} selected</Badge>
+          <Badge variant="secondary">{t("search.selected", { count: selectedCount })}</Badge>
         )}
         <ExportButtonGroup
           apps={selectedApps}
@@ -41,7 +43,7 @@ export function ActionBar({
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm">
               <ArrowUpDown className="h-4 w-4 mr-2" />
-              Sort
+              {t("sort.label")}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -50,9 +52,9 @@ export function ActionBar({
               onValueChange={(value) => onSortChange(value as SortOption)}
             >
               <DropdownMenuRadioItem value="relevance">
-                Relevance
+                {t("sort.relevance")}
               </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="count">Count</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="count">{t("sort.count")}</DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>

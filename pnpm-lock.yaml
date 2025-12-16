@@ -83,6 +83,9 @@ dependencies:
   tailwindcss:
     specifier: ^4.1.17
     version: 4.1.17
+  transliteration:
+    specifier: ^2.4.0
+    version: 2.4.0
 
 devDependencies:
   '@eslint/js':
@@ -3251,6 +3254,12 @@ packages:
     dependencies:
       is-number: 7.0.0
     dev: true
+
+  /transliteration@2.4.0:
+    resolution: {integrity: sha512-0FrA1WyS/SfrjpbQcMZB3Nf+Y0eWwJ3dcg0KXFzJ9UrQetoBfXcVv1BEEyeQOT/luwC3Mr7wjUpBpEEr+9XX2A==}
+    engines: {node: '>=20.0.0'}
+    hasBin: true
+    dev: false
 
   /ts-api-utils@2.1.0(typescript@5.9.3):
     resolution: {integrity: sha512-CUgTZL1irw8u29bzrOD/nH85jqyc74D6SshFgujOIA7osm2Rz7dYH77agkx7H4FBNxDq7Cjf+IjaX/8zwFW+ZQ==}

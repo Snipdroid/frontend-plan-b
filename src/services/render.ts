@@ -1,5 +1,6 @@
 import { API_BASE_URL } from "./api"
 import type { AppInfo } from "@/types"
+import { enrichAppsForTemplate } from "@/lib/drawable"
 
 interface RenderResponse {
   text: string
@@ -14,6 +15,9 @@ export async function renderLeafTemplate(
   template: string,
   apps: AppInfo[]
 ): Promise<RenderResponse> {
+  // Enrich apps with auto-generated drawable names
+  const enrichedApps = enrichAppsForTemplate(apps)
+
   const response = await fetch(`${API_BASE_URL}/render-leaf`, {
     method: "POST",
     headers: {
@@ -21,7 +25,7 @@ export async function renderLeafTemplate(
     },
     body: JSON.stringify({
       template,
-      context: { apps },
+      context: { apps: enrichedApps },
     }),
   })
 

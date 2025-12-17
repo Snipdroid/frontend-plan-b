@@ -2,7 +2,7 @@ import { useState, useEffect } from "react"
 import { useParams, useNavigate, Link } from "react-router"
 import { useAuth } from "react-oidc-context"
 import { useTranslation } from "react-i18next"
-import { ImageOff, Plus, Minus } from "lucide-react"
+import { Plus, Minus } from "lucide-react"
 import {
   Card,
   CardContent,
@@ -43,6 +43,7 @@ import { API_BASE_URL } from "@/services/api"
 import { CreateVersionDialog } from "./CreateVersionDialog"
 import { CreateAccessTokenDialog } from "./CreateAccessTokenDialog"
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog"
+import { AppRequestsTable, type AppRequestsTableColumn } from "./AppRequestsTable"
 import type { IconPackDTO, IconPackVersionDTO, AppInfoWithRequestCount } from "@/types/icon-pack"
 
 const REQUESTS_PER_PAGE = 10
@@ -246,6 +247,51 @@ export function IconPackManage() {
     return new Date(dateString).toLocaleDateString()
   }
 
+  const requestColumns: AppRequestsTableColumn[] = [
+    {
+      key: "appName",
+      header: t("iconPack.appName"),
+      width: "w-[15%]",
+      render: (item: AppInfoWithRequestCount) => (
+        <div className="truncate font-medium" title={item.appInfo?.defaultName ?? "-"}>
+          {item.appInfo?.defaultName ?? "-"}
+        </div>
+      ),
+      showInMobile: false,
+    },
+    {
+      key: "packageName",
+      header: t("iconPack.packageName"),
+      mobileLabel: t("iconPack.packageName"),
+      width: "w-[25%]",
+      className: "font-mono text-sm break-all",
+      render: (item: AppInfoWithRequestCount) => (
+        <div className="truncate" title={item.appInfo?.packageName ?? "-"}>
+          {item.appInfo?.packageName ?? "-"}
+        </div>
+      ),
+    },
+    {
+      key: "mainActivity",
+      header: t("iconPack.mainActivity"),
+      mobileLabel: t("iconPack.mainActivity"),
+      width: "w-[25%]",
+      className: "font-mono text-sm break-all",
+      render: (item: AppInfoWithRequestCount) => (
+        <div className="truncate" title={item.appInfo?.mainActivity ?? "-"}>
+          {item.appInfo?.mainActivity ?? "-"}
+        </div>
+      ),
+    },
+    {
+      key: "count",
+      header: t("iconPack.count"),
+      width: "w-[100px]",
+      render: (item: AppInfoWithRequestCount) => item.count,
+      showInMobile: true,
+    },
+  ]
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -389,83 +435,49 @@ export function IconPackManage() {
             </div>
           ) : requests.length > 0 ? (
             <div className="space-y-4">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">{t("iconPack.icon")}</TableHead>
-                    <TableHead>{t("iconPack.appName")}</TableHead>
-                    <TableHead>{t("iconPack.packageName")}</TableHead>
-                    <TableHead>{t("iconPack.mainActivity")}</TableHead>
-                    <TableHead>{t("iconPack.count")}</TableHead>
-                    <TableHead className="text-right">{t("iconPack.actions")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {requests.map((item) => {
-                    const iconUrl = getIconUrl(item.appInfo?.packageName)
-                    const isAdapted = !!item.iconPackApp
-                    return (
-                      <TableRow key={item.appInfo?.id}>
-                        <TableCell>
-                          {iconUrl ? (
-                            <img
-                              src={iconUrl}
-                              alt={item.appInfo?.defaultName ?? "App icon"}
-                              className="h-8 w-8 rounded object-contain"
-                              onError={(e) => {
-                                e.currentTarget.style.display = "none"
-                                e.currentTarget.nextElementSibling?.classList.remove("hidden")
-                              }}
-                            />
-                          ) : null}
-                          <div className={`${iconUrl ? "hidden" : ""} flex h-8 w-8 items-center justify-center rounded bg-muted`}>
-                            <ImageOff className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {item.appInfo?.defaultName ?? "-"}
-                        </TableCell>
-                        <TableCell className="font-mono text-sm">
-                          {item.appInfo?.packageName ?? "-"}
-                        </TableCell>
-                        <TableCell className="font-mono text-sm">
-                          {item.appInfo?.mainActivity ?? "-"}
-                        </TableCell>
-                        <TableCell>{item.count}</TableCell>
-                        <TableCell className="text-right">
-                          {isAdapted ? (
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() =>
-                                item.appInfo?.id &&
-                                handleMarkAsAdapted(item.appInfo.id, false)
-                              }
-                              disabled={isMarking || !item.appInfo?.id}
-                            >
-                              <Minus className="h-4 w-4 mr-1" />
-                              {t("common.remove")}
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                item.appInfo?.id &&
-                                handleMarkAsAdapted(item.appInfo.id, true)
-                              }
-                              disabled={isMarking || !item.appInfo?.id}
-                            >
-                              <Plus className="h-4 w-4 mr-1" />
-                              {t("common.add")}
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
+              <AppRequestsTable
+                items={requests}
+                columns={requestColumns}
+                getIconUrl={(item: AppInfoWithRequestCount) =>
+                  getIconUrl(item.appInfo?.packageName)
+                }
+                getAppName={(item: AppInfoWithRequestCount) =>
+                  item.appInfo?.defaultName ?? "-"
+                }
+                renderActions={(item: AppInfoWithRequestCount) => {
+                  const isAdapted = !!item.iconPackApp
+                  return isAdapted ? (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() =>
+                        item.appInfo?.id &&
+                        handleMarkAsAdapted(item.appInfo.id, false)
+                      }
+                      disabled={isMarking || !item.appInfo?.id}
+                    >
+                      <Minus className="h-4 w-4 mr-1" />
+                      {t("common.remove")}
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        item.appInfo?.id &&
+                        handleMarkAsAdapted(item.appInfo.id, true)
+                      }
+                      disabled={isMarking || !item.appInfo?.id}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      {t("common.add")}
+                    </Button>
+                  )
+                }}
+                getItemKey={(item: AppInfoWithRequestCount) =>
+                  item.appInfo?.id ?? ""
+                }
+              />
               {requestsTotalPages > 1 && (
                 <Pagination>
                   <PaginationContent>

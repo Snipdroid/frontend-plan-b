@@ -187,15 +187,100 @@ export function VersionDetail() {
             <p className="text-destructive">{error}</p>
           ) : requests.length > 0 ? (
             <div className="space-y-4">
-              <Table>
-                <TableHeader>
+              {/* Mobile Card Layout */}
+              <div className="md:hidden space-y-3">
+                {requests.map((item) => {
+                  const request = item.requestRecord
+                  const isAdapted = !!item.iconPackApp
+                  const iconUrl = getIconUrl(request.appInfo?.packageName)
+                  return (
+                    <div key={request.id} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-start gap-3">
+                        <div className="relative flex-shrink-0">
+                          {iconUrl ? (
+                            <img
+                              src={iconUrl}
+                              alt={request.appInfo?.defaultName ?? "App icon"}
+                              className="h-10 w-10 rounded object-contain"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none"
+                                e.currentTarget.nextElementSibling?.classList.remove("hidden")
+                              }}
+                            />
+                          ) : null}
+                          <div className={`${iconUrl ? "hidden" : ""} flex h-10 w-10 items-center justify-center rounded bg-muted`}>
+                            <ImageOff className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                          {request.isSystemApp && (
+                            <div className="absolute -bottom-1 -right-1 bg-background border rounded-full p-0.5">
+                              <Settings className="h-3 w-3 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium break-words">
+                            {request.appInfo?.defaultName ?? "-"}
+                          </div>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            {formatDate(request.createdAt)}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-2 text-sm">
+                        <div>
+                          <div className="text-muted-foreground">{t("iconPack.packageName")}</div>
+                          <div className="font-mono break-all">{request.appInfo?.packageName ?? "-"}</div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">{t("iconPack.mainActivity")}</div>
+                          <div className="font-mono break-all">{request.appInfo?.mainActivity ?? "-"}</div>
+                        </div>
+                      </div>
+                      <div className="flex justify-end pt-2">
+                        {isAdapted ? (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() =>
+                              request.appInfo?.id &&
+                              handleToggleAdapted(request.appInfo.id, false)
+                            }
+                            disabled={isMarking || !request.appInfo?.id}
+                          >
+                            <Minus className="h-4 w-4 mr-1" />
+                            {t("common.remove")}
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              request.appInfo?.id &&
+                              handleToggleAdapted(request.appInfo.id, true)
+                            }
+                            disabled={isMarking || !request.appInfo?.id}
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            {t("common.add")}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Desktop Table Layout */}
+              <div className="hidden md:block w-full overflow-hidden">
+                <Table className="table-fixed w-full">
+                  <TableHeader>
                   <TableRow>
                     <TableHead className="w-12">{t("iconPack.icon")}</TableHead>
-                    <TableHead>{t("iconPack.appName")}</TableHead>
-                    <TableHead>{t("iconPack.packageName")}</TableHead>
-                    <TableHead>{t("iconPack.mainActivity")}</TableHead>
-                    <TableHead>{t("iconPack.requested")}</TableHead>
-                    <TableHead className="text-right">{t("iconPack.actions")}</TableHead>
+                    <TableHead className="w-[15%]">{t("iconPack.appName")}</TableHead>
+                    <TableHead className="w-[25%]">{t("iconPack.packageName")}</TableHead>
+                    <TableHead className="w-[25%]">{t("iconPack.mainActivity")}</TableHead>
+                    <TableHead className="w-[100px]">{t("iconPack.requested")}</TableHead>
+                    <TableHead className="w-[120px] text-right">{t("iconPack.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -229,13 +314,19 @@ export function VersionDetail() {
                           </div>
                         </TableCell>
                         <TableCell className="font-medium">
-                          {request.appInfo?.defaultName ?? "-"}
+                          <div className="truncate" title={request.appInfo?.defaultName ?? "-"}>
+                            {request.appInfo?.defaultName ?? "-"}
+                          </div>
                         </TableCell>
                         <TableCell className="font-mono text-sm">
-                          {request.appInfo?.packageName ?? "-"}
+                          <div className="truncate" title={request.appInfo?.packageName ?? "-"}>
+                            {request.appInfo?.packageName ?? "-"}
+                          </div>
                         </TableCell>
                         <TableCell className="font-mono text-sm">
-                          {request.appInfo?.mainActivity ?? "-"}
+                          <div className="truncate" title={request.appInfo?.mainActivity ?? "-"}>
+                            {request.appInfo?.mainActivity ?? "-"}
+                          </div>
                         </TableCell>
                         <TableCell>{formatDate(request.createdAt)}</TableCell>
                         <TableCell className="text-right">
@@ -272,6 +363,7 @@ export function VersionDetail() {
                   })}
                 </TableBody>
               </Table>
+              </div>
               {totalPages > 1 && (
                 <Pagination>
                   <PaginationContent>

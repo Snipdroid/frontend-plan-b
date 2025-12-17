@@ -75,9 +75,9 @@ export function AppRequestsTable({
                   <div className="font-medium break-words">
                     {appName}
                   </div>
-                  {columns.find(col => col.showInMobile !== false)?.render(item) && (
+                  {columns.find(col => col.showInMobile === true)?.render(item) && (
                     <div className="text-sm text-muted-foreground mt-1">
-                      {columns.find(col => col.showInMobile !== false)?.render(item)}
+                      {columns.find(col => col.showInMobile === true)?.render(item)}
                     </div>
                   )}
                 </div>

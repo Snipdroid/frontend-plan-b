@@ -87,3 +87,8 @@ export interface PageIconPackVersionRequestRecordResponse {
   items: IconPackVersionRequestRecordResponse[]
   metadata: PageMetadata
 }
+
+export interface DesignerStatisticsResponse {
+  requestCount: number
+  distinctRequestCount: number
+}

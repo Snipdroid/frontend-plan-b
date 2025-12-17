@@ -1,6 +1,6 @@
 import { API_BASE_URL } from "./api"
 import type { DesignerDTO } from "@/types/user"
-import type { PageAppInfoWithRequestCount } from "@/types/icon-pack"
+import type { PageAppInfoWithRequestCount, DesignerStatisticsResponse } from "@/types/icon-pack"
 
 export async function getDesignerMe(accessToken: string): Promise<DesignerDTO> {
   const response = await fetch(`${API_BASE_URL}/designer/me`, {
@@ -46,6 +46,23 @@ export async function getDesignerRequests(
   const url = `${API_BASE_URL}/designer/requests${queryString ? `?${queryString}` : ""}`
 
   const response = await fetch(url, {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`)
+  }
+
+  return response.json()
+}
+
+export async function getDesignerStatistics(
+  accessToken: string
+): Promise<DesignerStatisticsResponse> {
+  const response = await fetch(`${API_BASE_URL}/designer/statistics`, {
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,

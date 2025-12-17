@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getIconPacks } from "@/services/icon-pack"
-import { getDesignerRequests } from "@/services/designer"
+import { getDesignerStatistics } from "@/services/designer"
 
 export function DashboardGeneral() {
   const auth = useAuth()
@@ -24,12 +24,12 @@ export function DashboardGeneral() {
       if (!auth.user?.access_token) return
 
       try {
-        const [packs, requestsResponse] = await Promise.all([
+        const [packs, statistics] = await Promise.all([
           getIconPacks(auth.user.access_token),
-          getDesignerRequests(auth.user.access_token, 1, 1),
+          getDesignerStatistics(auth.user.access_token),
         ])
         setIconPackCount(packs.length)
-        setTotalRequests(requestsResponse.metadata.total)
+        setTotalRequests(statistics.distinctRequestCount)
       } catch (error) {
         console.error("Failed to fetch stats:", error)
       } finally {

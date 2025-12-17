@@ -7,6 +7,7 @@ import type {
   PageIconPackVersionDTO,
   PageIconPackVersionRequestRecordResponse,
   PageAppInfoWithRequestCount,
+  PageAppInfoDTO,
   IconPackAppDTO,
 } from "@/types/icon-pack"
 
@@ -249,6 +250,33 @@ export async function markAppsAsAdapted(
       Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify({ appInfoIDs, adapted }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`)
+  }
+
+  return response.json()
+}
+
+export async function getIconPackAdaptedApps(
+  accessToken: string,
+  iconPackId: string,
+  page?: number,
+  per?: number
+): Promise<PageAppInfoDTO> {
+  const params = new URLSearchParams()
+  if (page !== undefined) params.set("page", String(page))
+  if (per !== undefined) params.set("per", String(per))
+
+  const queryString = params.toString()
+  const url = `${API_BASE_URL}/icon-pack/${iconPackId}/adapted-apps${queryString ? `?${queryString}` : ""}`
+
+  const response = await fetch(url, {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
   })
 
   if (!response.ok) {

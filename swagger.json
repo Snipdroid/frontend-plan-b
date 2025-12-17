@@ -1,1 +1,1540 @@
-{"info":{"version":"3.0.0","title":"AppTracker"},"components":{"examples":{"RenderRequest":{"value":{"context":{"foo":[1,2]},"template":"#for(f in foo):\nItem #(f)\n#endfor"}}},"schemas":{"PageIconPackVersionDTO":{"type":"object","required":["items","metadata"],"properties":{"metadata":{"$ref":"#\/components\/schemas\/PageMetadata"},"items":{"type":"array","items":{"$ref":"#\/components\/schemas\/IconPackVersionDTO"}}}},"PageAppInfoWithRequestCount":{"type":"object","required":["items","metadata"],"properties":{"metadata":{"$ref":"#\/components\/schemas\/PageMetadata"},"items":{"items":{"$ref":"#\/components\/schemas\/AppInfoWithRequestCount"},"type":"array"}}},"DesignerStatisticsResponse":{"type":"object","required":["distinctRequestCount","requestCount"],"properties":{"distinctRequestCount":{"type":"integer","description":"Total number of requests with distinct app info and icon pack combination\\nThis means how many icons the designer need to draw to fulfill every request","format":"int64"},"requestCount":{"type":"integer","description":"Total number of requests","format":"int64"}}},"DesignerDTO":{"type":"object","required":["oidcIssuer","oidcSubject"],"properties":{"email":{"nullable":true,"type":"string"},"oidcSubject":{"type":"string"},"name":{"nullable":true,"type":"string"},"createdAt":{"format":"date-time","nullable":true,"type":"string"},"id":{"format":"uuid","nullable":true,"type":"string"},"updatedAt":{"format":"date-time","nullable":true,"type":"string"},"oidcIssuer":{"type":"string"},"iconPacks":{"items":{"$ref":"#\/components\/schemas\/IconPackDTO"},"nullable":true,"type":"array"}}},"AppInfoQueryRequestSortOption":{"enum":["relevance","count"],"type":"string"},"PageAppInfoDTO":{"type":"object","required":["items","metadata"],"properties":{"metadata":{"$ref":"#\/components\/schemas\/PageMetadata"},"items":{"items":{"$ref":"#\/components\/schemas\/AppInfoDTO"},"type":"array"}}},"IconPackUpdate":{"type":"object","required":["name"],"properties":{"name":{"type":"string"}}},"AppInfoDTO":{"type":"object","required":["count","defaultName","mainActivity","packageName"],"properties":{"count":{"type":"integer","format":"int64"},"defaultName":{"type":"string"},"createdAt":{"nullable":true,"type":"string","format":"date-time"},"localizedNames":{"nullable":true,"type":"array","items":{"$ref":"#\/components\/schemas\/AppLocalizedNameDTO"}},"id":{"nullable":true,"type":"string","format":"uuid"},"packageName":{"type":"string"},"mainActivity":{"type":"string"},"iconPacks":{"items":{"$ref":"#\/components\/schemas\/IconPackDTO"},"type":"array","nullable":true}}},"IconPackMarkAppAsAdaptedRequest":{"type":"object","required":["adapted","appInfoIDs"],"properties":{"appInfoIDs":{"items":{"type":"string","format":"uuid"},"type":"array","description":"A list of app info IDs that are to be marked or unmarked as adapted"},"adapted":{"type":"boolean","description":"Whether the app should be marked as adapted\\nIf false, the adapted mark will be removed"}}},"RequestRecordDTO":{"type":"object","properties":{"id":{"format":"uuid","nullable":true,"type":"string"},"appInfo":{"$ref":"#\/components\/schemas\/AppInfoDTO"},"createdAt":{"format":"date-time","nullable":true,"type":"string"},"deletedAt":{"format":"date-time","nullable":true,"type":"string"},"iconPackVersion":{"$ref":"#\/components\/schemas\/IconPackVersionDTO"},"isSystemApp":{"nullable":true,"type":"boolean"}}},"IconPackVersionTokenRequest":{"type":"object","required":["expireAt"],"properties":{"expireAt":{"format":"date-time","type":"string"}}},"AppInfoWithRequestCount":{"type":"object","required":["appInfo","count"],"properties":{"iconPackApp":{"$ref":"#\/components\/schemas\/IconPackAppDTO"},"count":{"format":"int64","description":"Number of requests for this app","type":"integer"},"appInfo":{"$ref":"#\/components\/schemas\/AppInfoDTO"}}},"AppIconGenerateUploadURLResponse":{"type":"object","required":["uploadURL"],"properties":{"uploadURL":{"format":"uri","type":"string"}}},"RenderRequest":{"type":"object","required":["context","template"],"properties":{"context":{"type":"object","description":"The context for the template","additionalProperties":{"type":"array","items":{"type":"array","items":{"$ref":"#\/components\/schemas\/JSONValue"}}}},"template":{"type":"string","description":"The template to render in Leaf format"}}},"AppLocalizedNameDTO":{"type":"object","required":["isPrimary","languageCode","name"],"properties":{"appInfo":{"$ref":"#\/components\/schemas\/AppInfoDTO"},"name":{"type":"string"},"createdAt":{"type":"string","format":"date-time","nullable":true},"id":{"type":"string","format":"uuid","nullable":true},"languageCode":{"type":"string"},"updatedAt":{"type":"string","format":"date-time","nullable":true},"isPrimary":{"type":"boolean"}}},"RenderResponse":{"type":"object","required":["text"],"properties":{"text":{"type":"string"}}},"IconPackDTO":{"type":"object","required":["name"],"properties":{"versions":{"type":"array","nullable":true,"items":{"$ref":"#\/components\/schemas\/IconPackVersionDTO"}},"adaptedApps":{"type":"array","nullable":true,"items":{"$ref":"#\/components\/schemas\/AppInfoDTO"}},"createdAt":{"type":"string","format":"date-time","nullable":true},"name":{"type":"string"},"id":{"type":"string","format":"uuid","nullable":true},"designer":{"$ref":"#\/components\/schemas\/DesignerDTO"},"updatedAt":{"type":"string","format":"date-time","nullable":true}}},"IconPackCreate":{"type":"object","required":["name"],"properties":{"name":{"type":"string"}}},"IconPackVersionCreate":{"type":"object","required":["versionString"],"properties":{"versionString":{"type":"string"}}},"AppInfoCreateSingleRequest":{"type":"object","required":["defaultName","languageCode","localizedName","mainActivity","packageName"],"properties":{"defaultName":{"description":"The default display name of the app (used as fallback when no localized name matches)","type":"string"},"localizedName":{"description":"The localized name of the app in the specified language","type":"string"},"packageName":{"description":"Android package name (e.g., \"com.google.android.apps.maps\")","type":"string"},"mainActivity":{"description":"Android main activity class name (e.g., \"com.google.android.maps.MapsActivity\")","type":"string"},"languageCode":{"description":"IETF language tag (e.g., \"en\", \"zh-Hans\", \"ja\")","type":"string"},"systemApp":{"nullable":true,"description":"Whether this app is a system app on user's device","type":"boolean"}}},"IconPackVersionDTO":{"type":"object","required":["versionString"],"properties":{"id":{"format":"uuid","type":"string","nullable":true},"requestRecords":{"items":{"$ref":"#\/components\/schemas\/RequestRecordDTO"},"type":"array","nullable":true},"createdAt":{"format":"date-time","type":"string","nullable":true},"versionString":{"type":"string"},"iconPack":{"$ref":"#\/components\/schemas\/IconPackDTO"}}},"PageIconPackVersionRequestRecordResponse":{"type":"object","required":["items","metadata"],"properties":{"items":{"items":{"$ref":"#\/components\/schemas\/IconPackVersionRequestRecordResponse"},"type":"array"},"metadata":{"$ref":"#\/components\/schemas\/PageMetadata"}}},"PageMetadata":{"type":"object","required":["page","per","total"],"properties":{"per":{"type":"integer","format":"int64"},"total":{"type":"integer","format":"int64"},"page":{"type":"integer","format":"int64"}}},"IconPackVersionTokenResponse":{"type":"object","required":["token"],"properties":{"token":{"type":"string"}}},"IconPackVersionRequestRecordResponse":{"type":"object","required":["requestRecord"],"properties":{"iconPackApp":{"$ref":"#\/components\/schemas\/IconPackAppDTO"},"requestRecord":{"$ref":"#\/components\/schemas\/RequestRecordDTO"}}},"IconPackAppDTO":{"type":"object","properties":{"iconPack":{"$ref":"#\/components\/schemas\/IconPackDTO"},"id":{"format":"uuid","type":"string","nullable":true},"createdAt":{"format":"date-time","type":"string","nullable":true},"appInfo":{"$ref":"#\/components\/schemas\/AppInfoDTO"}}}}},"tags":[{"name":"designer"},{"name":"app-info"},{"name":"icon-pack"},{"name":"app-icon"},{"name":"request-record"},{"name":"render-leaf"}],"openapi":"3.0.1","paths":{"\/designer\/me":{"get":{"tags":["designer"],"summary":"Get Current Designer","description":"Get the currently authenticated designer's profile","responses":{"200":{"content":{"application\/json":{"schema":{"$ref":"#\/components\/schemas\/DesignerDTO"}}},"description":"OK"}},"operationId":"getDesignerMe"}},"\/app-info\/search":{"get":{"operationId":"getApp-infoSearch","responses":{"200":{"content":{"application\/json":{"schema":{"$ref":"#\/components\/schemas\/PageAppInfoDTO"}}},"description":"OK"}},"description":"Search for apps using a simple query or advanced filters. The `query` parameter searches across name, package name, and main activity. Advanced filters (byName, byPackageName, byMainActivity) can be combined with query using AND logic. Use `sortBy` to control result ordering.","parameters":[{"required":false,"schema":{"nullable":true,"type":"string"},"description":"Simple unified search - searches across name, packageName, and mainActivity","in":"query","name":"query"},{"required":false,"schema":{"nullable":true,"type":"string"},"description":"Filter by localized app name (uses similarity matching)","in":"query","name":"byName"},{"required":false,"schema":{"type":"string","nullable":true},"description":"Filter by package name (uses ILIKE matching)","in":"query","name":"byPackageName"},{"required":false,"schema":{"type":"string","nullable":true},"description":"Filter by main activity (uses ILIKE matching)","in":"query","name":"byMainActivity"},{"required":false,"schema":{"$ref":"#\/components\/schemas\/AppInfoQueryRequestSortOption"},"description":"Sort order for results","in":"query","name":"sortBy"}],"summary":"Search for apps","tags":["app-info"]}},"\/icon-pack\/{iconPackId}\/versions":{"get":{"operationId":"getIcon-packByIconPackIdVersions","parameters":[{"schema":{"nullable":true,"type":"integer","format":"int64"},"name":"page","in":"query","required":false},{"schema":{"format":"int64","nullable":true,"type":"integer"},"name":"per","in":"query","required":false},{"schema":{"type":"string"},"name":"iconPackId","in":"path","required":true}],"responses":{"200":{"content":{"application\/json":{"schema":{"$ref":"#\/components\/schemas\/PageIconPackVersionDTO"}}},"description":"OK"}},"summary":"List icon pack versions","description":"List all versions for an icon pack,\nsorted by creation date in descending order","tags":["icon-pack"]}},"\/app-info\/create":{"post":{"tags":["app-info"],"requestBody":{"required":true,"content":{"application\/json":{"schema":{"type":"array","items":{"$ref":"#\/components\/schemas\/AppInfoCreateSingleRequest"}}}}},"responses":{"200":{"description":"OK","content":{"application\/json":{"schema":{"type":"array","items":{"$ref":"#\/components\/schemas\/AppInfoDTO"}}}}}},"summary":"Create or update app information","description":"Creates or updates app information.\nIf an app with the same package name and main activity already exists, it will be updated. Otherwise, a new app will be created.\nLocalized names are also created or updated.\nA request record is created for each app to associate it with the authenticated icon pack.","operationId":"postApp-infoCreate"}},"\/icon-pack\/{iconPackId}\/version\/{versionId}\/token":{"post":{"operationId":"postIcon-packByIconPackIdVersionByVersionIdToken","tags":["icon-pack"],"description":"Generate an access token for an icon pack version","responses":{"200":{"content":{"application\/json":{"schema":{"$ref":"#\/components\/schemas\/IconPackVersionTokenResponse"}}},"description":"OK"}},"parameters":[{"in":"path","schema":{"type":"string"},"required":true,"name":"iconPackId"},{"in":"path","schema":{"type":"string"},"required":true,"name":"versionId"}],"summary":"Create access token","requestBody":{"required":true,"content":{"application\/json":{"schema":{"$ref":"#\/components\/schemas\/IconPackVersionTokenRequest"}}}}}},"\/designer\/statistics":{"get":{"summary":"Get Designer Statistics","operationId":"getDesignerStatistics","responses":{"200":{"content":{"application\/json":{"schema":{"$ref":"#\/components\/schemas\/DesignerStatisticsResponse"}}},"description":"OK"}},"tags":["designer"],"description":"Get statistics for the currently authenticated designer"}},"\/render-leaf":{"post":{"requestBody":{"required":true,"content":{"application\/json":{"schema":{"$ref":"#\/components\/schemas\/RenderRequest"},"examples":{"RenderRequest":{"$ref":"#\/components\/examples\/RenderRequest"}}}}},"tags":["render-leaf"],"summary":"Render a template","description":"Render a Leaf template, documentation is available at https:\/\/docs.vapor.codes\/leaf\/","operationId":"postRender-leaf","responses":{"200":{"description":"OK","content":{"application\/json":{"schema":{"$ref":"#\/components\/schemas\/RenderResponse"}}}}}}},"\/icon-pack\/create":{"post":{"summary":"Create icon pack","description":"Create a new icon pack","operationId":"postIcon-packCreate","responses":{"200":{"description":"OK","content":{"application\/json":{"schema":{"$ref":"#\/components\/schemas\/IconPackDTO"}}}}},"requestBody":{"content":{"application\/json":{"schema":{"$ref":"#\/components\/schemas\/IconPackCreate"}}},"required":true},"tags":["icon-pack"]}},"\/icon-pack\/{iconPackId}\/version\/{versionId}\/requests":{"get":{"description":"Get requests for an icon pack version","operationId":"getIcon-packByIconPackIdVersionByVersionIdRequests","parameters":[{"in":"query","schema":{"format":"int64","nullable":true,"type":"integer"},"name":"page","required":false},{"in":"query","schema":{"type":"integer","format":"int64","nullable":true},"name":"per","required":false},{"in":"query","schema":{"type":"boolean"},"name":"includingAdapted"},{"in":"path","schema":{"type":"string"},"name":"iconPackId","required":true},{"in":"path","schema":{"type":"string"},"name":"versionId","required":true}],"tags":["icon-pack"],"summary":"Get requests of version","responses":{"200":{"content":{"application\/json":{"schema":{"$ref":"#\/components\/schemas\/PageIconPackVersionRequestRecordResponse"}}},"description":"OK"}}}},"\/request-record\/{requestRecordId}":{"delete":{"responses":{"200":{"description":"OK","content":{"application\/json":{"schema":{"type":"integer","format":"int64"}}}}},"parameters":[{"name":"requestRecordId","in":"path","schema":{"type":"string"},"required":true}],"operationId":"deleteRequest-recordByRequestRecordId","tags":["request-record"],"summary":"Delete request","description":"Delete a request record"}},"\/icon-pack\/{iconPackId}\/adapted-apps":{"get":{"description":"Get the list of apps that have been adapted","summary":"Get adapted apps","responses":{"200":{"description":"OK","content":{"application\/json":{"schema":{"$ref":"#\/components\/schemas\/PageAppInfoDTO"}}}}},"parameters":[{"required":false,"schema":{"format":"int64","nullable":true,"type":"integer"},"in":"query","name":"page"},{"required":false,"schema":{"nullable":true,"format":"int64","type":"integer"},"in":"query","name":"per"},{"required":true,"schema":{"type":"string"},"in":"path","name":"iconPackId"}],"tags":["icon-pack"],"operationId":"getIcon-packByIconPackIdAdapted-apps"}},"\/designer\/requests":{"get":{"summary":"Get App Request of Designer","parameters":[{"name":"page","schema":{"type":"integer","format":"int64","nullable":true},"in":"query","required":false},{"name":"per","schema":{"nullable":true,"format":"int64","type":"integer"},"in":"query","required":false}],"responses":{"200":{"description":"OK","content":{"application\/json":{"schema":{"$ref":"#\/components\/schemas\/PageAppInfoWithRequestCount"}}}}},"operationId":"getDesignerRequests","description":"List all apps with request counts for the currently authenticated designer's icon packs, sorted by request count descending","tags":["designer"]}},"\/app-icon":{"get":{"description":"","tags":["app-icon"],"parameters":[{"in":"query","description":"The package name of the app.","name":"packageName","schema":{"type":"string"},"required":true}],"responses":{"307":{"description":"Redirect","headers":{"Location":{"schema":{"type":"string","format":"uri"}}}}},"operationId":"getApp-icon","summary":"Get app icon"}},"\/icon-pack":{"get":{"description":"List all icon packs for the authenticated designer","operationId":"getIcon-pack","tags":["icon-pack"],"responses":{"200":{"description":"OK","content":{"application\/json":{"schema":{"type":"array","items":{"$ref":"#\/components\/schemas\/IconPackDTO"}}}}}},"summary":"List icon packs"}},"\/app-icon\/generate-upload-url":{"get":{"responses":{"200":{"content":{"application\/json":{"schema":{"$ref":"#\/components\/schemas\/AppIconGenerateUploadURLResponse"}}},"description":"OK"}},"summary":"Generate upload URL","tags":["app-icon"],"description":"","parameters":[{"required":true,"in":"query","schema":{"type":"string"},"name":"packageName"}],"operationId":"getApp-iconGenerate-upload-url"}},"\/icon-pack\/{iconPackId}":{"get":{"tags":["icon-pack"],"parameters":[{"in":"path","required":true,"schema":{"type":"string"},"name":"iconPackId"}],"responses":{"200":{"content":{"application\/json":{"schema":{"$ref":"#\/components\/schemas\/IconPackDTO"}}},"description":"OK"}},"description":"Get a specific icon pack by ID,\ndoes not include its icon pack verisons,\nuse `\/icon-pack\/:iconPackId\/versions` instead","summary":"Get icon pack","operationId":"getIcon-packByIconPackId"},"post":{"description":"Mark an app as adapted, or remove the adapted mark","summary":"Mark app as adapted","operationId":"postIcon-packByIconPackId","tags":["icon-pack"],"responses":{"200":{"description":"OK","content":{"application\/json":{"schema":{"type":"array","items":{"$ref":"#\/components\/schemas\/IconPackAppDTO"}}}}}},"parameters":[{"in":"path","required":true,"schema":{"type":"string"},"name":"iconPackId"}],"requestBody":{"content":{"application\/json":{"schema":{"$ref":"#\/components\/schemas\/IconPackMarkAppAsAdaptedRequest"}}},"required":true}},"put":{"description":"Update an icon pack's name","summary":"Update icon pack","operationId":"putIcon-packByIconPackId","tags":["icon-pack"],"responses":{"200":{"content":{"application\/json":{"schema":{"$ref":"#\/components\/schemas\/IconPackDTO"}}},"description":"OK"}},"parameters":[{"in":"path","required":true,"schema":{"type":"string"},"name":"iconPackId"}],"requestBody":{"content":{"application\/json":{"schema":{"$ref":"#\/components\/schemas\/IconPackUpdate"}}},"required":true}},"delete":{"tags":["icon-pack"],"parameters":[{"in":"path","required":true,"schema":{"type":"string"},"name":"iconPackId"}],"responses":{"200":{"content":{"application\/json":{"schema":{"type":"integer","format":"int64"}}},"description":"OK"}},"description":"Delete an icon pack and all its versions","summary":"Delete icon pack","operationId":"deleteIcon-packByIconPackId"}},"\/icon-pack\/{iconPackId}\/version\/{versionId}":{"delete":{"description":"Delete an icon pack version, returns the deleted version","summary":"Delete icon pack version","tags":["icon-pack"],"operationId":"deleteIcon-packByIconPackIdVersionByVersionId","responses":{"200":{"description":"OK","content":{"application\/json":{"schema":{"$ref":"#\/components\/schemas\/IconPackVersionDTO"}}}}},"parameters":[{"name":"iconPackId","required":true,"schema":{"type":"string"},"in":"path"},{"name":"versionId","required":true,"schema":{"type":"string"},"in":"path"}]}},"\/icon-pack\/{iconPackId}\/version\/create":{"post":{"requestBody":{"content":{"application\/json":{"schema":{"$ref":"#\/components\/schemas\/IconPackVersionCreate"}}},"required":true},"summary":"Create icon pack version","operationId":"postIcon-packByIconPackIdVersionCreate","tags":["icon-pack"],"responses":{"200":{"content":{"application\/json":{"schema":{"$ref":"#\/components\/schemas\/IconPackVersionDTO"}}},"description":"OK"}},"parameters":[{"in":"path","name":"iconPackId","required":true,"schema":{"type":"string"}}],"description":"Create a new icon pack version"}},"\/designer\/me\/sync":{"post":{"summary":"Sync Designer Profile","responses":{"200":{"content":{"application\/json":{"schema":{"$ref":"#\/components\/schemas\/DesignerDTO"}}},"description":"OK"}},"tags":["designer"],"description":"Fetch and update profile data from OIDC provider's userinfo endpoint","operationId":"postDesignerMeSync"}},"\/icon-pack\/{iconPackId}\/requests":{"get":{"responses":{"200":{"content":{"application\/json":{"schema":{"$ref":"#\/components\/schemas\/PageAppInfoWithRequestCount"}}},"description":"OK"}},"parameters":[{"schema":{"type":"integer","format":"int64","nullable":true},"in":"query","name":"page","required":false},{"schema":{"format":"int64","nullable":true,"type":"integer"},"in":"query","name":"per","required":false},{"in":"query","name":"includingAdapted","schema":{"type":"boolean"}},{"schema":{"type":"string"},"in":"path","name":"iconPackId","required":true}],"operationId":"getIcon-packByIconPackIdRequests","summary":"Get requests of icon pack","tags":["icon-pack"],"description":"List all apps with request counts for a specific icon pack, sorted by request count descending"}}}}
+{
+  "info": {
+    "title": "AppTracker",
+    "version": "3.0.0"
+  },
+  "paths": {
+    "/request-record/{requestRecordId}": {
+      "delete": {
+        "tags": [
+          "request-record"
+        ],
+        "summary": "Delete request",
+        "description": "Delete a request record",
+        "operationId": "deleteRequest-recordByRequestRecordId",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "format": "int64",
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "requestRecordId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/icon-pack/{iconPackId}/version/{versionId}": {
+      "delete": {
+        "tags": [
+          "icon-pack"
+        ],
+        "parameters": [
+          {
+            "name": "iconPackId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "versionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IconPackVersionDTO"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "description": "Delete an icon pack version, returns the deleted version",
+        "summary": "Delete icon pack version",
+        "operationId": "deleteIcon-packByIconPackIdVersionByVersionId"
+      }
+    },
+    "/designer/me/sync": {
+      "post": {
+        "tags": [
+          "designer"
+        ],
+        "description": "Fetch and update profile data from OIDC provider's userinfo endpoint",
+        "operationId": "postDesignerMeSync",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesignerDTO"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Sync Designer Profile"
+      }
+    },
+    "/icon-pack/create": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IconPackDTO"
+                }
+              }
+            }
+          }
+        },
+        "description": "Create a new icon pack",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IconPackCreate"
+              }
+            }
+          }
+        },
+        "summary": "Create icon pack",
+        "operationId": "postIcon-packCreate",
+        "tags": [
+          "icon-pack"
+        ]
+      }
+    },
+    "/icon-pack": {
+      "get": {
+        "summary": "List icon packs",
+        "tags": [
+          "icon-pack"
+        ],
+        "operationId": "getIcon-pack",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/IconPackDTO"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "description": "List all icon packs for the authenticated designer"
+      }
+    },
+    "/icon-pack/{iconPackId}/versions": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "nullable": true
+            },
+            "required": false,
+            "name": "page"
+          },
+          {
+            "in": "query",
+            "schema": {
+              "format": "int64",
+              "nullable": true,
+              "type": "integer"
+            },
+            "required": false,
+            "name": "per"
+          },
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "iconPackId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageIconPackVersionDTO"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getIcon-packByIconPackIdVersions",
+        "description": "List all versions for an icon pack,\nsorted by creation date in descending order",
+        "tags": [
+          "icon-pack"
+        ],
+        "summary": "List icon pack versions"
+      }
+    },
+    "/app-icon/generate-upload-url": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "packageName"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppIconGenerateUploadURLResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Generate upload URL",
+        "operationId": "getApp-iconGenerate-upload-url",
+        "tags": [
+          "app-icon"
+        ]
+      }
+    },
+    "/designer/requests": {
+      "get": {
+        "description": "List all apps with request counts for the currently authenticated designer's icon packs, sorted by request count descending",
+        "tags": [
+          "designer"
+        ],
+        "summary": "Get App Request of Designer",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "nullable": true,
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "per",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "nullable": true,
+              "type": "integer"
+            }
+          }
+        ],
+        "operationId": "getDesignerRequests",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageAppInfoWithRequestCount"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/designer/statistics": {
+      "get": {
+        "tags": [
+          "designer"
+        ],
+        "operationId": "getDesignerStatistics",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesignerStatisticsResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "Get statistics for the currently authenticated designer",
+        "summary": "Get Designer Statistics"
+      }
+    },
+    "/icon-pack/{iconPackId}/version/{versionId}/token": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "iconPackId",
+            "required": true
+          },
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "versionId",
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IconPackVersionTokenRequest"
+              }
+            }
+          }
+        },
+        "summary": "Create access token",
+        "tags": [
+          "icon-pack"
+        ],
+        "description": "Generate an access token for an icon pack version",
+        "operationId": "postIcon-packByIconPackIdVersionByVersionIdToken",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IconPackVersionTokenResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/app-icon": {
+      "get": {
+        "responses": {
+          "307": {
+            "description": "Redirect",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            }
+          }
+        },
+        "description": "",
+        "summary": "Get app icon",
+        "operationId": "getApp-icon",
+        "tags": [
+          "app-icon"
+        ],
+        "parameters": [
+          {
+            "description": "The package name of the app.",
+            "schema": {
+              "type": "string"
+            },
+            "name": "packageName",
+            "in": "query",
+            "required": true
+          }
+        ]
+      }
+    },
+    "/app-info/create": {
+      "post": {
+        "operationId": "postApp-infoCreate",
+        "tags": [
+          "app-info"
+        ],
+        "description": "Creates or updates app information.\nIf an app with the same package name and main activity already exists, it will be updated. Otherwise, a new app will be created.\nLocalized names are also created or updated.\nA request record is created for each app to associate it with the authenticated icon pack.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AppInfoCreateSingleRequest"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "summary": "Create or update app information",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AppInfoDTO"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/app-info/search": {
+      "get": {
+        "tags": [
+          "app-info"
+        ],
+        "parameters": [
+          {
+            "description": "Simple unified search - searches across name, packageName, and mainActivity",
+            "in": "query",
+            "name": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "required": false
+          },
+          {
+            "description": "Filter by localized app name (uses similarity matching)",
+            "in": "query",
+            "name": "byName",
+            "schema": {
+              "nullable": true,
+              "type": "string"
+            },
+            "required": false
+          },
+          {
+            "description": "Filter by package name (uses ILIKE matching)",
+            "in": "query",
+            "name": "byPackageName",
+            "schema": {
+              "nullable": true,
+              "type": "string"
+            },
+            "required": false
+          },
+          {
+            "description": "Filter by main activity (uses ILIKE matching)",
+            "in": "query",
+            "name": "byMainActivity",
+            "schema": {
+              "nullable": true,
+              "type": "string"
+            },
+            "required": false
+          },
+          {
+            "description": "Sort order for results",
+            "in": "query",
+            "name": "sortBy",
+            "schema": {
+              "$ref": "#/components/schemas/AppInfoQueryRequestSortOption"
+            },
+            "required": false
+          }
+        ],
+        "description": "Search for apps using a simple query or advanced filters. The `query` parameter searches across name, package name, and main activity. Advanced filters (byName, byPackageName, byMainActivity) can be combined with query using AND logic. Use `sortBy` to control result ordering.",
+        "summary": "Search for apps",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageAppInfoDTO"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getApp-infoSearch"
+      }
+    },
+    "/icon-pack/{iconPackId}/version/{versionId}/requests": {
+      "get": {
+        "description": "Get requests for an icon pack version",
+        "operationId": "getIcon-packByIconPackIdVersionByVersionIdRequests",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageIconPackVersionRequestRecordResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get requests of version",
+        "tags": [
+          "icon-pack"
+        ],
+        "parameters": [
+          {
+            "required": false,
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "format": "int64",
+              "nullable": true,
+              "type": "integer"
+            }
+          },
+          {
+            "required": false,
+            "in": "query",
+            "name": "per",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "nullable": true
+            }
+          },
+          {
+            "in": "query",
+            "name": "includingAdapted",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "required": true,
+            "in": "path",
+            "name": "iconPackId",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "required": true,
+            "in": "path",
+            "name": "versionId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/designer/me": {
+      "get": {
+        "tags": [
+          "designer"
+        ],
+        "description": "Get the currently authenticated designer's profile",
+        "operationId": "getDesignerMe",
+        "summary": "Get Current Designer",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesignerDTO"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/icon-pack/{iconPackId}/requests": {
+      "get": {
+        "summary": "Get requests of icon pack",
+        "operationId": "getIcon-packByIconPackIdRequests",
+        "description": "List all apps with request counts for a specific icon pack, sorted by request count descending",
+        "parameters": [
+          {
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "nullable": true,
+              "format": "int64"
+            }
+          },
+          {
+            "required": false,
+            "name": "per",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "nullable": true
+            }
+          },
+          {
+            "name": "includingAdapted",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "required": true,
+            "name": "iconPackId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageAppInfoWithRequestCount"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "icon-pack"
+        ]
+      }
+    },
+    "/icon-pack/{iconPackId}": {
+      "put": {
+        "operationId": "putIcon-packByIconPackId",
+        "description": "Update an icon pack's name",
+        "tags": [
+          "icon-pack"
+        ],
+        "summary": "Update icon pack",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IconPackUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "parameters": [
+          {
+            "name": "iconPackId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IconPackDTO"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get icon pack",
+        "description": "Get a specific icon pack by ID,\ndoes not include its icon pack verisons,\nuse `/icon-pack/:iconPackId/versions` instead",
+        "operationId": "getIcon-packByIconPackId",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "name": "iconPackId",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IconPackDTO"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "icon-pack"
+        ]
+      },
+      "post": {
+        "operationId": "postIcon-packByIconPackId",
+        "description": "Mark an app as adapted, or remove the adapted mark",
+        "tags": [
+          "icon-pack"
+        ],
+        "summary": "Mark app as adapted",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IconPackMarkAppAsAdaptedRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "iconPackId",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/IconPackAppDTO"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete icon pack",
+        "description": "Delete an icon pack and all its versions",
+        "operationId": "deleteIcon-packByIconPackId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "iconPackId",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "icon-pack"
+        ]
+      }
+    },
+    "/render-leaf": {
+      "post": {
+        "tags": [
+          "render-leaf"
+        ],
+        "description": "Render a Leaf template, documentation is available at https://docs.vapor.codes/leaf/",
+        "operationId": "postRender-leaf",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "RenderRequest": {
+                  "$ref": "#/components/examples/RenderRequest"
+                }
+              },
+              "schema": {
+                "$ref": "#/components/schemas/RenderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenderResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Render a template"
+      }
+    },
+    "/icon-pack/{iconPackId}/version/create": {
+      "post": {
+        "operationId": "postIcon-packByIconPackIdVersionCreate",
+        "description": "Create a new icon pack version",
+        "tags": [
+          "icon-pack"
+        ],
+        "summary": "Create icon pack version",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "name": "iconPackId",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IconPackVersionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IconPackVersionDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/icon-pack/{iconPackId}/adapted-apps": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "nullable": true,
+              "type": "integer"
+            },
+            "name": "page"
+          },
+          {
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "nullable": true,
+              "format": "int64"
+            },
+            "name": "per"
+          },
+          {
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "name": "iconPackId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageAppInfoDTO"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "icon-pack"
+        ],
+        "summary": "Get adapted apps",
+        "description": "Get the list of apps that have been adapted",
+        "operationId": "getIcon-packByIconPackIdAdapted-apps"
+      }
+    }
+  },
+  "openapi": "3.0.1",
+  "components": {
+    "examples": {
+      "RenderRequest": {
+        "value": {
+          "template": "#for(f in foo):\nItem #(f)\n#endfor",
+          "context": {
+            "foo": [
+              1,
+              2
+            ]
+          }
+        }
+      }
+    },
+    "schemas": {
+      "IconPackVersionTokenRequest": {
+        "type": "object",
+        "properties": {
+          "expireAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "expireAt"
+        ]
+      },
+      "PageAppInfoDTO": {
+        "type": "object",
+        "properties": {
+          "metadata": {
+            "$ref": "#/components/schemas/PageMetadata"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AppInfoDTO"
+            }
+          }
+        },
+        "required": [
+          "items",
+          "metadata"
+        ]
+      },
+      "PageAppInfoWithRequestCount": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AppInfoWithRequestCount"
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PageMetadata"
+          }
+        },
+        "required": [
+          "items",
+          "metadata"
+        ]
+      },
+      "IconPackVersionRequestRecordResponse": {
+        "type": "object",
+        "properties": {
+          "requestRecord": {
+            "$ref": "#/components/schemas/RequestRecordDTO"
+          },
+          "iconPackApp": {
+            "$ref": "#/components/schemas/IconPackAppDTO"
+          }
+        },
+        "required": [
+          "requestRecord"
+        ]
+      },
+      "RenderResponse": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ]
+      },
+      "DesignerDTO": {
+        "required": [
+          "oidcIssuer",
+          "oidcSubject"
+        ],
+        "properties": {
+          "name": {
+            "nullable": true,
+            "type": "string"
+          },
+          "email": {
+            "nullable": true,
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "oidcSubject": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "iconPacks": {
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IconPackDTO"
+            }
+          },
+          "oidcIssuer": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AppIconGenerateUploadURLResponse": {
+        "type": "object",
+        "properties": {
+          "uploadURL": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "uploadURL"
+        ]
+      },
+      "AppLocalizedNameDTO": {
+        "required": [
+          "isPrimary",
+          "languageCode",
+          "name"
+        ],
+        "properties": {
+          "isPrimary": {
+            "type": "boolean"
+          },
+          "languageCode": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "appInfo": {
+            "$ref": "#/components/schemas/AppInfoDTO"
+          },
+          "updatedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "IconPackMarkAppAsAdaptedRequest": {
+        "type": "object",
+        "properties": {
+          "appInfoIDs": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "description": "A list of app info IDs that are to be marked or unmarked as adapted"
+          },
+          "adapted": {
+            "type": "boolean",
+            "description": "Whether the app should be marked as adapted\\nIf false, the adapted mark will be removed"
+          }
+        },
+        "required": [
+          "adapted",
+          "appInfoIDs"
+        ]
+      },
+      "AppInfoQueryRequestSortOption": {
+        "enum": [
+          "relevance",
+          "count"
+        ],
+        "type": "string"
+      },
+      "AppInfoDTO": {
+        "required": [
+          "count",
+          "defaultName",
+          "mainActivity",
+          "packageName"
+        ],
+        "properties": {
+          "localizedNames": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/AppLocalizedNameDTO"
+            }
+          },
+          "mainActivity": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "defaultName": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "packageName": {
+            "type": "string"
+          },
+          "iconPacks": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/IconPackDTO"
+            }
+          }
+        },
+        "type": "object"
+      },
+      "PageIconPackVersionRequestRecordResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/IconPackVersionRequestRecordResponse"
+            },
+            "type": "array"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PageMetadata"
+          }
+        },
+        "required": [
+          "items",
+          "metadata"
+        ]
+      },
+      "RenderRequest": {
+        "type": "object",
+        "properties": {
+          "context": {
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "items": {
+                  "$ref": "#/components/schemas/JSONValue"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object",
+            "description": "The context for the template"
+          },
+          "template": {
+            "type": "string",
+            "description": "The template to render in Leaf format"
+          }
+        },
+        "required": [
+          "context",
+          "template"
+        ]
+      },
+      "IconPackAppDTO": {
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "iconPack": {
+            "$ref": "#/components/schemas/IconPackDTO"
+          },
+          "appInfo": {
+            "$ref": "#/components/schemas/AppInfoDTO"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        }
+      },
+      "IconPackCreate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "PageMetadata": {
+        "type": "object",
+        "properties": {
+          "per": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "required": [
+          "page",
+          "per",
+          "total"
+        ]
+      },
+      "PageIconPackVersionDTO": {
+        "type": "object",
+        "properties": {
+          "metadata": {
+            "$ref": "#/components/schemas/PageMetadata"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/IconPackVersionDTO"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "metadata"
+        ]
+      },
+      "DesignerStatisticsResponse": {
+        "required": [
+          "distinctRequestCount",
+          "requestCount"
+        ],
+        "properties": {
+          "distinctRequestCount": {
+            "description": "Total number of requests with distinct app info and icon pack combination\\nThis means how many icons the designer need to draw to fulfill every request",
+            "format": "int64",
+            "type": "integer"
+          },
+          "requestCount": {
+            "description": "Total number of requests",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "AppInfoCreateSingleRequest": {
+        "type": "object",
+        "properties": {
+          "defaultName": {
+            "type": "string",
+            "description": "The default display name of the app (used as fallback when no localized name matches)"
+          },
+          "mainActivity": {
+            "type": "string",
+            "description": "Android main activity class name (e.g., \"com.google.android.maps.MapsActivity\")"
+          },
+          "packageName": {
+            "type": "string",
+            "description": "Android package name (e.g., \"com.google.android.apps.maps\")"
+          },
+          "systemApp": {
+            "type": "boolean",
+            "description": "Whether this app is a system app on user's device",
+            "nullable": true
+          },
+          "localizedName": {
+            "type": "string",
+            "description": "The localized name of the app in the specified language"
+          },
+          "languageCode": {
+            "type": "string",
+            "description": "IETF language tag (e.g., \"en\", \"zh-Hans\", \"ja\")"
+          }
+        },
+        "required": [
+          "defaultName",
+          "languageCode",
+          "localizedName",
+          "mainActivity",
+          "packageName"
+        ]
+      },
+      "IconPackVersionDTO": {
+        "required": [
+          "versionString"
+        ],
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "iconPack": {
+            "$ref": "#/components/schemas/IconPackDTO"
+          },
+          "requestRecords": {
+            "items": {
+              "$ref": "#/components/schemas/RequestRecordDTO"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "versionString": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "RequestRecordDTO": {
+        "properties": {
+          "createdAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "isSystemApp": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "appInfo": {
+            "$ref": "#/components/schemas/AppInfoDTO"
+          },
+          "iconPackVersion": {
+            "$ref": "#/components/schemas/IconPackVersionDTO"
+          },
+          "id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "deletedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          }
+        },
+        "type": "object"
+      },
+      "IconPackVersionTokenResponse": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "IconPackVersionCreate": {
+        "type": "object",
+        "properties": {
+          "versionString": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "versionString"
+        ]
+      },
+      "IconPackUpdate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "IconPackDTO": {
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "designer": {
+            "$ref": "#/components/schemas/DesignerDTO"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/IconPackVersionDTO"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "adaptedApps": {
+            "items": {
+              "$ref": "#/components/schemas/AppInfoDTO"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AppInfoWithRequestCount": {
+        "type": "object",
+        "properties": {
+          "appInfo": {
+            "$ref": "#/components/schemas/AppInfoDTO"
+          },
+          "iconPackApp": {
+            "$ref": "#/components/schemas/IconPackAppDTO"
+          },
+          "count": {
+            "type": "integer",
+            "description": "Number of requests for this app",
+            "format": "int64"
+          }
+        },
+        "required": [
+          "appInfo",
+          "count"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "designer"
+    },
+    {
+      "name": "app-info"
+    },
+    {
+      "name": "icon-pack"
+    },
+    {
+      "name": "app-icon"
+    },
+    {
+      "name": "request-record"
+    },
+    {
+      "name": "render-leaf"
+    }
+  ]
+}

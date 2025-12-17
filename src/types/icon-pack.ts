@@ -47,6 +47,11 @@ export interface PageRequestRecordDTO {
   metadata: PageMetadata
 }
 
+export interface PageAppInfoDTO {
+  items: AppInfoDTO[]
+  metadata: PageMetadata
+}
+
 export interface AppInfoWithRequestCount {
   appInfo: AppInfoDTO
   count: number

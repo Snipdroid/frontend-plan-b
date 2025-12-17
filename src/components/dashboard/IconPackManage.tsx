@@ -37,6 +37,7 @@ import {
   getIconPack,
   getIconPackVersions,
   getIconPackRequests,
+  getIconPackAdaptedApps,
   markAppsAsAdapted,
 } from "@/services/icon-pack"
 import { API_BASE_URL } from "@/services/api"
@@ -44,9 +45,10 @@ import { CreateVersionDialog } from "./CreateVersionDialog"
 import { CreateAccessTokenDialog } from "./CreateAccessTokenDialog"
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog"
 import { AppRequestsTable, type AppRequestsTableColumn } from "./AppRequestsTable"
-import type { IconPackDTO, IconPackVersionDTO, AppInfoWithRequestCount } from "@/types/icon-pack"
+import type { IconPackDTO, IconPackVersionDTO, AppInfoWithRequestCount, AppInfoDTO } from "@/types/icon-pack"
 
 const REQUESTS_PER_PAGE = 10
+const ADAPTED_PER_PAGE = 10
 
 export function IconPackManage() {
   const { packId } = useParams()
@@ -68,7 +70,14 @@ export function IconPackManage() {
   const [isLoadingRequests, setIsLoadingRequests] = useState(false)
   const [isMarking, setIsMarking] = useState(false)
 
+  // Adapted apps state
+  const [adaptedApps, setAdaptedApps] = useState<AppInfoDTO[]>([])
+  const [adaptedTotal, setAdaptedTotal] = useState(0)
+  const [adaptedPage, setAdaptedPage] = useState(1)
+  const [isLoadingAdapted, setIsLoadingAdapted] = useState(false)
+
   const requestsTotalPages = Math.ceil(requestsTotal / REQUESTS_PER_PAGE)
+  const adaptedTotalPages = Math.ceil(adaptedTotal / ADAPTED_PER_PAGE)
 
   const [createVersionOpen, setCreateVersionOpen] = useState(false)
   const [tokenDialogOpen, setTokenDialogOpen] = useState(false)
@@ -130,6 +139,38 @@ export function IconPackManage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [packId, auth.user?.access_token, requestsPage, includingAdapted])
 
+  // Fetch adapted apps
+  const fetchAdaptedApps = async () => {
+    if (!packId || !auth.user?.access_token) return
+
+    setIsLoadingAdapted(true)
+    try {
+      const response = await getIconPackAdaptedApps(
+        auth.user.access_token,
+        packId,
+        adaptedPage,
+        ADAPTED_PER_PAGE
+      )
+      setAdaptedApps(response.items)
+      setAdaptedTotal(response.metadata.total)
+    } catch (err) {
+      console.error(t("errors.loadAdaptedApps"), err)
+    } finally {
+      setIsLoadingAdapted(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchAdaptedApps()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [packId, auth.user?.access_token, adaptedPage])
+
+  const handleAdaptedPageChange = (page: number) => {
+    if (page >= 1 && page <= adaptedTotalPages) {
+      setAdaptedPage(page)
+    }
+  }
+
   const handleRequestsPageChange = (page: number) => {
     if (page >= 1 && page <= requestsTotalPages) {
       setRequestsPage(page)
@@ -147,7 +188,7 @@ export function IconPackManage() {
     setIsMarking(true)
     try {
       await markAppsAsAdapted(auth.user.access_token, packId, [appInfoId], adapted)
-      await fetchRequests()
+      await Promise.all([fetchRequests(), fetchAdaptedApps()])
     } catch (err) {
       console.error(t("errors.updateAdaptedStatus"), err)
     } finally {
@@ -186,6 +227,37 @@ export function IconPackManage() {
       }
 
       pages.push(requestsTotalPages)
+    }
+
+    return pages
+  }
+
+  const getVisibleAdaptedPages = () => {
+    const pages: (number | "ellipsis")[] = []
+
+    if (adaptedTotalPages <= 5) {
+      for (let i = 1; i <= adaptedTotalPages; i++) {
+        pages.push(i)
+      }
+    } else {
+      pages.push(1)
+
+      if (adaptedPage > 3) {
+        pages.push("ellipsis")
+      }
+
+      const start = Math.max(2, adaptedPage - 1)
+      const end = Math.min(adaptedTotalPages - 1, adaptedPage + 1)
+
+      for (let i = start; i <= end; i++) {
+        pages.push(i)
+      }
+
+      if (adaptedPage < adaptedTotalPages - 2) {
+        pages.push("ellipsis")
+      }
+
+      pages.push(adaptedTotalPages)
     }
 
     return pages
@@ -289,6 +361,44 @@ export function IconPackManage() {
       width: "w-[100px]",
       render: (item: AppInfoWithRequestCount) => item.count,
       showInMobile: true,
+    },
+  ]
+
+  const adaptedColumns: AppRequestsTableColumn[] = [
+    {
+      key: "appName",
+      header: t("iconPack.appName"),
+      width: "w-[15%]",
+      render: (item: AppInfoDTO) => (
+        <div className="truncate font-medium" title={item.defaultName ?? "-"}>
+          {item.defaultName ?? "-"}
+        </div>
+      ),
+      showInMobile: false,
+    },
+    {
+      key: "packageName",
+      header: t("iconPack.packageName"),
+      mobileLabel: t("iconPack.packageName"),
+      width: "w-[30%]",
+      className: "font-mono text-sm break-all",
+      render: (item: AppInfoDTO) => (
+        <div className="truncate" title={item.packageName ?? "-"}>
+          {item.packageName ?? "-"}
+        </div>
+      ),
+    },
+    {
+      key: "mainActivity",
+      header: t("iconPack.mainActivity"),
+      mobileLabel: t("iconPack.mainActivity"),
+      width: "w-[30%]",
+      className: "font-mono text-sm break-all",
+      render: (item: AppInfoDTO) => (
+        <div className="truncate" title={item.mainActivity ?? "-"}>
+          {item.mainActivity ?? "-"}
+        </div>
+      ),
     },
   ]
 
@@ -516,6 +626,82 @@ export function IconPackManage() {
             </div>
           ) : (
             <p className="text-muted-foreground">{t("iconPack.noRequests")}</p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("iconPack.adaptedApps")}</CardTitle>
+          <CardDescription>
+            {t("iconPack.adaptedAppsCount", { count: adaptedTotal })}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoadingAdapted ? (
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : adaptedApps.length > 0 ? (
+            <div className="space-y-4">
+              <AppRequestsTable
+                items={adaptedApps}
+                columns={adaptedColumns}
+                getIconUrl={(item: AppInfoDTO) => getIconUrl(item.packageName)}
+                getAppName={(item: AppInfoDTO) => item.defaultName ?? "-"}
+                renderActions={(item: AppInfoDTO) => (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => item.id && handleMarkAsAdapted(item.id, false)}
+                    disabled={isMarking || !item.id}
+                  >
+                    <Minus className="h-4 w-4 mr-1" />
+                    {t("common.remove")}
+                  </Button>
+                )}
+                getItemKey={(item: AppInfoDTO) => item.id ?? ""}
+              />
+              {adaptedTotalPages > 1 && (
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() => handleAdaptedPageChange(adaptedPage - 1)}
+                        className={adaptedPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                    {getVisibleAdaptedPages().map((page, index) =>
+                      page === "ellipsis" ? (
+                        <PaginationItem key={`ellipsis-${index}`}>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      ) : (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            onClick={() => handleAdaptedPageChange(page)}
+                            isActive={adaptedPage === page}
+                            className="cursor-pointer"
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      )
+                    )}
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() => handleAdaptedPageChange(adaptedPage + 1)}
+                        className={adaptedPage === adaptedTotalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">{t("iconPack.noAdaptedApps")}</p>
           )}
         </CardContent>
       </Card>

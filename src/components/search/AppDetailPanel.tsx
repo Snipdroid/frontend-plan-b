@@ -139,7 +139,7 @@ export function AppDetailPanel({ app, onClose }: AppDetailPanelProps) {
                   ))}
                   <Badge
                     variant="outline"
-                    className="cursor-pointer hover:bg-accent"
+                    className="h-[22px] cursor-pointer hover:bg-accent"
                     onClick={() => {
                       if (!auth.isAuthenticated) {
                         auth.signinRedirect()

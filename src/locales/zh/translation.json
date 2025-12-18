@@ -119,7 +119,9 @@
     "filesFound_other": "发现 {{count}} 个应用",
     "noEntriesParsed": "尚未解析应用条目。请上传包含 appfilter.xml 的 ZIP 文件。",
     "drawable": "资源名",
-    "source": "来源"
+    "source": "来源",
+    "uploadIcons": "上传图标",
+    "uploadIconsDesc": "在上传时包含应用图标。如果您只需要提交应用元数据，可以禁用此选项。"
   },
   "dashboard": {
     "title": "控制面板",

@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Progress } from "@/components/ui/progress"
 import { FileDropZone } from "@/components/upload/FileDropZone"
 import { AppPreviewList } from "@/components/upload/AppPreviewList"
@@ -70,6 +71,9 @@ export function UploadPage() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitSuccess, setSubmitSuccess] = useState(false)
   const [uploadedCount, setUploadedCount] = useState(0)
+
+  // Upload icons checkbox
+  const [uploadIcons, setUploadIcons] = useState(true)
 
   // Icon pack selection (for authenticated users)
   const [iconPacks, setIconPacks] = useState<IconPackDTO[]>([])
@@ -199,7 +203,7 @@ export function UploadPage() {
 
       const batches = chunkArray(appInfoRequests, BATCH_SIZE)
       const entriesWithIcons = entries.filter((entry) => entry.iconBlob)
-      const totalSteps = batches.length + entriesWithIcons.length
+      const totalSteps = batches.length + (uploadIcons ? entriesWithIcons.length : 0)
 
       setUploadProgress({ current: 0, total: totalSteps })
 
@@ -209,18 +213,20 @@ export function UploadPage() {
         setUploadProgress({ current: i + 1, total: totalSteps })
       }
 
-      // Step 3: Upload icons
-      for (let i = 0; i < entriesWithIcons.length; i++) {
-        const entry = entriesWithIcons[i]
-        setUploadProgress({ current: batches.length + i + 1, total: totalSteps })
-        setUploadStatus(`Uploading icon ${i + 1} of ${entriesWithIcons.length}...`)
+      // Step 3: Upload icons (only if checkbox is checked)
+      if (uploadIcons) {
+        for (let i = 0; i < entriesWithIcons.length; i++) {
+          const entry = entriesWithIcons[i]
+          setUploadProgress({ current: batches.length + i + 1, total: totalSteps })
+          setUploadStatus(`Uploading icon ${i + 1} of ${entriesWithIcons.length}...`)
 
-        try {
-          const { uploadURL } = await getIconUploadUrl(entry.packageName)
-          await uploadIconToS3(uploadURL, entry.iconBlob!)
-        } catch (err) {
-          console.error(`Failed to upload icon for ${entry.packageName}:`, err)
-          // Continue with other icons even if one fails
+          try {
+            const { uploadURL } = await getIconUploadUrl(entry.packageName)
+            await uploadIconToS3(uploadURL, entry.iconBlob!)
+          } catch (err) {
+            console.error(`Failed to upload icon for ${entry.packageName}:`, err)
+            // Continue with other icons even if one fails
+          }
         }
       }
 
@@ -235,7 +241,7 @@ export function UploadPage() {
     } finally {
       setIsSubmitting(false)
     }
-  }, [entries, selectedPackId, selectedVersionId, auth.user?.access_token])
+  }, [entries, selectedPackId, selectedVersionId, auth.user?.access_token, uploadIcons])
 
   // Cleanup object URLs on unmount
   useEffect(() => {
@@ -291,6 +297,31 @@ export function UploadPage() {
               onRemoveFile={handleRemoveFile}
               onClearAll={handleClearAll}
             />
+
+            {files.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("upload.uploadIcons")}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Label className="hover:bg-accent/50 flex items-start gap-3 rounded-lg border p-3 cursor-pointer has-[[aria-checked=true]]:border-primary has-[[aria-checked=true]]:bg-accent">
+                    <Checkbox
+                      id="upload-icons-mobile"
+                      checked={uploadIcons}
+                      onCheckedChange={(checked) => setUploadIcons(checked as boolean)}
+                    />
+                    <div className="grid gap-1.5 font-normal">
+                      <p className="text-sm leading-none font-medium">
+                        {t("upload.uploadIcons")}
+                      </p>
+                      <p className="text-muted-foreground text-sm">
+                        {t("upload.uploadIconsDesc")}
+                      </p>
+                    </div>
+                  </Label>
+                </CardContent>
+              </Card>
+            )}
 
             {isAuthenticated && (
               <Card>
@@ -502,6 +533,8 @@ export function UploadPage() {
                   submitSuccess={submitSuccess}
                   submitError={submitError}
                   uploadedCount={uploadedCount}
+                  uploadIcons={uploadIcons}
+                  onUploadIconsChange={setUploadIcons}
                 />
               </div>
             </div>

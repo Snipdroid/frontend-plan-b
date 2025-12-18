@@ -119,7 +119,9 @@
     "filesFound_other": "{{count}} apps found",
     "noEntriesParsed": "No app entries parsed yet. Upload ZIP files containing appfilter.xml.",
     "drawable": "Drawable",
-    "source": "Source"
+    "source": "Source",
+    "uploadIcons": "Upload icons",
+    "uploadIconsDesc": "Include app icons in the upload. Disable this if you only need to submit app metadata."
   },
   "dashboard": {
     "title": "Dashboard",

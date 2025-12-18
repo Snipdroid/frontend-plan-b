@@ -6,6 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Select,
   SelectContent,
@@ -52,6 +53,8 @@ interface UploadSidebarProps {
   submitSuccess: boolean
   submitError: string | null
   uploadedCount: number
+  uploadIcons: boolean
+  onUploadIconsChange: (checked: boolean) => void
 }
 
 export function UploadSidebar({
@@ -65,6 +68,8 @@ export function UploadSidebar({
   submitSuccess,
   submitError,
   uploadedCount,
+  uploadIcons,
+  onUploadIconsChange,
 }: UploadSidebarProps) {
   const { t } = useTranslation()
   const progressPercent =
@@ -82,6 +87,30 @@ export function UploadSidebar({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Upload Icons Checkbox */}
+        {fileList.files.length > 0 && (
+          <>
+            <div>
+              <Label className="hover:bg-accent/50 flex items-start gap-3 rounded-lg border p-3 cursor-pointer has-[[aria-checked=true]]:border-primary has-[[aria-checked=true]]:bg-accent">
+                <Checkbox
+                  id="upload-icons-desktop"
+                  checked={uploadIcons}
+                  onCheckedChange={(checked) => onUploadIconsChange(checked as boolean)}
+                />
+                <div className="grid gap-1.5 font-normal">
+                  <p className="text-sm leading-none font-medium">
+                    {t("upload.uploadIcons")}
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    {t("upload.uploadIconsDesc")}
+                  </p>
+                </div>
+              </Label>
+            </div>
+            <Separator />
+          </>
+        )}
+
         {/* Files Section */}
         <FileList
           files={fileList.files}

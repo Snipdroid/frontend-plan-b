@@ -215,6 +215,7 @@
     "package": "Package",
     "activity": "Activity",
     "count": "请求次数",
+    "tags": "标签",
     "localizedNames": "本地化名称"
   },
   "errors": {

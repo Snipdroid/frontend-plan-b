@@ -4,10 +4,18 @@ export interface LocalizedName {
 }
 
 export interface AppInfo {
+  id: string
   packageName: string
   mainActivity: string
   localizedNames: LocalizedName[]
   count?: number
+}
+
+export interface Tag {
+  id: string | null
+  name: string
+  description: string | null
+  createdAt: string | null
 }
 
 export interface PageMetadata {

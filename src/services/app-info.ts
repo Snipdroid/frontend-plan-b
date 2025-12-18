@@ -4,6 +4,7 @@ import type {
   AppInfoCreateSingleRequest,
   AppInfoDTO,
   AppIconGenerateUploadURLResponse,
+  Tag,
 } from "@/types/app-info"
 import { API_BASE_URL, fetchJson } from "./api"
 
@@ -76,4 +77,11 @@ export async function uploadIconToS3(
   if (!response.ok) {
     throw new Error(`S3 Upload Error: ${response.status} ${response.statusText}`)
   }
+}
+
+export async function getTagsForApp(
+  appInfoId: string,
+  signal?: AbortSignal
+): Promise<Tag[]> {
+  return fetchJson<Tag[]>(`/app-info/${appInfoId}/tags`, { signal })
 }

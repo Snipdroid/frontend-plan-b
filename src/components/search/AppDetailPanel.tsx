@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react"
-import { X } from "lucide-react"
+import { X, Plus } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { useAuth } from "react-oidc-context"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
   TooltipContent,
@@ -13,6 +15,7 @@ import { useLocalizedName } from "@/hooks"
 import { API_BASE_URL } from "@/services/api"
 import { getTagsForApp } from "@/services/app-info"
 import { LocalizedNamesList } from "./LocalizedNamesList"
+import { AddTagDialog } from "./AddTagDialog"
 import type { AppInfo, Tag } from "@/types"
 
 function getAppIconUrl(packageName: string): string {
@@ -27,9 +30,12 @@ interface AppDetailPanelProps {
 
 export function AppDetailPanel({ app, onClose }: AppDetailPanelProps) {
   const { t } = useTranslation()
+  const auth = useAuth()
   const displayName = useLocalizedName(app?.localizedNames ?? [])
   const [iconError, setIconError] = useState(false)
   const [tags, setTags] = useState<Tag[]>([])
+  const [isLoadingTags, setIsLoadingTags] = useState(false)
+  const [isAddTagDialogOpen, setIsAddTagDialogOpen] = useState(false)
 
   // Reset icon error when app changes
   useEffect(() => {
@@ -43,6 +49,7 @@ export function AppDetailPanel({ app, onClose }: AppDetailPanelProps) {
       return
     }
 
+    setIsLoadingTags(true)
     const controller = new AbortController()
     getTagsForApp(app.id, controller.signal)
       .then(setTags)
@@ -52,6 +59,7 @@ export function AppDetailPanel({ app, onClose }: AppDetailPanelProps) {
           setTags([])
         }
       })
+      .finally(() => setIsLoadingTags(false))
 
     return () => controller.abort()
   }, [app?.id])
@@ -106,9 +114,15 @@ export function AppDetailPanel({ app, onClose }: AppDetailPanelProps) {
               <div className="tabular-nums">{app.count}</div>
             </div>
           )}
-          {tags.length > 0 && (
-            <div>
-              <div className="text-muted-foreground mb-1">{t("appDetail.tags")}</div>
+          <div>
+            <div className="text-muted-foreground mb-1">{t("appDetail.tags")}</div>
+            {isLoadingTags ? (
+              <div className="flex flex-wrap gap-1">
+                <Skeleton className="h-6 w-16 rounded-full" />
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-6 w-14 rounded-full" />
+              </div>
+            ) : (
               <div className="flex flex-wrap gap-1">
                 <TooltipProvider>
                   {tags.map((tag) => (
@@ -123,10 +137,23 @@ export function AppDetailPanel({ app, onClose }: AppDetailPanelProps) {
                       )}
                     </Tooltip>
                   ))}
+                  <Badge
+                    variant="outline"
+                    className="cursor-pointer hover:bg-accent"
+                    onClick={() => {
+                      if (!auth.isAuthenticated) {
+                        auth.signinRedirect()
+                        return
+                      }
+                      setIsAddTagDialogOpen(true)
+                    }}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Badge>
                 </TooltipProvider>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <div className="border-t pt-4">
@@ -134,6 +161,14 @@ export function AppDetailPanel({ app, onClose }: AppDetailPanelProps) {
           <LocalizedNamesList localizedNames={app.localizedNames} />
         </div>
       </div>
+
+      <AddTagDialog
+        app={app}
+        currentTags={tags}
+        open={isAddTagDialogOpen}
+        onOpenChange={setIsAddTagDialogOpen}
+        onTagAdded={(newTags) => setTags(newTags)}
+      />
     </div>
   )
 }

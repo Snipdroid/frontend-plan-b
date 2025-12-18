@@ -208,6 +208,12 @@
     "confirmDelete": {
       "typeToConfirm": "Type {{text}} to confirm:",
       "deleting": "Deleting..."
+    },
+    "addTag": {
+      "title": "Add Tag",
+      "description": "Select an existing tag to add to this app.",
+      "selectTag": "Select a tag",
+      "noAvailableTags": "All available tags have been added to this app."
     }
   },
   "appDetail": {

@@ -85,3 +85,55 @@ export async function getTagsForApp(
 ): Promise<Tag[]> {
   return fetchJson<Tag[]>(`/app-info/${appInfoId}/tags`, { signal })
 }
+
+export async function getAllTags(signal?: AbortSignal): Promise<Tag[]> {
+  return fetchJson<Tag[]>("/tags", { signal })
+}
+
+export async function addTagToApp(
+  appInfoId: string,
+  tagId: string,
+  accessToken: string
+): Promise<AppInfoDTO> {
+  const response = await fetch(`${API_BASE_URL}/app-info/${appInfoId}/tag`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      tagID: tagId,
+      remove: false,
+    }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to add tag: ${response.status} ${response.statusText}`)
+  }
+
+  return response.json()
+}
+
+export async function removeTagFromApp(
+  appInfoId: string,
+  tagId: string,
+  accessToken: string
+): Promise<AppInfoDTO> {
+  const response = await fetch(`${API_BASE_URL}/app-info/${appInfoId}/tag`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      tagID: tagId,
+      remove: true,
+    }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to remove tag: ${response.status} ${response.statusText}`)
+  }
+
+  return response.json()
+}

@@ -208,6 +208,12 @@
     "confirmDelete": {
       "typeToConfirm": "输入 {{text}} 以确认：",
       "deleting": "删除中..."
+    },
+    "addTag": {
+      "title": "添加标签",
+      "description": "选择一个现有标签添加到此应用。",
+      "selectTag": "选择标签",
+      "noAvailableTags": "所有可用标签已添加到此应用。"
     }
   },
   "appDetail": {

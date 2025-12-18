@@ -213,6 +213,8 @@
       "title": "添加标签",
       "description": "选择一个现有标签添加到此应用。",
       "selectTag": "选择标签",
+      "searchTag": "搜索标签...",
+      "noTagFound": "未找到标签。",
       "noAvailableTags": "所有可用标签已添加到此应用。"
     }
   },

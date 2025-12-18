@@ -213,6 +213,8 @@
       "title": "Add Tag",
       "description": "Select an existing tag to add to this app.",
       "selectTag": "Select a tag",
+      "searchTag": "Search tags...",
+      "noTagFound": "No tag found.",
       "noAvailableTags": "All available tags have been added to this app."
     }
   },

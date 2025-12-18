@@ -118,9 +118,9 @@ export function AppDetailPanel({ app, onClose }: AppDetailPanelProps) {
             <div className="text-muted-foreground mb-1">{t("appDetail.tags")}</div>
             {isLoadingTags ? (
               <div className="flex flex-wrap gap-1">
-                <Skeleton className="h-6 w-16 rounded-full" />
-                <Skeleton className="h-6 w-20 rounded-full" />
-                <Skeleton className="h-6 w-14 rounded-full" />
+                <Skeleton className="h-[22px] w-16 rounded-full" />
+                <Skeleton className="h-[22px] w-20 rounded-full" />
+                <Skeleton className="h-[22px] w-14 rounded-full" />
               </div>
             ) : (
               <div className="flex flex-wrap gap-1">

@@ -68,6 +68,13 @@
     "copied": "Copied to clipboard",
     "copyFailed": "Failed to copy to clipboard"
   },
+  "actions": {
+    "copyAppfilter": "Copy Appfilter",
+    "copyDrawable": "Copy Drawable",
+    "customCopy": "Custom Copy",
+    "addToAdapted": "Add to Adapted",
+    "removeFromAdapted": "Remove from Adapted"
+  },
   "customTemplate": {
     "title": "Custom Template",
     "description": "Write a <link>Leaf template</link> to render your selected apps. Use <code>#for(app in apps):</code> to iterate.",

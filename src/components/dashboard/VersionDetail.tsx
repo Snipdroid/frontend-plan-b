@@ -2,7 +2,6 @@ import { useState, useEffect } from "react"
 import { useParams } from "react-router"
 import { useAuth } from "react-oidc-context"
 import { useTranslation } from "react-i18next"
-import { Plus, Minus } from "lucide-react"
 import {
   Card,
   CardContent,
@@ -21,11 +20,11 @@ import {
   PaginationEllipsis,
 } from "@/components/ui/pagination"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { getVersionRequests, markAppsAsAdapted } from "@/services/icon-pack"
 import { API_BASE_URL } from "@/services/api"
 import { AppRequestsTable, type AppRequestsTableColumn } from "./AppRequestsTable"
+import { AppActionDropdown } from "./AppActionDropdown"
 import type { IconPackVersionRequestRecordResponse } from "@/types/icon-pack"
 
 const PER_PAGE = 10
@@ -237,36 +236,18 @@ export function VersionDetail() {
                 isSystemApp={(item: IconPackVersionRequestRecordResponse) =>
                   item.requestRecord.isSystemApp ?? false
                 }
-                renderActions={(item: IconPackVersionRequestRecordResponse) => {
-                  const isAdapted = !!item.iconPackApp
-                  return isAdapted ? (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() =>
-                        item.requestRecord.appInfo?.id &&
-                        handleToggleAdapted(item.requestRecord.appInfo.id, false)
-                      }
-                      disabled={isMarking || !item.requestRecord.appInfo?.id}
-                    >
-                      <Minus className="h-4 w-4 mr-1" />
-                      {t("common.remove")}
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        item.requestRecord.appInfo?.id &&
-                        handleToggleAdapted(item.requestRecord.appInfo.id, true)
-                      }
-                      disabled={isMarking || !item.requestRecord.appInfo?.id}
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      {t("common.add")}
-                    </Button>
-                  )
-                }}
+                renderActions={(item: IconPackVersionRequestRecordResponse) => (
+                  <AppActionDropdown
+                    item={item}
+                    isAdapted={!!item.iconPackApp}
+                    isMarking={isMarking}
+                    onToggleAdapted={(adapted) =>
+                      item.requestRecord.appInfo?.id &&
+                      handleToggleAdapted(item.requestRecord.appInfo.id, adapted)
+                    }
+                    disabled={!item.requestRecord.appInfo?.id}
+                  />
+                )}
                 getItemKey={(item: IconPackVersionRequestRecordResponse) =>
                   item.requestRecord.id ?? ""
                 }

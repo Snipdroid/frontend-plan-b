@@ -2,7 +2,6 @@ import { useState, useEffect } from "react"
 import { useParams, useNavigate, Link } from "react-router"
 import { useAuth } from "react-oidc-context"
 import { useTranslation } from "react-i18next"
-import { Plus, Minus } from "lucide-react"
 import {
   Card,
   CardContent,
@@ -45,6 +44,7 @@ import { CreateVersionDialog } from "./CreateVersionDialog"
 import { CreateAccessTokenDialog } from "./CreateAccessTokenDialog"
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog"
 import { AppRequestsTable, type AppRequestsTableColumn } from "./AppRequestsTable"
+import { AppActionDropdown } from "./AppActionDropdown"
 import type { IconPackDTO, IconPackVersionDTO, AppInfoWithRequestCount, AppInfoDTO } from "@/types/icon-pack"
 
 const REQUESTS_PER_PAGE = 10
@@ -554,36 +554,17 @@ export function IconPackManage() {
                 getAppName={(item: AppInfoWithRequestCount) =>
                   item.appInfo?.defaultName ?? "-"
                 }
-                renderActions={(item: AppInfoWithRequestCount) => {
-                  const isAdapted = !!item.iconPackApp
-                  return isAdapted ? (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() =>
-                        item.appInfo?.id &&
-                        handleMarkAsAdapted(item.appInfo.id, false)
-                      }
-                      disabled={isMarking || !item.appInfo?.id}
-                    >
-                      <Minus className="h-4 w-4 mr-1" />
-                      {t("common.remove")}
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        item.appInfo?.id &&
-                        handleMarkAsAdapted(item.appInfo.id, true)
-                      }
-                      disabled={isMarking || !item.appInfo?.id}
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      {t("common.add")}
-                    </Button>
-                  )
-                }}
+                renderActions={(item: AppInfoWithRequestCount) => (
+                  <AppActionDropdown
+                    item={item}
+                    isAdapted={!!item.iconPackApp}
+                    isMarking={isMarking}
+                    onToggleAdapted={(adapted) =>
+                      item.appInfo?.id && handleMarkAsAdapted(item.appInfo.id, adapted)
+                    }
+                    disabled={!item.appInfo?.id}
+                  />
+                )}
                 getItemKey={(item: AppInfoWithRequestCount) =>
                   item.appInfo?.id ?? ""
                 }
@@ -652,15 +633,15 @@ export function IconPackManage() {
                 getIconUrl={(item: AppInfoDTO) => getIconUrl(item.packageName)}
                 getAppName={(item: AppInfoDTO) => item.defaultName ?? "-"}
                 renderActions={(item: AppInfoDTO) => (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => item.id && handleMarkAsAdapted(item.id, false)}
-                    disabled={isMarking || !item.id}
-                  >
-                    <Minus className="h-4 w-4 mr-1" />
-                    {t("common.remove")}
-                  </Button>
+                  <AppActionDropdown
+                    item={item}
+                    isAdapted={true}
+                    isMarking={isMarking}
+                    onToggleAdapted={(adapted) =>
+                      item.id && handleMarkAsAdapted(item.id, adapted)
+                    }
+                    disabled={!item.id}
+                  />
                 )}
                 getItemKey={(item: AppInfoDTO) => item.id ?? ""}
               />

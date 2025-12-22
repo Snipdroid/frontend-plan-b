@@ -19,7 +19,7 @@ import {
 import { parseAppFilterXml } from "@/lib/appfilter-parser"
 import { getIconPackAdaptedApps, markAppsAsAdapted } from "@/services/icon-pack"
 import { createAppInfo, searchAppInfo } from "@/services/app-info"
-import type { AppInfoDTO, AppInfoCreateSingleRequest } from "@/types/app-info"
+import type { AppInfo, AppInfoDTO, AppInfoCreateSingleRequest } from "@/types/app-info"
 import { ChevronDown, ChevronUp, Upload } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { AppFilterPreviewDialog, type ParsedApp } from "./AppFilterPreviewDialog"
@@ -196,11 +196,11 @@ export function ImportAppFilterDialog({
   const searchForExistingApps = async (
     entries: ReturnType<typeof parseAppFilterXml>
   ): Promise<{
-    existing: Map<string, AppInfoDTO>
+    existing: Map<string, AppInfo>
     failures: FailedApp[]
   }> => {
     const SEARCH_CONCURRENCY = 10
-    const existingMap = new Map<string, AppInfoDTO>()
+    const existingMap = new Map<string, AppInfo>()
     const searchFailures: FailedApp[] = []
 
     for (let i = 0; i < entries.length; i += SEARCH_CONCURRENCY) {
@@ -379,7 +379,7 @@ export function ImportAppFilterDialog({
       setFoundCount(existingAppsMap.size)
 
       // Separate existing apps from apps that need creation
-      const existingApps: AppInfoDTO[] = []
+      const existingApps: AppInfo[] = []
       const missingApps = validApps.filter((app) => {
         const key = `${app.packageName}|${app.mainActivity}`
         const existing = existingAppsMap.get(key)
@@ -450,7 +450,7 @@ export function ImportAppFilterDialog({
       setCreationFailures(creationFails)
 
       // Combine existing and created apps for marking
-      const allApps = [...existingApps, ...createdApps]
+      const allApps: (AppInfo | AppInfoDTO)[] = [...existingApps, ...createdApps]
 
       if (allApps.length === 0) {
         // All searches and creations failed
@@ -462,7 +462,7 @@ export function ImportAppFilterDialog({
       // Stage 5: Mark as adapted in batches
       setStage("marking")
       const markBatchSize = 25
-      const batches: AppInfoDTO[][] = []
+      const batches: (AppInfo | AppInfoDTO)[][] = []
       for (let i = 0; i < allApps.length; i += markBatchSize) {
         batches.push(allApps.slice(i, i + markBatchSize))
       }

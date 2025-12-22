@@ -125,19 +125,6 @@ export function AppFilterPreviewDialog({
     }
   }
 
-  const getStatusBadge = (status: ParsedApp["status"]) => {
-    switch (status) {
-      case "valid":
-        return <Badge variant="outline" className="border-green-600 text-green-600 text-xs">Valid</Badge>
-      case "invalid-drawable":
-        return <Badge variant="destructive" className="text-xs">Invalid</Badge>
-      case "duplicate":
-        return <Badge variant="outline" className="border-yellow-600 text-yellow-600 text-xs">Duplicate</Badge>
-      case "already-adapted":
-        return <Badge variant="secondary" className="text-xs">Skipped</Badge>
-    }
-  }
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[95vw] h-[85vh] flex flex-col p-0">

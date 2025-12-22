@@ -154,35 +154,36 @@ export function DashboardSidebar() {
                       <SidebarMenuSkeleton showIcon />
                       <SidebarMenuSkeleton showIcon />
                     </>
-                  ) : iconPacks.length === 0 ? (
-                    <SidebarMenuItem>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full justify-start text-muted-foreground"
-                        onClick={() => setShowCreateDialog(true)}
-                      >
-                        <Plus className="mr-2 h-4 w-4" />
-                        {t("dashboard.createIconPack")}
-                      </Button>
-                    </SidebarMenuItem>
                   ) : (
-                    iconPacks.map((pack) => (
-                      <SidebarMenuItem key={pack.id}>
-                        <SidebarMenuButton
-                          asChild
-                          isActive={isActive(`/dashboard/icon-pack/${pack.id}`)}
-                        >
-                          <Link
-                            to={`/dashboard/icon-pack/${pack.id}`}
-                            state={{ iconPackName: pack.name }}
+                    <>
+                      {iconPacks.map((pack) => (
+                        <SidebarMenuItem key={pack.id}>
+                          <SidebarMenuButton
+                            asChild
+                            isActive={isActive(`/dashboard/icon-pack/${pack.id}`)}
                           >
-                            <Package />
-                            <span>{pack.name}</span>
-                          </Link>
-                        </SidebarMenuButton>
+                            <Link
+                              to={`/dashboard/icon-pack/${pack.id}`}
+                              state={{ iconPackName: pack.name }}
+                            >
+                              <Package />
+                              <span>{pack.name}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                      <SidebarMenuItem>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-start text-muted-foreground"
+                          onClick={() => setShowCreateDialog(true)}
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          {t("dashboard.createIconPack")}
+                        </Button>
                       </SidebarMenuItem>
-                    ))
+                    </>
                   )}
                 </SidebarMenu>
               </SidebarGroupContent>

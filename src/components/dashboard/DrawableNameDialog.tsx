@@ -135,10 +135,14 @@ export function DrawableNameDialog({
 
         // Pre-fill with first suggestion or auto-generated name
         if (sorted.length > 0) {
-          setInputValue(sorted[0].drawable)
+          const prefillValue = sorted[0].drawable
+          setInputValue(prefillValue)
+          setValidationError(validateDrawableName(prefillValue))
           setMode("suggestions") // Default to suggestions when available
         } else {
-          setInputValue(toDrawableName(app.defaultName))
+          const generatedValue = toDrawableName(app.defaultName)
+          setInputValue(generatedValue)
+          setValidationError(validateDrawableName(generatedValue))
         }
       })
       .catch((err) => {
@@ -146,7 +150,9 @@ export function DrawableNameDialog({
           console.error("Failed to fetch suggestions:", err)
           setSuggestions([])
           // Fallback to auto-generated name
-          setInputValue(toDrawableName(app.defaultName))
+          const generatedValue = toDrawableName(app.defaultName)
+          setInputValue(generatedValue)
+          setValidationError(validateDrawableName(generatedValue))
         }
       })
       .finally(() => setIsLoadingSuggestions(false))

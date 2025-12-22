@@ -18,24 +18,28 @@ import {
 } from "@/components/ui/collapsible"
 import { parseAppFilterXml } from "@/lib/appfilter-parser"
 import { getIconPackAdaptedApps, markAppsAsAdapted } from "@/services/icon-pack"
-import { createAppInfo } from "@/services/app-info"
+import { createAppInfo, searchAppInfo } from "@/services/app-info"
 import type { AppInfoDTO, AppInfoCreateSingleRequest } from "@/types/app-info"
 import { ChevronDown, ChevronUp, Upload } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { AppFilterPreviewDialog, type ParsedApp } from "./AppFilterPreviewDialog"
 
 type ImportStage =
   | "idle"
   | "parsing"
+  | "preview"
   | "fetching"
+  | "searching"
   | "creating"
   | "marking"
   | "complete"
   | "error"
 
-interface SkippedApp {
+interface FailedApp {
   packageName: string
   mainActivity: string
   drawableName: string
+  error: string
 }
 
 interface ImportAppFilterDialogProps {
@@ -58,8 +62,13 @@ export function ImportAppFilterDialog({
   const [file, setFile] = useState<File | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [successCount, setSuccessCount] = useState(0)
-  const [skipped, setSkipped] = useState<SkippedApp[]>([])
-  const [isSkippedOpen, setIsSkippedOpen] = useState(false)
+  const [parsedApps, setParsedApps] = useState<ParsedApp[]>([])
+  const [searchFailures, setSearchFailures] = useState<FailedApp[]>([])
+  const [creationFailures, setCreationFailures] = useState<FailedApp[]>([])
+  const [foundCount, setFoundCount] = useState(0)
+  const [searchProgress, setSearchProgress] = useState({ current: 0, total: 0 })
+  const [isSearchFailedOpen, setIsSearchFailedOpen] = useState(false)
+  const [isCreationFailedOpen, setIsCreationFailedOpen] = useState(false)
   const [currentBatch, setCurrentBatch] = useState(0)
   const [totalBatches, setTotalBatches] = useState(0)
   const [isDragOver, setIsDragOver] = useState(false)
@@ -70,8 +79,13 @@ export function ImportAppFilterDialog({
     setFile(null)
     setError(null)
     setSuccessCount(0)
-    setSkipped([])
-    setIsSkippedOpen(false)
+    setParsedApps([])
+    setSearchFailures([])
+    setCreationFailures([])
+    setFoundCount(0)
+    setSearchProgress({ current: 0, total: 0 })
+    setIsSearchFailedOpen(false)
+    setIsCreationFailedOpen(false)
     setCurrentBatch(0)
     setTotalBatches(0)
   }
@@ -161,6 +175,91 @@ export function ImportAppFilterDialog({
     return adaptedSet
   }
 
+  const validateDrawableName = (name: string): string | null => {
+    if (!name || name.length === 0) {
+      return "Drawable name cannot be empty"
+    }
+
+    // Must start with a letter
+    if (!/^[a-z]/.test(name)) {
+      return "Must start with a lowercase letter"
+    }
+
+    // Can only contain lowercase letters, numbers, and underscores
+    if (!/^[a-z][a-z0-9_]*$/.test(name)) {
+      return "Can only contain lowercase letters, numbers, and underscores"
+    }
+
+    return null
+  }
+
+  const searchForExistingApps = async (
+    entries: ReturnType<typeof parseAppFilterXml>
+  ): Promise<{
+    existing: Map<string, AppInfoDTO>
+    failures: FailedApp[]
+  }> => {
+    const SEARCH_CONCURRENCY = 10
+    const existingMap = new Map<string, AppInfoDTO>()
+    const searchFailures: FailedApp[] = []
+
+    for (let i = 0; i < entries.length; i += SEARCH_CONCURRENCY) {
+      const batch = entries.slice(i, i + SEARCH_CONCURRENCY)
+
+      const batchResults = await Promise.all(
+        batch.map(async (entry) => {
+          try {
+            const result = await searchAppInfo({
+              byPackageName: entry.packageName,
+              byMainActivity: entry.mainActivity,
+              sortBy: "count",
+              page: 1,
+              per: 10,
+            })
+
+            // Find exact match (ILIKE returns partial matches)
+            const exactMatch = result.items.find(
+              (app) =>
+                app.packageName === entry.packageName &&
+                app.mainActivity === entry.mainActivity
+            )
+
+            return { entry, app: exactMatch || null, error: null }
+          } catch (error) {
+            console.warn("Search failed for", entry.packageName, error)
+            return {
+              entry,
+              app: null,
+              error: error instanceof Error ? error.message : "Search failed",
+            }
+          }
+        })
+      )
+
+      batchResults.forEach(({ entry, app, error }) => {
+        const key = `${entry.packageName}|${entry.mainActivity}`
+        if (app) {
+          existingMap.set(key, app)
+        } else if (error) {
+          searchFailures.push({
+            packageName: entry.packageName,
+            mainActivity: entry.mainActivity,
+            drawableName: entry.drawableName,
+            error,
+          })
+        }
+      })
+
+      // Update progress
+      setSearchProgress({
+        current: Math.min(i + SEARCH_CONCURRENCY, entries.length),
+        total: entries.length,
+      })
+    }
+
+    return { existing: existingMap, failures: searchFailures }
+  }
+
   const processImport = async (file: File) => {
     try {
       // Stage 1: Parse XML
@@ -174,71 +273,198 @@ export function ImportAppFilterDialog({
         return
       }
 
-      // Stage 2: Fetch all adapted apps
+      // Stage 2: Fetch already-adapted apps
       setStage("fetching")
       const adaptedSet = await fetchAllAdaptedApps()
 
-      // Filter entries: separate already adapted from to-process
-      const toProcess: typeof entries = []
-      const skippedList: SkippedApp[] = []
+      // Stage 3: Validate and categorize all apps
+      const entryMap = new Map<string, { drawableNames: string[]; entries: typeof entries }>()
 
+      // Group by (packageName, mainActivity)
       for (const entry of entries) {
         const key = `${entry.packageName}|${entry.mainActivity}`
-        if (adaptedSet.has(key)) {
-          skippedList.push({
-            packageName: entry.packageName,
-            mainActivity: entry.mainActivity,
-            drawableName: entry.drawableName,
-          })
-        } else {
-          toProcess.push(entry)
+        if (!entryMap.has(key)) {
+          entryMap.set(key, { drawableNames: [], entries: [] })
         }
+        const group = entryMap.get(key)!
+        group.drawableNames.push(entry.drawableName)
+        group.entries.push(entry)
       }
 
-      setSkipped(skippedList)
+      // Build parsed apps array with status
+      const parsed: ParsedApp[] = []
+      for (const [key, group] of entryMap.entries()) {
+        const [packageName, mainActivity] = key.split("|")
+        const firstEntry = group.entries[0]
 
-      if (toProcess.length === 0) {
-        // All apps already adapted
-        setSuccessCount(0)
-        setStage("complete")
-        toast.success(t("iconPack.importSuccess", { count: 0 }))
+        // Check if already adapted
+        if (adaptedSet.has(key)) {
+          parsed.push({
+            packageName,
+            mainActivity,
+            drawableName: firstEntry.drawableName,
+            status: "already-adapted",
+          })
+          continue
+        }
+
+        // Check for duplicate with different drawable names
+        const uniqueDrawableNames = [...new Set(group.drawableNames)]
+        if (uniqueDrawableNames.length > 1) {
+          parsed.push({
+            packageName,
+            mainActivity,
+            drawableName: firstEntry.drawableName,
+            status: "duplicate",
+            duplicateDrawables: uniqueDrawableNames,
+            reason: t("iconPack.previewStatusDuplicate"),
+          })
+          continue
+        }
+
+        // Validate drawable name
+        const validationError = validateDrawableName(firstEntry.drawableName)
+        if (validationError) {
+          parsed.push({
+            packageName,
+            mainActivity,
+            drawableName: firstEntry.drawableName,
+            status: "invalid-drawable",
+            reason: validationError,
+          })
+          continue
+        }
+
+        // Valid app
+        parsed.push({
+          packageName,
+          mainActivity,
+          drawableName: firstEntry.drawableName,
+          status: "valid",
+        })
+      }
+
+      setParsedApps(parsed)
+      setStage("preview")
+    } catch (err) {
+      console.error("Import error:", err)
+      setError(
+        err instanceof Error
+          ? err.message
+          : t("errors.importAppFilter")
+      )
+      setStage("error")
+      toast.error(t("errors.importAppFilter"))
+    }
+  }
+
+  const handlePreviewConfirm = async () => {
+    try {
+      // Get only valid apps to import
+      const validApps = parsedApps.filter((app) => app.status === "valid")
+
+      if (validApps.length === 0) {
+        toast.info(t("iconPack.importNoValidApps"))
+        handleClose()
         return
       }
 
-      // Stage 3: Create/get app info in batches
+      // Stage 3: Search for existing apps
+      setStage("searching")
+      setSearchProgress({ current: 0, total: validApps.length })
+      const { existing: existingAppsMap, failures: searchFails } =
+        await searchForExistingApps(validApps)
+
+      setSearchFailures(searchFails)
+      setFoundCount(existingAppsMap.size)
+
+      // Separate existing apps from apps that need creation
+      const existingApps: AppInfoDTO[] = []
+      const missingApps = validApps.filter((app) => {
+        const key = `${app.packageName}|${app.mainActivity}`
+        const existing = existingAppsMap.get(key)
+        if (existing) {
+          existingApps.push(existing)
+          return false
+        }
+        return true
+      })
+
+      // Stage 4: Create missing app info in batches
       setStage("creating")
-      const createRequests: AppInfoCreateSingleRequest[] = toProcess.map(
-        (entry) => ({
-          packageName: entry.packageName,
-          mainActivity: entry.mainActivity,
-          defaultName:
-            entry.packageName.split(".").pop() || entry.packageName,
-          localizedName:
-            entry.packageName.split(".").pop() || entry.packageName,
-          languageCode: "--",
-        })
-      )
-
-      // Batch createAppInfo calls to avoid 413 Payload Too Large
-      const createBatchSize = 25
       const createdApps: AppInfoDTO[] = []
-      const createBatches = Math.ceil(createRequests.length / createBatchSize)
+      const creationFails: FailedApp[] = []
 
-      for (let i = 0; i < createBatches; i++) {
-        const batchStart = i * createBatchSize
-        const batchEnd = Math.min((i + 1) * createBatchSize, createRequests.length)
-        const batch = createRequests.slice(batchStart, batchEnd)
+      if (missingApps.length > 0) {
+        const createRequests: AppInfoCreateSingleRequest[] = missingApps.map(
+          (app) => ({
+            packageName: app.packageName,
+            mainActivity: app.mainActivity,
+            defaultName: app.packageName.split(".").pop() || app.packageName,
+            localizedName: app.packageName.split(".").pop() || app.packageName,
+            languageCode: "--",
+          })
+        )
 
-        const batchResult = await createAppInfo(batch)
-        createdApps.push(...batchResult)
+        // Batch createAppInfo calls to avoid 413 Payload Too Large
+        const createBatchSize = 25
+        const createBatches = Math.ceil(
+          createRequests.length / createBatchSize
+        )
+
+        for (let i = 0; i < createBatches; i++) {
+          const batchStart = i * createBatchSize
+          const batchEnd = Math.min(
+            (i + 1) * createBatchSize,
+            createRequests.length
+          )
+          const batch = createRequests.slice(batchStart, batchEnd)
+
+          try {
+            const batchResult = await createAppInfo(batch, accessToken)
+            createdApps.push(...batchResult)
+          } catch (error) {
+            // Retry individually to isolate failures
+            for (let j = 0; j < batch.length; j++) {
+              const singleRequest = batch[j]
+              try {
+                const result = await createAppInfo([singleRequest], accessToken)
+                createdApps.push(...result)
+              } catch (individualError) {
+                const originalApp = missingApps[batchStart + j]
+                creationFails.push({
+                  packageName: originalApp.packageName,
+                  mainActivity: originalApp.mainActivity,
+                  drawableName: originalApp.drawableName,
+                  error:
+                    individualError instanceof Error
+                      ? individualError.message
+                      : "Creation failed",
+                })
+              }
+            }
+          }
+        }
       }
 
-      // Stage 4: Mark as adapted in batches
+      setCreationFailures(creationFails)
+
+      // Combine existing and created apps for marking
+      const allApps = [...existingApps, ...createdApps]
+
+      if (allApps.length === 0) {
+        // All searches and creations failed
+        setSuccessCount(0)
+        setStage("complete")
+        return
+      }
+
+      // Stage 5: Mark as adapted in batches
       setStage("marking")
       const markBatchSize = 25
       const batches: AppInfoDTO[][] = []
-      for (let i = 0; i < createdApps.length; i += markBatchSize) {
-        batches.push(createdApps.slice(i, i + markBatchSize))
+      for (let i = 0; i < allApps.length; i += markBatchSize) {
+        batches.push(allApps.slice(i, i + markBatchSize))
       }
 
       setTotalBatches(batches.length)
@@ -251,15 +477,15 @@ export function ImportAppFilterDialog({
         const appInfoIDs = batch.map((app) => app.id!).filter(Boolean)
         const drawables: Record<string, string> = {}
 
-        // Match drawable names from original entries
+        // Match drawable names from original valid apps
         for (const app of batch) {
-          const entry = toProcess.find(
-            (e) =>
-              e.packageName === app.packageName &&
-              e.mainActivity === app.mainActivity
+          const validApp = validApps.find(
+            (a) =>
+              a.packageName === app.packageName &&
+              a.mainActivity === app.mainActivity
           )
-          if (entry && app.id) {
-            drawables[app.id] = entry.drawableName
+          if (validApp && app.id) {
+            drawables[app.id] = validApp.drawableName
           }
         }
 
@@ -287,13 +513,15 @@ export function ImportAppFilterDialog({
     } catch (err) {
       console.error("Import error:", err)
       setError(
-        err instanceof Error
-          ? err.message
-          : t("errors.importAppFilter")
+        err instanceof Error ? err.message : t("errors.importAppFilter")
       )
       setStage("error")
       toast.error(t("errors.importAppFilter"))
     }
+  }
+
+  const handlePreviewCancel = () => {
+    resetState()
   }
 
   const handleRetry = () => {
@@ -348,6 +576,7 @@ export function ImportAppFilterDialog({
 
       case "parsing":
       case "fetching":
+      case "searching":
       case "creating":
       case "marking":
         return (
@@ -359,6 +588,11 @@ export function ImportAppFilterDialog({
             <p className="text-sm text-muted-foreground">
               {stage === "parsing" && t("iconPack.importParsing")}
               {stage === "fetching" && t("iconPack.importChecking")}
+              {stage === "searching" &&
+                t("iconPack.importSearching", {
+                  current: searchProgress.current,
+                  total: searchProgress.total,
+                })}
               {stage === "creating" && t("iconPack.importCreating")}
               {stage === "marking" &&
                 t("iconPack.importMarking", {
@@ -372,23 +606,40 @@ export function ImportAppFilterDialog({
       case "complete":
         return (
           <div className="space-y-4">
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Badge variant="default" className="text-sm">
                 {t("iconPack.importSuccess", { count: successCount })}
               </Badge>
-              {skipped.length > 0 && (
+              {foundCount > 0 && (
                 <Badge variant="secondary" className="text-sm">
-                  {t("iconPack.importSkipped", { count: skipped.length })}
+                  {t("iconPack.importFound", { count: foundCount })}
+                </Badge>
+              )}
+              {searchFailures.length > 0 && (
+                <Badge variant="destructive" className="text-sm">
+                  {t("iconPack.importSearchFailed", {
+                    count: searchFailures.length,
+                  })}
+                </Badge>
+              )}
+              {creationFailures.length > 0 && (
+                <Badge variant="destructive" className="text-sm">
+                  {t("iconPack.importCreationFailed", {
+                    count: creationFailures.length,
+                  })}
                 </Badge>
               )}
             </div>
 
-            {skipped.length > 0 && (
-              <Collapsible open={isSkippedOpen} onOpenChange={setIsSkippedOpen}>
+            {searchFailures.length > 0 && (
+              <Collapsible
+                open={isSearchFailedOpen}
+                onOpenChange={setIsSearchFailedOpen}
+              >
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" size="sm" className="w-full justify-between">
-                    <span>{t("iconPack.importSkippedList")}</span>
-                    {isSkippedOpen ? (
+                    <span>{t("iconPack.importSearchFailedList")}</span>
+                    {isSearchFailedOpen ? (
                       <ChevronUp className="h-4 w-4" />
                     ) : (
                       <ChevronDown className="h-4 w-4" />
@@ -397,18 +648,50 @@ export function ImportAppFilterDialog({
                 </CollapsibleTrigger>
                 <CollapsibleContent className="mt-2">
                   <div className="max-h-60 overflow-y-auto space-y-2">
-                    {skipped.map((app, index) => (
+                    {searchFailures.map((app, index) => (
                       <div
                         key={index}
-                        className="rounded-lg border p-3 text-sm"
+                        className="rounded-lg border border-destructive/50 p-3 text-sm"
                       >
                         <div className="font-medium truncate">{app.packageName}</div>
                         <div className="text-muted-foreground text-xs truncate">
                           {app.mainActivity}
                         </div>
-                        <div className="text-muted-foreground text-xs mt-1">
-                          {t("iconPack.drawable")}: {app.drawableName}
+                        <div className="text-destructive text-xs mt-1">{app.error}</div>
+                      </div>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+
+            {creationFailures.length > 0 && (
+              <Collapsible
+                open={isCreationFailedOpen}
+                onOpenChange={setIsCreationFailedOpen}
+              >
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="w-full justify-between">
+                    <span>{t("iconPack.importCreationFailedList")}</span>
+                    {isCreationFailedOpen ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2">
+                  <div className="max-h-60 overflow-y-auto space-y-2">
+                    {creationFailures.map((app, index) => (
+                      <div
+                        key={index}
+                        className="rounded-lg border border-destructive/50 p-3 text-sm"
+                      >
+                        <div className="font-medium truncate">{app.packageName}</div>
+                        <div className="text-muted-foreground text-xs truncate">
+                          {app.mainActivity}
                         </div>
+                        <div className="text-destructive text-xs mt-1">{app.error}</div>
                       </div>
                     ))}
                   </div>
@@ -428,6 +711,7 @@ export function ImportAppFilterDialog({
             <div className="rounded-lg border border-destructive p-4">
               <p className="text-sm text-destructive">{error}</p>
             </div>
+
             <div className="flex gap-2">
               <Button onClick={handleRetry} variant="default" className="flex-1">
                 {t("common.retry")}
@@ -445,16 +729,30 @@ export function ImportAppFilterDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{t("iconPack.importDialogTitle")}</DialogTitle>
-          <DialogDescription>
-            {t("iconPack.importDialogDesc")}
-          </DialogDescription>
-        </DialogHeader>
-        {renderContent()}
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={open && stage !== "preview"} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("iconPack.importDialogTitle")}</DialogTitle>
+            <DialogDescription>
+              {t("iconPack.importDialogDesc")}
+            </DialogDescription>
+          </DialogHeader>
+          {renderContent()}
+        </DialogContent>
+      </Dialog>
+
+      <AppFilterPreviewDialog
+        open={stage === "preview"}
+        onOpenChange={(open) => {
+          if (!open) {
+            handlePreviewCancel()
+          }
+        }}
+        apps={parsedApps}
+        onConfirm={handlePreviewConfirm}
+        onCancel={handlePreviewCancel}
+      />
+    </>
   )
 }

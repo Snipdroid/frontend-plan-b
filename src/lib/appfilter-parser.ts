@@ -13,17 +13,43 @@ interface AppFilterEntry {
  */
 export function parseAppFilterXml(xmlContent: string): AppFilterEntry[] {
   const entries: AppFilterEntry[] = []
-  const regex =
-    /component\s*=\s*"ComponentInfo\{([^/]+)\/([^}]+)\}"\s+drawable\s*=\s*"([^"]+)"/g
 
-  let match
-  while ((match = regex.exec(xmlContent)) !== null) {
+  // Parse XML using DOMParser
+  const parser = new DOMParser()
+  const xmlDoc = parser.parseFromString(xmlContent, "text/xml")
+
+  // Check for parsing errors
+  const parserError = xmlDoc.querySelector("parsererror")
+  if (parserError) {
+    throw new Error(`XML parsing error: ${parserError.textContent}`)
+  }
+
+  // Get all <item> elements
+  const items = xmlDoc.querySelectorAll("item")
+
+  // Regex to parse ComponentInfo{package/activity}
+  const componentRegex = /^ComponentInfo\{([^/]+)\/([^}]+)\}$/
+
+  items.forEach((item) => {
+    const component = item.getAttribute("component")
+    const drawable = item.getAttribute("drawable")
+
+    if (!component || !drawable) {
+      return // Skip items without both attributes
+    }
+
+    // Parse the component attribute
+    const match = component.match(componentRegex)
+    if (!match) {
+      return // Skip items with invalid component format
+    }
+
     entries.push({
       packageName: match[1],
       mainActivity: match[2],
-      drawableName: match[3],
+      drawableName: drawable,
     })
-  }
+  })
 
   return entries
 }

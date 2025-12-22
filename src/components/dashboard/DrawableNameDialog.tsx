@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
-import { Check, ChevronsUpDown } from "lucide-react"
+import { Check, ChevronsUpDown, Edit2, Sparkles } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -9,6 +9,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import {
   Command,
   CommandEmpty,
@@ -110,6 +117,7 @@ export function DrawableNameDialog({
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
   const [validationError, setValidationError] = useState<string | null>(null)
   const [comboboxOpen, setComboboxOpen] = useState(false)
+  const [mode, setMode] = useState<"custom" | "suggestions">("custom")
 
   // Fetch suggestions when dialog opens
   useEffect(() => {
@@ -128,6 +136,7 @@ export function DrawableNameDialog({
         // Pre-fill with first suggestion or auto-generated name
         if (sorted.length > 0) {
           setInputValue(sorted[0].drawable)
+          setMode("suggestions") // Default to suggestions when available
         } else {
           setInputValue(toDrawableName(app.defaultName))
         }
@@ -191,6 +200,7 @@ export function DrawableNameDialog({
       setSuggestions([])
       setValidationError(null)
       setComboboxOpen(false)
+      setMode("custom") // Reset mode
     }
     onOpenChange(open)
   }
@@ -238,76 +248,125 @@ export function DrawableNameDialog({
           </DialogHeader>
 
           <div className="py-4 space-y-3">
-            <label className="text-sm font-medium">
-              {t("dialogs.drawableName.inputLabel")}
-            </label>
-
             {isLoadingSuggestions ? (
               <div className="space-y-2">
                 <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-8 w-full" />
                 <Skeleton className="h-8 w-full" />
               </div>
-            ) : suggestions.length === 0 ? (
-              // No suggestions - simple input
-              <Input
-                value={inputValue}
-                onChange={(e) => handleInputChange(e.target.value)}
-                placeholder={t("dialogs.drawableName.inputPlaceholder")}
-                disabled={isSubmitting}
-                autoFocus
-                className={cn(
-                  "font-mono",
-                  validationError && "border-destructive"
-                )}
-              />
-            ) : isMobile ? (
-              // Mobile - Drawer
-              <Drawer open={comboboxOpen} onOpenChange={setComboboxOpen}>
-                <DrawerTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={comboboxOpen}
-                    className="w-full justify-between font-mono"
-                    disabled={isSubmitting}
-                  >
-                    {inputValue || t("dialogs.drawableName.inputPlaceholder")}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </DrawerTrigger>
-                <DrawerContent>
-                  <div className="mt-4 border-t">
-                    <SuggestionsList />
-                  </div>
-                </DrawerContent>
-              </Drawer>
             ) : (
-              // Desktop - Popover
-              <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={comboboxOpen}
-                    className="w-full justify-between font-mono"
-                    disabled={isSubmitting}
-                  >
-                    {inputValue || t("dialogs.drawableName.inputPlaceholder")}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-[var(--radix-popover-trigger-width)] p-0"
-                  align="start"
+              <>
+                {/* Custom Input Card */}
+                <Card
+                  className={cn(
+                    "cursor-pointer transition-all hover:bg-accent/50",
+                    mode === "custom" && "ring-2 ring-primary bg-accent/10"
+                  )}
+                  onClick={() => setMode("custom")}
                 >
-                  <SuggestionsList />
-                </PopoverContent>
-              </Popover>
-            )}
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Edit2 className="h-4 w-4" />
+                      {t("dialogs.drawableName.customOption.title")}
+                    </CardTitle>
+                    <CardDescription>
+                      {t("dialogs.drawableName.customOption.description")}
+                    </CardDescription>
+                  </CardHeader>
+                  {mode === "custom" && (
+                    <CardContent>
+                      <Input
+                        value={inputValue}
+                        onChange={(e) => handleInputChange(e.target.value)}
+                        placeholder={t("dialogs.drawableName.inputPlaceholder")}
+                        disabled={isSubmitting}
+                        autoFocus
+                        className={cn(
+                          "font-mono",
+                          validationError && "border-destructive"
+                        )}
+                      />
+                      {validationError && (
+                        <p className="text-sm text-destructive mt-2">
+                          {validationError}
+                        </p>
+                      )}
+                    </CardContent>
+                  )}
+                </Card>
 
-            {validationError && (
-              <p className="text-sm text-destructive">{validationError}</p>
+                {/* Suggestions Card - Only show if suggestions exist */}
+                {suggestions.length > 0 && (
+                  <Card
+                    className={cn(
+                      "cursor-pointer transition-all hover:bg-accent/50",
+                      mode === "suggestions" && "ring-2 ring-primary bg-accent/10"
+                    )}
+                    onClick={() => setMode("suggestions")}
+                  >
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Sparkles className="h-4 w-4" />
+                        {t("dialogs.drawableName.suggestionsOption.title")}
+                        <Badge variant="secondary" className="ml-auto">
+                          {suggestions.length}
+                        </Badge>
+                      </CardTitle>
+                      <CardDescription>
+                        {t("dialogs.drawableName.suggestionsOption.description")}
+                      </CardDescription>
+                    </CardHeader>
+                    {mode === "suggestions" && (
+                      <CardContent>
+                        {isMobile ? (
+                          // Mobile - Drawer
+                          <Drawer open={comboboxOpen} onOpenChange={setComboboxOpen}>
+                            <DrawerTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={comboboxOpen}
+                                className="w-full justify-between font-mono"
+                                disabled={isSubmitting}
+                              >
+                                {inputValue || t("dialogs.drawableName.inputPlaceholder")}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </DrawerTrigger>
+                            <DrawerContent>
+                              <div className="mt-4 border-t">
+                                <SuggestionsList />
+                              </div>
+                            </DrawerContent>
+                          </Drawer>
+                        ) : (
+                          // Desktop - Popover
+                          <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={comboboxOpen}
+                                className="w-full justify-between font-mono"
+                                disabled={isSubmitting}
+                              >
+                                {inputValue || t("dialogs.drawableName.inputPlaceholder")}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              className="w-[var(--radix-popover-trigger-width)] p-0"
+                              align="start"
+                            >
+                              <SuggestionsList />
+                            </PopoverContent>
+                          </Popover>
+                        )}
+                      </CardContent>
+                    )}
+                  </Card>
+                )}
+              </>
             )}
           </div>
 

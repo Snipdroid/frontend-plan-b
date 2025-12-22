@@ -258,6 +258,14 @@
         "iconpack": "当前图标包",
         "designer": "您的图标包",
         "none": "社区"
+      },
+      "customOption": {
+        "title": "自定义名称",
+        "description": "输入您自己的资源名称"
+      },
+      "suggestionsOption": {
+        "title": "从建议中选择",
+        "description": "从现有建议中选择"
       }
     }
   },

@@ -258,6 +258,14 @@
         "iconpack": "Current Pack",
         "designer": "Your Packs",
         "none": "Community"
+      },
+      "customOption": {
+        "title": "Custom Name",
+        "description": "Type your own drawable name"
+      },
+      "suggestionsOption": {
+        "title": "From Suggestions",
+        "description": "Choose from existing suggestions"
       }
     }
   },

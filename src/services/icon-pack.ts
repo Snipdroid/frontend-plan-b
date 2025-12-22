@@ -251,7 +251,7 @@ export async function markAppsAsAdapted(
     drawables?: Record<string, string>
   } = { appInfoIDs, adapted }
 
-  if (adapted && drawables) {
+  if (drawables !== undefined) {
     body.drawables = drawables
   }
 

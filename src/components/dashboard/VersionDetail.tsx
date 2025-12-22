@@ -127,7 +127,8 @@ export function VersionDetail() {
         auth.user.access_token,
         packId,
         [appInfoId],
-        false
+        false,
+        {} // Empty drawables dictionary when unmarking
       )
       await fetchRequests()
     } catch (err) {

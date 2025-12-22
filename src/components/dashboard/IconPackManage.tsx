@@ -229,7 +229,8 @@ export function IconPackManage() {
         auth.user.access_token,
         packId,
         [appInfoId],
-        false
+        false,
+        {} // Empty drawables dictionary when unmarking
       )
       await Promise.all([fetchRequests(), fetchAdaptedApps()])
     } catch (err) {

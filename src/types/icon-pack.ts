@@ -81,6 +81,7 @@ export interface IconPackAppDTO {
   createdAt?: string
   appInfo?: AppInfoDTO
   iconPack?: IconPackDTO
+  drawable: string
 }
 
 export interface IconPackVersionRequestRecordResponse {
@@ -96,4 +97,11 @@ export interface PageIconPackVersionRequestRecordResponse {
 export interface DesignerStatisticsResponse {
   requestCount: number
   distinctRequestCount: number
+}
+
+export type SuggestionSource = "none" | "iconpack" | "designer"
+
+export interface DrawableNameSuggestion {
+  drawable: string
+  from: SuggestionSource
 }

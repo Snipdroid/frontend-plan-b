@@ -16,7 +16,9 @@
     "close": "关闭",
     "back": "返回",
     "next": "下一页",
-    "previous": "上一页"
+    "previous": "上一页",
+    "confirm": "确认",
+    "retry": "重试"
   },
   "nav": {
     "upload": "上传",
@@ -169,6 +171,23 @@
     "adaptedAppsCount": "{{count}} 个已适配应用。",
     "adaptedAppsCount_other": "{{count}} 个已适配应用。",
     "noAdaptedApps": "暂无已适配应用。",
+    "importAppFilter": "导入",
+    "importDialogTitle": "导入 AppFilter XML",
+    "importDialogDesc": "上传 appfilter.xml 文件以批量导入已适配应用。",
+    "importSelectFile": "选择 appfilter.xml 文件",
+    "importSelectFileDesc": "拖放文件或点击浏览",
+    "importParsing": "正在解析 XML 文件...",
+    "importChecking": "正在检查已有应用...",
+    "importCreating": "正在创建应用条目...",
+    "importMarking": "正在标记为已适配（{{current}}/{{total}}）...",
+    "importComplete": "导入完成",
+    "importSuccess": "成功导入 {{count}} 个应用",
+    "importSuccess_other": "成功导入 {{count}} 个应用",
+    "importSkipped": "{{count}} 个应用已适配",
+    "importSkipped_other": "{{count}} 个应用已适配",
+    "importSkippedList": "已跳过的应用",
+    "importNoEntries": "XML 文件中未找到有效条目",
+    "drawable": "资源名",
     "dangerZone": "危险",
     "deleteIconPack": "删除图标包",
     "deleteVersion": "删除版本",
@@ -225,6 +244,21 @@
       "searchTag": "搜索标签...",
       "noTagFound": "未找到标签。",
       "noAvailableTags": "所有可用标签已添加到此应用。"
+    },
+    "drawableName": {
+      "title": "输入资源名称",
+      "description": "为 {{appName}}（{{packageName}}）提供资源名称",
+      "inputLabel": "资源名称",
+      "inputPlaceholder": "输入或选择资源名称...",
+      "searchPlaceholder": "搜索建议...",
+      "errorRequired": "资源名称不能为空",
+      "errorInvalidFormat": "必须以字母开头，且只能包含小写字母、数字和下划线",
+      "noSuggestions": "暂无建议",
+      "source": {
+        "iconpack": "当前图标包",
+        "designer": "您的图标包",
+        "none": "社区"
+      }
     }
   },
   "appDetail": {
@@ -243,6 +277,7 @@
     "updateAdaptedStatus": "更新适配状态失败",
     "renderTemplate": "渲染模板失败",
     "deleteIconPack": "删除图标包失败",
-    "deleteVersion": "删除版本失败"
+    "deleteVersion": "删除版本失败",
+    "importAppFilter": "导入 appfilter.xml 失败"
   }
 }

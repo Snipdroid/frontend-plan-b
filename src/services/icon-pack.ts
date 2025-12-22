@@ -9,6 +9,7 @@ import type {
   PageAppInfoWithRequestCount,
   PageAppInfoDTO,
   IconPackAppDTO,
+  DrawableNameSuggestion,
 } from "@/types/icon-pack"
 
 export async function getIconPacks(accessToken: string): Promise<IconPackDTO[]> {
@@ -241,15 +242,26 @@ export async function markAppsAsAdapted(
   accessToken: string,
   iconPackId: string,
   appInfoIDs: string[],
-  adapted: boolean
+  adapted: boolean,
+  drawables?: Record<string, string>
 ): Promise<IconPackAppDTO[]> {
+  const body: {
+    appInfoIDs: string[]
+    adapted: boolean
+    drawables?: Record<string, string>
+  } = { appInfoIDs, adapted }
+
+  if (adapted && drawables) {
+    body.drawables = drawables
+  }
+
   const response = await fetch(`${API_BASE_URL}/icon-pack/${iconPackId}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify({ appInfoIDs, adapted }),
+    body: JSON.stringify(body),
   })
 
   if (!response.ok) {
@@ -278,6 +290,31 @@ export async function getIconPackAdaptedApps(
       Authorization: `Bearer ${accessToken}`,
     },
   })
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`)
+  }
+
+  return response.json()
+}
+
+export async function getDrawableNameSuggestions(
+  packageName: string,
+  iconPackId?: string,
+  designerId?: string
+): Promise<DrawableNameSuggestion[]> {
+  const params = new URLSearchParams({ packageName })
+  if (iconPackId) params.set("iconPackID", iconPackId)
+  if (designerId) params.set("designerID", designerId)
+
+  const response = await fetch(
+    `${API_BASE_URL}/icon-pack-app/drawable-name-suggestions?${params.toString()}`,
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  )
 
   if (!response.ok) {
     throw new Error(`API Error: ${response.status} ${response.statusText}`)

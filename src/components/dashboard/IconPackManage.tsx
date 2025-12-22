@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { useParams, useNavigate, Link } from "react-router"
 import { useAuth } from "react-oidc-context"
 import { useTranslation } from "react-i18next"
+import { Upload } from "lucide-react"
 import {
   Card,
   CardContent,
@@ -43,6 +44,8 @@ import { API_BASE_URL } from "@/services/api"
 import { CreateVersionDialog } from "./CreateVersionDialog"
 import { CreateAccessTokenDialog } from "./CreateAccessTokenDialog"
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog"
+import { DrawableNameDialog } from "./DrawableNameDialog"
+import { ImportAppFilterDialog } from "./ImportAppFilterDialog"
 import { AppRequestsTable, type AppRequestsTableColumn } from "./AppRequestsTable"
 import { AppActionDropdown } from "./AppActionDropdown"
 import type { IconPackDTO, IconPackVersionDTO, AppInfoWithRequestCount, AppInfoDTO } from "@/types/icon-pack"
@@ -70,6 +73,14 @@ export function IconPackManage() {
   const [isLoadingRequests, setIsLoadingRequests] = useState(false)
   const [isMarking, setIsMarking] = useState(false)
 
+  // Drawable name dialog state
+  const [drawableDialogOpen, setDrawableDialogOpen] = useState(false)
+  const [pendingAdaptApp, setPendingAdaptApp] = useState<{
+    appInfoId: string
+    app: AppInfoDTO
+  } | null>(null)
+  const [designerId, setDesignerId] = useState<string | null>(null)
+
   // Adapted apps state
   const [adaptedApps, setAdaptedApps] = useState<AppInfoDTO[]>([])
   const [adaptedTotal, setAdaptedTotal] = useState(0)
@@ -83,6 +94,7 @@ export function IconPackManage() {
   const [tokenDialogOpen, setTokenDialogOpen] = useState(false)
   const [deletePackDialogOpen, setDeletePackDialogOpen] = useState(false)
   const [deleteVersionDialogOpen, setDeleteVersionDialogOpen] = useState(false)
+  const [importDialogOpen, setImportDialogOpen] = useState(false)
   const [selectedVersion, setSelectedVersion] =
     useState<IconPackVersionDTO | null>(null)
 
@@ -111,6 +123,20 @@ export function IconPackManage() {
 
     fetchData()
   }, [packId, auth.user?.access_token])
+
+  // Fetch designer ID
+  useEffect(() => {
+    if (!auth.user?.access_token) return
+
+    fetch(`${API_BASE_URL}/designer/me`, {
+      headers: {
+        Authorization: `Bearer ${auth.user.access_token}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => setDesignerId(data.id))
+      .catch((err) => console.error("Failed to fetch designer:", err))
+  }, [auth.user?.access_token])
 
   // Fetch requests
   const fetchRequests = async () => {
@@ -182,15 +208,55 @@ export function IconPackManage() {
     setRequestsPage(1)
   }
 
-  const handleMarkAsAdapted = async (appInfoId: string, adapted: boolean) => {
+  const handleMarkAsAdapted = async (
+    appInfoId: string,
+    app: AppInfoDTO,
+    adapted: boolean
+  ) => {
     if (!packId || !auth.user?.access_token) return
 
+    // If marking as adapted, open dialog
+    if (adapted) {
+      setPendingAdaptApp({ appInfoId, app })
+      setDrawableDialogOpen(true)
+      return
+    }
+
+    // If removing, proceed directly without drawable
     setIsMarking(true)
     try {
-      await markAppsAsAdapted(auth.user.access_token, packId, [appInfoId], adapted)
+      await markAppsAsAdapted(
+        auth.user.access_token,
+        packId,
+        [appInfoId],
+        false
+      )
       await Promise.all([fetchRequests(), fetchAdaptedApps()])
     } catch (err) {
       console.error(t("errors.updateAdaptedStatus"), err)
+    } finally {
+      setIsMarking(false)
+    }
+  }
+
+  const handleDrawableNameConfirm = async (drawableName: string) => {
+    if (!packId || !auth.user?.access_token || !pendingAdaptApp) return
+
+    setIsMarking(true)
+    try {
+      await markAppsAsAdapted(
+        auth.user.access_token,
+        packId,
+        [pendingAdaptApp.appInfoId],
+        true,
+        { [pendingAdaptApp.appInfoId]: drawableName }
+      )
+      await Promise.all([fetchRequests(), fetchAdaptedApps()])
+      setDrawableDialogOpen(false)
+      setPendingAdaptApp(null)
+    } catch (err) {
+      console.error(t("errors.updateAdaptedStatus"), err)
+      // Keep dialog open on error
     } finally {
       setIsMarking(false)
     }
@@ -560,7 +626,9 @@ export function IconPackManage() {
                     isAdapted={!!item.iconPackApp}
                     isMarking={isMarking}
                     onToggleAdapted={(adapted) =>
-                      item.appInfo?.id && handleMarkAsAdapted(item.appInfo.id, adapted)
+                      item.appInfo?.id &&
+                      item.appInfo &&
+                      handleMarkAsAdapted(item.appInfo.id, item.appInfo, adapted)
                     }
                     disabled={!item.appInfo?.id}
                   />
@@ -613,10 +681,22 @@ export function IconPackManage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{t("iconPack.adaptedApps")}</CardTitle>
-          <CardDescription>
-            {t("iconPack.adaptedAppsCount", { count: adaptedTotal })}
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>{t("iconPack.adaptedApps")}</CardTitle>
+              <CardDescription>
+                {t("iconPack.adaptedAppsCount", { count: adaptedTotal })}
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setImportDialogOpen(true)}
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              {t("iconPack.importAppFilter")}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoadingAdapted ? (
@@ -638,7 +718,7 @@ export function IconPackManage() {
                     isAdapted={true}
                     isMarking={isMarking}
                     onToggleAdapted={(adapted) =>
-                      item.id && handleMarkAsAdapted(item.id, adapted)
+                      item.id && handleMarkAsAdapted(item.id, item, adapted)
                     }
                     disabled={!item.id}
                   />
@@ -742,6 +822,31 @@ export function IconPackManage() {
           confirmText={selectedVersion.versionString}
           onConfirm={handleDeleteVersion}
           isDeleting={isDeletingVersion}
+        />
+      )}
+
+      {pendingAdaptApp && designerId && (
+        <DrawableNameDialog
+          open={drawableDialogOpen}
+          onOpenChange={(open) => {
+            setDrawableDialogOpen(open)
+            if (!open) setPendingAdaptApp(null)
+          }}
+          app={pendingAdaptApp.app}
+          iconPackId={packId!}
+          designerId={designerId}
+          onConfirm={handleDrawableNameConfirm}
+          isSubmitting={isMarking}
+        />
+      )}
+
+      {packId && auth.user?.access_token && (
+        <ImportAppFilterDialog
+          open={importDialogOpen}
+          onOpenChange={setImportDialogOpen}
+          iconPackId={packId}
+          accessToken={auth.user.access_token}
+          onImportComplete={fetchAdaptedApps}
         />
       )}
     </div>

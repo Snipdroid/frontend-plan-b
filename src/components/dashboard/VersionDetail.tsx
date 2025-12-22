@@ -25,7 +25,8 @@ import { getVersionRequests, markAppsAsAdapted } from "@/services/icon-pack"
 import { API_BASE_URL } from "@/services/api"
 import { AppRequestsTable, type AppRequestsTableColumn } from "./AppRequestsTable"
 import { AppActionDropdown } from "./AppActionDropdown"
-import type { IconPackVersionRequestRecordResponse } from "@/types/icon-pack"
+import { DrawableNameDialog } from "./DrawableNameDialog"
+import type { IconPackVersionRequestRecordResponse, AppInfoDTO } from "@/types/icon-pack"
 
 const PER_PAGE = 10
 
@@ -40,6 +41,14 @@ export function VersionDetail() {
   const [currentPage, setCurrentPage] = useState(1)
   const [includingAdapted, setIncludingAdapted] = useState(false)
   const [isMarking, setIsMarking] = useState(false)
+
+  // Drawable name dialog state
+  const [drawableDialogOpen, setDrawableDialogOpen] = useState(false)
+  const [pendingAdaptApp, setPendingAdaptApp] = useState<{
+    appInfoId: string
+    app: AppInfoDTO
+  } | null>(null)
+  const [designerId, setDesignerId] = useState<string | null>(null)
 
   const totalPages = Math.ceil(total / PER_PAGE)
 
@@ -72,6 +81,20 @@ export function VersionDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [packId, versionId, auth.user?.access_token, currentPage, includingAdapted])
 
+  // Fetch designer ID
+  useEffect(() => {
+    if (!auth.user?.access_token) return
+
+    fetch(`${API_BASE_URL}/designer/me`, {
+      headers: {
+        Authorization: `Bearer ${auth.user.access_token}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => setDesignerId(data.id))
+      .catch((err) => console.error("Failed to fetch designer:", err))
+  }, [auth.user?.access_token])
+
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page)
@@ -83,15 +106,55 @@ export function VersionDetail() {
     setCurrentPage(1)
   }
 
-  const handleToggleAdapted = async (appInfoId: string, adapted: boolean) => {
+  const handleToggleAdapted = async (
+    appInfoId: string,
+    app: AppInfoDTO,
+    adapted: boolean
+  ) => {
     if (!packId || !auth.user?.access_token) return
 
+    // If marking as adapted, open dialog
+    if (adapted) {
+      setPendingAdaptApp({ appInfoId, app })
+      setDrawableDialogOpen(true)
+      return
+    }
+
+    // If removing, proceed directly without drawable
     setIsMarking(true)
     try {
-      await markAppsAsAdapted(auth.user.access_token, packId, [appInfoId], adapted)
+      await markAppsAsAdapted(
+        auth.user.access_token,
+        packId,
+        [appInfoId],
+        false
+      )
       await fetchRequests()
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errors.updateAdaptedStatus"))
+    } finally {
+      setIsMarking(false)
+    }
+  }
+
+  const handleDrawableNameConfirm = async (drawableName: string) => {
+    if (!packId || !auth.user?.access_token || !pendingAdaptApp) return
+
+    setIsMarking(true)
+    try {
+      await markAppsAsAdapted(
+        auth.user.access_token,
+        packId,
+        [pendingAdaptApp.appInfoId],
+        true,
+        { [pendingAdaptApp.appInfoId]: drawableName }
+      )
+      await fetchRequests()
+      setDrawableDialogOpen(false)
+      setPendingAdaptApp(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("errors.updateAdaptedStatus"))
+      // Keep dialog open on error
     } finally {
       setIsMarking(false)
     }
@@ -243,7 +306,12 @@ export function VersionDetail() {
                     isMarking={isMarking}
                     onToggleAdapted={(adapted) =>
                       item.requestRecord.appInfo?.id &&
-                      handleToggleAdapted(item.requestRecord.appInfo.id, adapted)
+                      item.requestRecord.appInfo &&
+                      handleToggleAdapted(
+                        item.requestRecord.appInfo.id,
+                        item.requestRecord.appInfo,
+                        adapted
+                      )
                     }
                     disabled={!item.requestRecord.appInfo?.id}
                   />
@@ -293,6 +361,21 @@ export function VersionDetail() {
           )}
         </CardContent>
       </Card>
+
+      {pendingAdaptApp && designerId && (
+        <DrawableNameDialog
+          open={drawableDialogOpen}
+          onOpenChange={(open) => {
+            setDrawableDialogOpen(open)
+            if (!open) setPendingAdaptApp(null)
+          }}
+          app={pendingAdaptApp.app}
+          iconPackId={packId!}
+          designerId={designerId}
+          onConfirm={handleDrawableNameConfirm}
+          isSubmitting={isMarking}
+        />
+      )}
     </div>
   )
 }

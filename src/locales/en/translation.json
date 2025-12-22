@@ -16,7 +16,9 @@
     "close": "Close",
     "back": "Back",
     "next": "Next",
-    "previous": "Previous"
+    "previous": "Previous",
+    "confirm": "Confirm",
+    "retry": "Retry"
   },
   "nav": {
     "upload": "Upload",
@@ -169,6 +171,23 @@
     "adaptedAppsCount": "{{count}} adapted app.",
     "adaptedAppsCount_other": "{{count}} adapted apps.",
     "noAdaptedApps": "No adapted apps yet.",
+    "importAppFilter": "Import",
+    "importDialogTitle": "Import AppFilter XML",
+    "importDialogDesc": "Upload an appfilter.xml file to batch import adapted apps.",
+    "importSelectFile": "Select appfilter.xml file",
+    "importSelectFileDesc": "Drag and drop or click to browse",
+    "importParsing": "Parsing XML file...",
+    "importChecking": "Checking existing apps...",
+    "importCreating": "Creating app entries...",
+    "importMarking": "Marking apps as adapted ({{current}}/{{total}})...",
+    "importComplete": "Import Complete",
+    "importSuccess": "Successfully imported {{count}} app",
+    "importSuccess_other": "Successfully imported {{count}} apps",
+    "importSkipped": "{{count}} app already adapted",
+    "importSkipped_other": "{{count}} apps already adapted",
+    "importSkippedList": "Skipped Apps",
+    "importNoEntries": "No valid entries found in XML file",
+    "drawable": "Drawable",
     "dangerZone": "Danger Zone",
     "deleteIconPack": "Delete Icon Pack",
     "deleteVersion": "Delete Version",
@@ -225,6 +244,21 @@
       "searchTag": "Search tags...",
       "noTagFound": "No tag found.",
       "noAvailableTags": "All available tags have been added to this app."
+    },
+    "drawableName": {
+      "title": "Enter Drawable Name",
+      "description": "Provide a drawable name for {{appName}} ({{packageName}})",
+      "inputLabel": "Drawable Name",
+      "inputPlaceholder": "Type or select a drawable name...",
+      "searchPlaceholder": "Search suggestions...",
+      "errorRequired": "Drawable name is required",
+      "errorInvalidFormat": "Must start with a letter and contain only lowercase letters, numbers, and underscores",
+      "noSuggestions": "No suggestions available",
+      "source": {
+        "iconpack": "Current Pack",
+        "designer": "Your Packs",
+        "none": "Community"
+      }
     }
   },
   "appDetail": {
@@ -243,6 +277,7 @@
     "updateAdaptedStatus": "Failed to update adapted status",
     "renderTemplate": "Failed to render template",
     "deleteIconPack": "Failed to delete icon pack",
-    "deleteVersion": "Failed to delete version"
+    "deleteVersion": "Failed to delete version",
+    "importAppFilter": "Failed to import appfilter.xml"
   }
 }

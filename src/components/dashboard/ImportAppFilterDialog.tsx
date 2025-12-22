@@ -406,7 +406,9 @@ export function ImportAppFilterDialog({
           })
         )
 
-        // Batch createAppInfo calls to avoid 413 Payload Too Large
+        // Batch createAppInfo calls
+        // IMPORTANT: /app-info/create has strict rate limits (burst: 20, avg: 20 per 7 days)
+        // We must NOT retry failed batches individually to avoid hitting rate limits
         const createBatchSize = 25
         const createBatches = Math.ceil(
           createRequests.length / createBatchSize
@@ -424,24 +426,17 @@ export function ImportAppFilterDialog({
             const batchResult = await createAppInfo(batch, accessToken)
             createdApps.push(...batchResult)
           } catch (error) {
-            // Retry individually to isolate failures
+            // Record all apps in failed batch as creation failures
+            // Do NOT retry individually due to strict rate limits
+            const errorMessage = error instanceof Error ? error.message : "Batch creation failed"
             for (let j = 0; j < batch.length; j++) {
-              const singleRequest = batch[j]
-              try {
-                const result = await createAppInfo([singleRequest], accessToken)
-                createdApps.push(...result)
-              } catch (individualError) {
-                const originalApp = missingApps[batchStart + j]
-                creationFails.push({
-                  packageName: originalApp.packageName,
-                  mainActivity: originalApp.mainActivity,
-                  drawableName: originalApp.drawableName,
-                  error:
-                    individualError instanceof Error
-                      ? individualError.message
-                      : "Creation failed",
-                })
-              }
+              const originalApp = missingApps[batchStart + j]
+              creationFails.push({
+                packageName: originalApp.packageName,
+                mainActivity: originalApp.mainActivity,
+                drawableName: originalApp.drawableName,
+                error: errorMessage,
+              })
             }
           }
         }

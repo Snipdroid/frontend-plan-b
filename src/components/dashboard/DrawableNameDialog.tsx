@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { Check, ChevronsUpDown, Edit2, Sparkles } from "lucide-react"
 import {
@@ -216,7 +216,7 @@ export function DrawableNameDialog({
     s.drawable.toLowerCase().includes(inputValue.toLowerCase())
   )
 
-  const SuggestionsList = () => (
+  const SuggestionsList = useMemo(() => (
     <Command shouldFilter={false}>
       <CommandInput
         placeholder={t("dialogs.drawableName.searchPlaceholder")}
@@ -237,7 +237,7 @@ export function DrawableNameDialog({
         </CommandGroup>
       </CommandList>
     </Command>
-  )
+  ), [filteredSuggestions, inputValue, t, handleInputChange, handleSuggestionSelect])
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -341,7 +341,7 @@ export function DrawableNameDialog({
                             </DrawerTrigger>
                             <DrawerContent>
                               <div className="mt-4 border-t">
-                                <SuggestionsList />
+                                {SuggestionsList}
                               </div>
                             </DrawerContent>
                           </Drawer>
@@ -364,7 +364,7 @@ export function DrawableNameDialog({
                               className="w-[var(--radix-popover-trigger-width)] p-0"
                               align="start"
                             >
-                              <SuggestionsList />
+                              {SuggestionsList}
                             </PopoverContent>
                           </Popover>
                         )}

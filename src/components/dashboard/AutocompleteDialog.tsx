@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
-import { Search, Check } from "lucide-react"
+import { Search, Check, ChevronRight, ChevronDown } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -24,7 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { getMissingApps, markAppsAsAdapted } from "@/services/icon-pack"
+import { getMissingApps, markAppsAsAdapted, getIconPackRequests } from "@/services/icon-pack"
 import { API_BASE_URL } from "@/services/api"
 import { DrawableNameDialog } from "./DrawableNameDialog"
 import type { AppInfoDTO } from "@/types/icon-pack"
@@ -34,6 +34,13 @@ type AutocompleteStage = "idle" | "loading" | "preview" | "submitting" | "comple
 interface FailedApp {
   app: AppInfoDTO
   error: string
+}
+
+interface AppGroup {
+  packageName: string
+  defaultName: string
+  apps: AppInfoDTO[]
+  drawableName?: string
 }
 
 interface AutocompleteDialogProps {
@@ -58,7 +65,9 @@ export function AutocompleteDialog({
   const [missingApps, setMissingApps] = useState<AppInfoDTO[]>([])
   const [drawableNameMap, setDrawableNameMap] = useState<Map<string, string>>(new Map())
   const [searchQuery, setSearchQuery] = useState("")
+  const [selectedPackageName, setSelectedPackageName] = useState<string | null>(null)
   const [selectedApp, setSelectedApp] = useState<AppInfoDTO | null>(null)
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [error, setError] = useState<string | null>(null)
   const [successCount, setSuccessCount] = useState(0)
   const [failedApps, setFailedApps] = useState<FailedApp[]>([])
@@ -68,7 +77,9 @@ export function AutocompleteDialog({
     setMissingApps([])
     setDrawableNameMap(new Map())
     setSearchQuery("")
+    setSelectedPackageName(null)
     setSelectedApp(null)
+    setExpandedGroups(new Set())
     setError(null)
     setSuccessCount(0)
     setFailedApps([])
@@ -93,8 +104,34 @@ export function AutocompleteDialog({
     setError(null)
 
     try {
-      const apps = await getMissingApps(accessToken, iconPackId)
+      // Fetch both missing apps and all requests (including adapted) to get drawable names
+      const [apps, requestsResponse] = await Promise.all([
+        getMissingApps(accessToken, iconPackId),
+        getIconPackRequests(accessToken, iconPackId, undefined, undefined, true) // includingAdapted=true
+      ])
+
+      // Create a map of package names to drawable names from adapted apps
+      const packageToDrawableMap = new Map<string, string>()
+      requestsResponse.items.forEach((request) => {
+        if (request.iconPackApp?.drawable) {
+          packageToDrawableMap.set(request.appInfo.packageName, request.iconPackApp.drawable)
+        }
+      })
+
       setMissingApps(apps)
+
+      // Prefill drawable names for all missing apps based on their package name
+      const newDrawableNameMap = new Map<string, string>()
+      apps.forEach((app) => {
+        if (app.id) {
+          const drawableName = packageToDrawableMap.get(app.packageName)
+          if (drawableName) {
+            newDrawableNameMap.set(app.id, drawableName)
+          }
+        }
+      })
+      setDrawableNameMap(newDrawableNameMap)
+
       setStage("preview")
     } catch (err) {
       console.error("Failed to fetch missing apps:", err)
@@ -103,37 +140,115 @@ export function AutocompleteDialog({
     }
   }
 
-  const filteredApps = useMemo(() => {
-    if (!searchQuery) return missingApps
+  // Group apps by package name
+  const appGroups = useMemo(() => {
+    const groups = new Map<string, AppGroup>()
+
+    missingApps.forEach((app) => {
+      if (!groups.has(app.packageName)) {
+        groups.set(app.packageName, {
+          packageName: app.packageName,
+          defaultName: app.defaultName,
+          apps: [],
+        })
+      }
+      groups.get(app.packageName)!.apps.push(app)
+    })
+
+    // Sort groups by package name
+    return Array.from(groups.values()).sort((a, b) =>
+      a.packageName.localeCompare(b.packageName)
+    )
+  }, [missingApps])
+
+  // Filter groups based on search query
+  const filteredGroups = useMemo(() => {
+    if (!searchQuery) return appGroups
 
     const query = searchQuery.toLowerCase()
-    return missingApps.filter(
-      (app) =>
-        app.defaultName.toLowerCase().includes(query) ||
-        app.packageName.toLowerCase().includes(query) ||
-        app.mainActivity.toLowerCase().includes(query)
+    return appGroups.filter(
+      (group) =>
+        group.defaultName.toLowerCase().includes(query) ||
+        group.packageName.toLowerCase().includes(query) ||
+        group.apps.some((app) => app.mainActivity.toLowerCase().includes(query))
     )
-  }, [missingApps, searchQuery])
+  }, [appGroups, searchQuery])
 
-  const appsWithDrawableNames = useMemo(() => {
-    return filteredApps.filter((app) => app.id && drawableNameMap.has(app.id))
-  }, [filteredApps, drawableNameMap])
+  // Get groups with drawable names set
+  const groupsWithDrawableNames = useMemo(() => {
+    return filteredGroups.filter((group) => {
+      // A group has drawable name if any of its apps have a drawable name
+      return group.apps.some((app) => app.id && drawableNameMap.has(app.id))
+    })
+  }, [filteredGroups, drawableNameMap])
+
+  // Get drawable name for a group (from first app that has one)
+  const getGroupDrawableName = (group: AppGroup): string | undefined => {
+    for (const app of group.apps) {
+      if (app.id && drawableNameMap.has(app.id)) {
+        return drawableNameMap.get(app.id)
+      }
+    }
+    return undefined
+  }
 
   const getIconUrl = (packageName: string) => {
     return `${API_BASE_URL}/app-icon?packageName=${encodeURIComponent(packageName)}`
   }
 
-  const handleSetDrawableName = (app: AppInfoDTO) => {
+  const handleSetDrawableNameForGroup = (group: AppGroup) => {
+    setSelectedPackageName(group.packageName)
+    setSelectedApp(null)
+  }
+
+  const handleSetDrawableNameForApp = (app: AppInfoDTO) => {
     setSelectedApp(app)
+    setSelectedPackageName(null)
+  }
+
+  const toggleGroupExpanded = (packageName: string) => {
+    const newExpanded = new Set(expandedGroups)
+    if (newExpanded.has(packageName)) {
+      newExpanded.delete(packageName)
+    } else {
+      newExpanded.add(packageName)
+    }
+    setExpandedGroups(newExpanded)
   }
 
   const handleDrawableNameConfirm = (drawableName: string) => {
-    if (selectedApp?.id) {
-      const newMap = new Map(drawableNameMap)
-      newMap.set(selectedApp.id, drawableName)
-      setDrawableNameMap(newMap)
+    const newMap = new Map(drawableNameMap)
+
+    if (selectedApp) {
+      // Setting for individual app
+      if (selectedApp.id) {
+        newMap.set(selectedApp.id, drawableName)
+      }
+    } else if (selectedPackageName) {
+      // Setting for entire group
+      const group = appGroups.find((g) => g.packageName === selectedPackageName)
+      if (group) {
+        group.apps.forEach((app) => {
+          if (app.id) {
+            newMap.set(app.id, drawableName)
+          }
+        })
+      }
     }
+
+    setDrawableNameMap(newMap)
+    setSelectedPackageName(null)
     setSelectedApp(null)
+  }
+
+  // Get a representative app from a group or the selected app for DrawableNameDialog
+  const getDialogApp = (): AppInfoDTO | null => {
+    if (selectedApp) return selectedApp
+    if (selectedPackageName) {
+      const group = appGroups.find((g) => g.packageName === selectedPackageName)
+      return group?.apps[0] || null
+    }
+    return null
   }
 
   const handleSubmit = async () => {
@@ -249,9 +364,9 @@ export function AutocompleteDialog({
                   className="flex-1"
                 />
               </div>
-              {appsWithDrawableNames.length > 0 && (
+              {groupsWithDrawableNames.length > 0 && (
                 <p className="text-sm text-muted-foreground mt-2">
-                  {t("iconPack.autocomplete.appsSelected", { count: appsWithDrawableNames.length })}
+                  {t("iconPack.autocomplete.appsSelected", { count: groupsWithDrawableNames.length })}
                 </p>
               )}
             </div>
@@ -263,10 +378,11 @@ export function AutocompleteDialog({
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-[40px]"></TableHead>
                         <TableHead className="w-[60px]">Icon</TableHead>
                         <TableHead className="min-w-[180px]">{t("iconPack.autocomplete.table.appName")}</TableHead>
                         <TableHead className="min-w-[220px]">{t("iconPack.autocomplete.table.packageName")}</TableHead>
-                        <TableHead className="min-w-[220px]">{t("iconPack.autocomplete.table.mainActivity")}</TableHead>
+                        <TableHead className="min-w-[180px]">{t("iconPack.autocomplete.table.mainActivity")}</TableHead>
                         <TableHead className="min-w-[140px]">{t("iconPack.autocomplete.table.drawableName")}</TableHead>
                         <TableHead className="text-right min-w-[120px]">
                           {t("iconPack.autocomplete.table.actions")}
@@ -274,44 +390,105 @@ export function AutocompleteDialog({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredApps.map((app) => {
-                        const drawableName = app.id ? drawableNameMap.get(app.id) : null
+                      {filteredGroups.map((group) => {
+                        const drawableName = getGroupDrawableName(group)
+                        const isExpanded = expandedGroups.has(group.packageName)
+
                         return (
-                          <TableRow key={app.id}>
-                            <TableCell>
-                              <Avatar className="h-8 w-8">
-                                <img src={getIconUrl(app.packageName)} alt={app.defaultName} />
-                                <AvatarFallback>{app.defaultName[0]}</AvatarFallback>
-                              </Avatar>
-                            </TableCell>
-                            <TableCell className="font-medium">{app.defaultName}</TableCell>
-                            <TableCell className="text-sm text-muted-foreground">
-                              {app.packageName}
-                            </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">
-                              {app.mainActivity}
-                            </TableCell>
-                            <TableCell>
-                              {drawableName ? (
-                                <Badge variant="default" className="font-mono text-xs">
-                                  {drawableName}
+                          <>
+                            {/* Group row */}
+                            <TableRow key={group.packageName}>
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => toggleGroupExpanded(group.packageName)}
+                                >
+                                  {isExpanded ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                  ) : (
+                                    <ChevronRight className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </TableCell>
+                              <TableCell>
+                                <Avatar className="h-8 w-8">
+                                  <img src={getIconUrl(group.packageName)} alt={group.defaultName} />
+                                  <AvatarFallback>{group.defaultName[0]}</AvatarFallback>
+                                </Avatar>
+                              </TableCell>
+                              <TableCell className="font-medium">{group.defaultName}</TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {group.packageName}
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                <Badge variant="secondary" className="font-mono text-xs">
+                                  {group.apps.length} {group.apps.length === 1 ? 'activity' : 'activities'}
                                 </Badge>
-                              ) : (
-                                <span className="text-xs text-muted-foreground">-</span>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleSetDrawableName(app)}
-                              >
-                                {drawableName
-                                  ? t("iconPack.autocomplete.table.edit")
-                                  : t("iconPack.autocomplete.setName")}
-                              </Button>
-                            </TableCell>
-                          </TableRow>
+                              </TableCell>
+                              <TableCell>
+                                {drawableName ? (
+                                  <Badge variant="default" className="font-mono text-xs">
+                                    {drawableName}
+                                  </Badge>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">-</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleSetDrawableNameForGroup(group)}
+                                >
+                                  {drawableName
+                                    ? t("iconPack.autocomplete.table.edit")
+                                    : t("iconPack.autocomplete.setName")}
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+
+                            {/* Individual app rows when expanded */}
+                            {isExpanded && group.apps.map((app) => {
+                              const appDrawableName = app.id ? drawableNameMap.get(app.id) : null
+                              return (
+                                <TableRow key={app.id} className="bg-muted/30">
+                                  <TableCell></TableCell>
+                                  <TableCell></TableCell>
+                                  <TableCell className="text-sm text-muted-foreground pl-8">
+                                    {app.defaultName}
+                                  </TableCell>
+                                  <TableCell className="text-sm text-muted-foreground">
+                                    {app.packageName}
+                                  </TableCell>
+                                  <TableCell className="text-sm text-muted-foreground font-mono text-xs">
+                                    {app.mainActivity}
+                                  </TableCell>
+                                  <TableCell>
+                                    {appDrawableName ? (
+                                      <Badge variant="default" className="font-mono text-xs">
+                                        {appDrawableName}
+                                      </Badge>
+                                    ) : (
+                                      <span className="text-xs text-muted-foreground">-</span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleSetDrawableNameForApp(app)}
+                                    >
+                                      {appDrawableName
+                                        ? t("iconPack.autocomplete.table.edit")
+                                        : t("iconPack.autocomplete.setName")}
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              )
+                            })}
+                          </>
                         )
                       })}
                     </TableBody>
@@ -324,31 +501,49 @@ export function AutocompleteDialog({
             <div className="md:hidden flex-1 min-h-0 px-6">
               <ScrollArea className="h-full">
                 <div className="space-y-3 pb-4">
-                  {filteredApps.map((app) => {
-                    const drawableName = app.id ? drawableNameMap.get(app.id) : null
+                  {filteredGroups.map((group) => {
+                    const drawableName = getGroupDrawableName(group)
+                    const isExpanded = expandedGroups.has(group.packageName)
+
                     return (
                       <div
-                        key={app.id}
+                        key={group.packageName}
                         className="rounded-lg border p-4 text-sm space-y-3"
                       >
-                        <div className="flex items-start gap-3">
+                        {/* Group Header */}
+                        <div className="flex items-start gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 mt-1"
+                            onClick={() => toggleGroupExpanded(group.packageName)}
+                          >
+                            {isExpanded ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </Button>
                           <Avatar className="h-10 w-10 mt-0.5">
-                            <img src={getIconUrl(app.packageName)} alt={app.defaultName} />
-                            <AvatarFallback>{app.defaultName[0]}</AvatarFallback>
+                            <img src={getIconUrl(group.packageName)} alt={group.defaultName} />
+                            <AvatarFallback>{group.defaultName[0]}</AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium">{app.defaultName}</div>
+                            <div className="font-medium">{group.defaultName}</div>
                             <div className="text-xs text-muted-foreground mt-1 space-y-1">
                               <div className="truncate">
-                                <span className="font-medium">Package:</span> {app.packageName}
+                                <span className="font-medium">Package:</span> {group.packageName}
                               </div>
-                              <div className="truncate">
-                                <span className="font-medium">Activity:</span> {app.mainActivity}
+                              <div>
+                                <Badge variant="secondary" className="font-mono text-xs">
+                                  {group.apps.length} {group.apps.length === 1 ? 'activity' : 'activities'}
+                                </Badge>
                               </div>
                             </div>
                           </div>
                         </div>
 
+                        {/* Group Drawable Name and Action */}
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0 flex-1">
                             <span className="text-xs text-muted-foreground whitespace-nowrap">
@@ -365,7 +560,7 @@ export function AutocompleteDialog({
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleSetDrawableName(app)}
+                            onClick={() => handleSetDrawableNameForGroup(group)}
                             className="whitespace-nowrap"
                           >
                             {drawableName
@@ -373,6 +568,55 @@ export function AutocompleteDialog({
                               : t("iconPack.autocomplete.setName")}
                           </Button>
                         </div>
+
+                        {/* Individual Apps (when expanded) */}
+                        {isExpanded && (
+                          <div className="space-y-2 pt-2 border-t">
+                            {group.apps.map((app) => {
+                              const appDrawableName = app.id ? drawableNameMap.get(app.id) : null
+                              return (
+                                <div
+                                  key={app.id}
+                                  className="bg-muted/30 rounded-md p-3 space-y-2"
+                                >
+                                  <div className="text-xs space-y-1">
+                                    <div className="font-medium text-muted-foreground">
+                                      {app.defaultName}
+                                    </div>
+                                    <div className="truncate">
+                                      <span className="font-medium">Activity:</span>{" "}
+                                      <span className="font-mono">{app.mainActivity}</span>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                        {t("iconPack.autocomplete.table.drawableName")}:
+                                      </span>
+                                      {appDrawableName ? (
+                                        <Badge variant="default" className="font-mono text-xs truncate">
+                                          {appDrawableName}
+                                        </Badge>
+                                      ) : (
+                                        <span className="text-xs text-muted-foreground">-</span>
+                                      )}
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleSetDrawableNameForApp(app)}
+                                      className="whitespace-nowrap text-xs"
+                                    >
+                                      {appDrawableName
+                                        ? t("iconPack.autocomplete.table.edit")
+                                        : t("iconPack.autocomplete.setName")}
+                                    </Button>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
                       </div>
                     )
                   })}
@@ -497,13 +741,16 @@ export function AutocompleteDialog({
         </DialogContent>
       </Dialog>
 
-      {selectedApp && designerId && (
+      {(selectedPackageName || selectedApp) && designerId && getDialogApp() && (
         <DrawableNameDialog
-          open={selectedApp !== null}
+          open={selectedPackageName !== null || selectedApp !== null}
           onOpenChange={(open) => {
-            if (!open) setSelectedApp(null)
+            if (!open) {
+              setSelectedPackageName(null)
+              setSelectedApp(null)
+            }
           }}
-          app={selectedApp}
+          app={getDialogApp()!}
           iconPackId={iconPackId}
           designerId={designerId}
           onConfirm={handleDrawableNameConfirm}

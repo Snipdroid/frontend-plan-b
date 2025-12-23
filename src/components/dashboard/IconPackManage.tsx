@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react"
 import { useParams, useNavigate, Link } from "react-router"
 import { useAuth } from "react-oidc-context"
 import { useTranslation } from "react-i18next"
-import { Upload } from "lucide-react"
+import { Upload, Sparkles } from "lucide-react"
 import {
   Card,
   CardContent,
@@ -47,6 +47,7 @@ import { CreateAccessTokenDialog } from "./CreateAccessTokenDialog"
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog"
 import { DrawableNameDialog } from "./DrawableNameDialog"
 import { ImportAppFilterDialog } from "./ImportAppFilterDialog"
+import { AutocompleteDialog } from "./AutocompleteDialog"
 import { ManageCollaboratorsDialog } from "./ManageCollaboratorsDialog"
 import { AppRequestsTable, type AppRequestsTableColumn } from "./AppRequestsTable"
 import { AppActionDropdown } from "./AppActionDropdown"
@@ -104,6 +105,7 @@ export function IconPackManage() {
   const [deletePackDialogOpen, setDeletePackDialogOpen] = useState(false)
   const [deleteVersionDialogOpen, setDeleteVersionDialogOpen] = useState(false)
   const [importDialogOpen, setImportDialogOpen] = useState(false)
+  const [autocompleteDialogOpen, setAutocompleteDialogOpen] = useState(false)
   const [selectedVersion, setSelectedVersion] =
     useState<IconPackVersionDTO | null>(null)
 
@@ -701,14 +703,24 @@ export function IconPackManage() {
                 {t("iconPack.adaptedAppsCount", { count: adaptedTotal })}
               </CardDescription>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setImportDialogOpen(true)}
-            >
-              <Upload className="mr-2 h-4 w-4" />
-              {t("iconPack.importAppFilter")}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setImportDialogOpen(true)}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                {t("iconPack.importAppFilter")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setAutocompleteDialogOpen(true)}
+              >
+                <Sparkles className="mr-2 h-4 w-4" />
+                {t("iconPack.autocomplete")}
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -929,6 +941,17 @@ export function IconPackManage() {
           iconPackId={packId}
           accessToken={auth.user.access_token}
           onImportComplete={fetchAdaptedApps}
+        />
+      )}
+
+      {packId && auth.user?.access_token && designerId && (
+        <AutocompleteDialog
+          open={autocompleteDialogOpen}
+          onOpenChange={setAutocompleteDialogOpen}
+          iconPackId={packId}
+          accessToken={auth.user.access_token}
+          onComplete={fetchAdaptedApps}
+          designerId={designerId}
         />
       )}
 

@@ -9,6 +9,7 @@ import type {
   PageAppInfoWithRequestCount,
   PageAppInfoDTO,
   IconPackAppDTO,
+  AppInfoDTO,
   DrawableNameSuggestion,
   IconPackAddCollaboratorsRequest,
   IconPackRemoveCollaboratorsRequest,
@@ -293,6 +294,27 @@ export async function getIconPackAdaptedApps(
       Authorization: `Bearer ${accessToken}`,
     },
   })
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`)
+  }
+
+  return response.json()
+}
+
+export async function getMissingApps(
+  accessToken: string,
+  iconPackId: string
+): Promise<AppInfoDTO[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/icon-pack/${iconPackId}/missing-apps`,
+    {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  )
 
   if (!response.ok) {
     throw new Error(`API Error: ${response.status} ${response.statusText}`)

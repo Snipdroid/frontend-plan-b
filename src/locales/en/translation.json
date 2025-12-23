@@ -192,6 +192,7 @@
     "autocomplete.table.actions": "Actions",
     "autocomplete.table.edit": "Edit",
     "autocomplete.setName": "Set Name",
+    "autocomplete.multipleNames": "Multiple",
     "autocomplete.submit": "Mark as Adapted",
     "autocomplete.submitting": "Marking apps as adapted...",
     "autocomplete.success": "Successfully marked {{count}} app as adapted",

@@ -192,6 +192,7 @@
     "autocomplete.table.actions": "操作",
     "autocomplete.table.edit": "编辑",
     "autocomplete.setName": "设置名称",
+    "autocomplete.multipleNames": "多个",
     "autocomplete.submit": "标记为已适配",
     "autocomplete.submitting": "正在标记为已适配...",
     "autocomplete.success": "成功标记 {{count}} 个应用为已适配",

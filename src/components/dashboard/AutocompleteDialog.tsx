@@ -43,6 +43,11 @@ interface AppGroup {
   drawableName?: string
 }
 
+type GroupDrawableName =
+  | { status: "none" }
+  | { status: "single"; name: string }
+  | { status: "multiple" }
+
 interface AutocompleteDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -182,14 +187,31 @@ export function AutocompleteDialog({
     })
   }, [filteredGroups, drawableNameMap])
 
-  // Get drawable name for a group (from first app that has one)
-  const getGroupDrawableName = (group: AppGroup): string | undefined => {
+  // Get drawable name for a group (only if all apps have the same drawable name)
+  const getGroupDrawableName = (group: AppGroup): GroupDrawableName => {
+    const drawableNames = new Set<string>()
+
     for (const app of group.apps) {
       if (app.id && drawableNameMap.has(app.id)) {
-        return drawableNameMap.get(app.id)
+        const name = drawableNameMap.get(app.id)
+        if (name) {
+          drawableNames.add(name)
+        }
       }
     }
-    return undefined
+
+    // If no apps have drawable names set
+    if (drawableNames.size === 0) {
+      return { status: "none" }
+    }
+
+    // If all apps have the same drawable name, return it
+    if (drawableNames.size === 1) {
+      return { status: "single", name: Array.from(drawableNames)[0] }
+    }
+
+    // If apps have different drawable names
+    return { status: "multiple" }
   }
 
   const getIconUrl = (packageName: string) => {
@@ -428,9 +450,13 @@ export function AutocompleteDialog({
                                 </Badge>
                               </TableCell>
                               <TableCell>
-                                {drawableName ? (
+                                {drawableName.status === "multiple" ? (
+                                  <Badge variant="secondary" className="text-xs">
+                                    {t("iconPack.autocomplete.multipleNames")}
+                                  </Badge>
+                                ) : drawableName.status === "single" ? (
                                   <Badge variant="default" className="font-mono text-xs">
-                                    {drawableName}
+                                    {drawableName.name}
                                   </Badge>
                                 ) : (
                                   <span className="text-xs text-muted-foreground">-</span>
@@ -442,7 +468,7 @@ export function AutocompleteDialog({
                                   size="sm"
                                   onClick={() => handleSetDrawableNameForGroup(group)}
                                 >
-                                  {drawableName
+                                  {drawableName.status !== "none"
                                     ? t("iconPack.autocomplete.table.edit")
                                     : t("iconPack.autocomplete.setName")}
                                 </Button>
@@ -549,9 +575,13 @@ export function AutocompleteDialog({
                             <span className="text-xs text-muted-foreground whitespace-nowrap">
                               {t("iconPack.autocomplete.table.drawableName")}:
                             </span>
-                            {drawableName ? (
+                            {drawableName.status === "multiple" ? (
+                              <Badge variant="secondary" className="text-xs truncate">
+                                {t("iconPack.autocomplete.multipleNames")}
+                              </Badge>
+                            ) : drawableName.status === "single" ? (
                               <Badge variant="default" className="font-mono text-xs truncate">
-                                {drawableName}
+                                {drawableName.name}
                               </Badge>
                             ) : (
                               <span className="text-xs text-muted-foreground">-</span>
@@ -563,7 +593,7 @@ export function AutocompleteDialog({
                             onClick={() => handleSetDrawableNameForGroup(group)}
                             className="whitespace-nowrap"
                           >
-                            {drawableName
+                            {drawableName.status !== "none"
                               ? t("iconPack.autocomplete.table.edit")
                               : t("iconPack.autocomplete.setName")}
                           </Button>

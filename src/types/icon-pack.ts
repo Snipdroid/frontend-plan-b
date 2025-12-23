@@ -103,7 +103,7 @@ export interface DesignerStatisticsResponse {
   distinctRequestCount: number
 }
 
-export type SuggestionSource = "none" | "iconpack" | "designer"
+export type SuggestionSource = "none" | "iconPack" | "designer"
 
 export interface DrawableNameSuggestion {
   drawable: string

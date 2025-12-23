@@ -133,7 +133,8 @@
     "drawable": "资源名",
     "source": "来源",
     "uploadIcons": "上传图标",
-    "uploadIconsDesc": "在上传时包含应用图标。如果您只需要提交应用元数据，可以禁用此选项。"
+    "uploadIconsDesc": "在上传时包含应用图标。如果您只需要提交应用元数据，可以禁用此选项。",
+    "successMessage_other": "成功上传 {{count}} 条应用信息！"
   },
   "dashboard": {
     "title": "控制面板",
@@ -339,7 +340,7 @@
       "errorInvalidFormat": "必须以字母开头，且只能包含小写字母、数字和下划线",
       "noSuggestions": "暂无建议",
       "source": {
-        "iconpack": "当前图标包",
+        "iconPack": "当前图标包",
         "designer": "您的图标包",
         "none": "社区"
       },

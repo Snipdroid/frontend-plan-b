@@ -133,7 +133,8 @@
     "drawable": "Drawable",
     "source": "Source",
     "uploadIcons": "Upload icons",
-    "uploadIconsDesc": "Include app icons in the upload. Disable this if you only need to submit app metadata."
+    "uploadIconsDesc": "Include app icons in the upload. Disable this if you only need to submit app metadata.",
+    "successMessage_other": "Successfully uploaded {{count}} app entries!"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -339,7 +340,7 @@
       "errorInvalidFormat": "Must start with a letter and contain only lowercase letters, numbers, and underscores",
       "noSuggestions": "No suggestions available",
       "source": {
-        "iconpack": "Current Pack",
+        "iconPack": "Current Pack",
         "designer": "Your Packs",
         "none": "Community"
       },

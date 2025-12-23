@@ -75,7 +75,7 @@ function SuggestionItem({
     source: SuggestionSource
   ): "default" | "secondary" | "outline" => {
     switch (source) {
-      case "iconpack":
+      case "iconPack":
         return "default"
       case "designer":
         return "secondary"
@@ -128,14 +128,29 @@ export function DrawableNameDialog({
 
     getDrawableNameSuggestions(app.packageName, iconPackId, designerId)
       .then((data) => {
-        // Sort: iconpack > designer > none
-        const sortOrder = { iconpack: 0, designer: 1, none: 2 }
-        const sorted = data.sort((a, b) => sortOrder[a.from] - sortOrder[b.from])
-        setSuggestions(sorted)
+        // Filter out suggestions with empty drawable names
+        const validSuggestions = data.filter(s => s.drawable && s.drawable.trim() !== "")
+
+        // Sort by priority: iconPack > designer > none
+        const sortOrder = { iconPack: 0, designer: 1, none: 2 }
+        const sorted = validSuggestions.sort((a, b) => sortOrder[a.from] - sortOrder[b.from])
+
+        // Deduplicate by drawable name, keeping the one with highest priority (closest to user)
+        const deduped = Array.from(
+          sorted.reduce((map, suggestion) => {
+            // Only add if drawable name doesn't exist yet (first occurrence = highest priority)
+            if (!map.has(suggestion.drawable)) {
+              map.set(suggestion.drawable, suggestion)
+            }
+            return map
+          }, new Map<string, DrawableNameSuggestion>()).values()
+        )
+
+        setSuggestions(deduped)
 
         // Pre-fill with first suggestion or auto-generated name
-        if (sorted.length > 0) {
-          const prefillValue = sorted[0].drawable
+        if (deduped.length > 0) {
+          const prefillValue = deduped[0].drawable
           setInputValue(prefillValue)
           setValidationError(validateDrawableName(prefillValue))
           setMode("suggestions") // Default to suggestions when available

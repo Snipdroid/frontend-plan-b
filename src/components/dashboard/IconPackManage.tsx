@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useParams, useNavigate, Link } from "react-router"
 import { useAuth } from "react-oidc-context"
 import { useTranslation } from "react-i18next"
@@ -31,6 +31,7 @@ import {
   PaginationPrevious,
   PaginationEllipsis,
 } from "@/components/ui/pagination"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   deleteIconPack,
   deleteIconPackVersion,
@@ -46,6 +47,7 @@ import { CreateAccessTokenDialog } from "./CreateAccessTokenDialog"
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog"
 import { DrawableNameDialog } from "./DrawableNameDialog"
 import { ImportAppFilterDialog } from "./ImportAppFilterDialog"
+import { ManageCollaboratorsDialog } from "./ManageCollaboratorsDialog"
 import { AppRequestsTable, type AppRequestsTableColumn } from "./AppRequestsTable"
 import { AppActionDropdown } from "./AppActionDropdown"
 import type { IconPackDTO, IconPackVersionDTO, AppInfoWithRequestCount, AppInfoDTO } from "@/types/icon-pack"
@@ -80,12 +82,19 @@ export function IconPackManage() {
     app: AppInfoDTO
   } | null>(null)
   const [designerId, setDesignerId] = useState<string | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [collaboratorsDialogOpen, setCollaboratorsDialogOpen] = useState(false)
 
   // Adapted apps state
   const [adaptedApps, setAdaptedApps] = useState<AppInfoDTO[]>([])
   const [adaptedTotal, setAdaptedTotal] = useState(0)
   const [adaptedPage, setAdaptedPage] = useState(1)
   const [isLoadingAdapted, setIsLoadingAdapted] = useState(false)
+
+  // Derive ownership status
+  const isOwner = useMemo(() => {
+    return iconPack?.designer?.id === currentUserId
+  }, [iconPack?.designer?.id, currentUserId])
 
   const requestsTotalPages = Math.ceil(requestsTotal / REQUESTS_PER_PAGE)
   const adaptedTotalPages = Math.ceil(adaptedTotal / ADAPTED_PER_PAGE)
@@ -134,7 +143,10 @@ export function IconPackManage() {
       },
     })
       .then((res) => res.json())
-      .then((data) => setDesignerId(data.id))
+      .then((data) => {
+        setDesignerId(data.id)
+        setCurrentUserId(data.id)
+      })
       .catch((err) => console.error("Failed to fetch designer:", err))
   }, [auth.user?.access_token])
 
@@ -768,18 +780,87 @@ export function IconPackManage() {
         </CardContent>
       </Card>
 
+      {/* Collaborators Section */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <div className="space-y-1.5">
+            <CardTitle>{t("iconPack.collaborators")}</CardTitle>
+            <CardDescription>
+              {isOwner
+                ? t("iconPack.collaboratorsDescOwner")
+                : t("iconPack.collaboratorsDescCollaborator")}
+            </CardDescription>
+          </div>
+          <Button
+            onClick={() => setCollaboratorsDialogOpen(true)}
+            disabled={!isOwner}
+          >
+            {t("iconPack.manageCollaborators")}
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {iconPack?.collaborators && iconPack.collaborators.length > 0 ? (
+            <div className="space-y-2">
+              {iconPack.collaborators.slice(0, 3).map((collaborator) => (
+                <div key={collaborator.id} className="flex items-center gap-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>
+                      {collaborator.name?.charAt(0).toUpperCase() ||
+                        collaborator.email?.charAt(0).toUpperCase() ||
+                        "?"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {collaborator.name || collaborator.email}
+                    </p>
+                    {collaborator.email && collaborator.name && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        {collaborator.email}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {iconPack.collaborators.length > 3 && (
+                <p className="text-sm text-muted-foreground">
+                  {t("iconPack.andMoreCollaborators", {
+                    count: iconPack.collaborators.length - 3,
+                  })}
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              {t("iconPack.noCollaborators")}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>{t("iconPack.dangerZone")}</CardTitle>
+          <CardDescription>
+            {isOwner
+              ? t("iconPack.dangerZoneDescOwner")
+              : t("iconPack.dangerZoneDescCollaborator")}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button
-            variant="destructive"
-            onClick={() => setDeletePackDialogOpen(true)}
-            disabled={isDeleting}
-          >
-            {t("iconPack.deleteIconPack")}
-          </Button>
+          {isOwner ? (
+            <Button
+              variant="destructive"
+              onClick={() => setDeletePackDialogOpen(true)}
+              disabled={isDeleting}
+            >
+              {t("iconPack.deleteIconPack")}
+            </Button>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {t("iconPack.onlyOwnerCanDelete")}
+            </p>
+          )}
         </CardContent>
       </Card>
 
@@ -848,6 +929,23 @@ export function IconPackManage() {
           iconPackId={packId}
           accessToken={auth.user.access_token}
           onImportComplete={fetchAdaptedApps}
+        />
+      )}
+
+      {packId && iconPack && currentUserId && (
+        <ManageCollaboratorsDialog
+          open={collaboratorsDialogOpen}
+          onOpenChange={setCollaboratorsDialogOpen}
+          iconPackId={packId}
+          iconPackName={iconPack.name}
+          isOwner={isOwner}
+          currentUserId={currentUserId}
+          onCollaboratorsChanged={async () => {
+            if (auth.user?.access_token) {
+              const updated = await getIconPack(auth.user.access_token, packId)
+              setIconPack(updated)
+            }
+          }}
         />
       )}
     </div>

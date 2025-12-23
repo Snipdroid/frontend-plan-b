@@ -10,7 +10,10 @@ import type {
   PageAppInfoDTO,
   IconPackAppDTO,
   DrawableNameSuggestion,
+  IconPackAddCollaboratorsRequest,
+  IconPackRemoveCollaboratorsRequest,
 } from "@/types/icon-pack"
+import type { DesignerDTO } from "@/types/user"
 
 export async function getIconPacks(accessToken: string): Promise<IconPackDTO[]> {
   const response = await fetch(`${API_BASE_URL}/icon-pack`, {
@@ -313,6 +316,78 @@ export async function getDrawableNameSuggestions(
       headers: {
         "Content-Type": "application/json",
       },
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`)
+  }
+
+  return response.json()
+}
+
+// Get collaborators for an icon pack
+export async function getIconPackCollaborators(
+  accessToken: string,
+  iconPackId: string
+): Promise<DesignerDTO[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/icon-pack/${iconPackId}/collaborators`,
+    {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`)
+  }
+
+  return response.json()
+}
+
+// Add collaborators to an icon pack (owner only)
+export async function addIconPackCollaborators(
+  accessToken: string,
+  iconPackId: string,
+  designerIds: string[]
+): Promise<DesignerDTO[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/icon-pack/${iconPackId}/collaborators`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ designerIds } as IconPackAddCollaboratorsRequest),
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`)
+  }
+
+  return response.json()
+}
+
+// Remove collaborators from an icon pack (owner only)
+export async function removeIconPackCollaborators(
+  accessToken: string,
+  iconPackId: string,
+  designerIds: string[]
+): Promise<DesignerDTO[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/icon-pack/${iconPackId}/collaborators`,
+    {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ designerIds } as IconPackRemoveCollaboratorsRequest),
     }
   )
 

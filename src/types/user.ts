@@ -1,3 +1,5 @@
+import type { IconPackDTO } from "./icon-pack"
+
 export interface UserProfile {
   name: string
   email?: string
@@ -10,6 +12,9 @@ export interface DesignerDTO {
   oidcSubject: string
   name?: string
   email?: string
+  role: number
+  iconPacks?: IconPackDTO[]
+  collaboratedIconPacks?: IconPackDTO[]
   createdAt?: string
   updatedAt?: string
 }

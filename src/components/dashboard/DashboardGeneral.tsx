@@ -10,12 +10,14 @@ import {
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getIconPacks } from "@/services/icon-pack"
-import { getDesignerStatistics } from "@/services/designer"
+import { getDesignerStatistics, getDesignerMe } from "@/services/designer"
 
 export function DashboardGeneral() {
   const auth = useAuth()
   const { t } = useTranslation()
   const [iconPackCount, setIconPackCount] = useState<number | null>(null)
+  const [ownedPackCount, setOwnedPackCount] = useState<number | null>(null)
+  const [collaboratedPackCount, setCollaboratedPackCount] = useState<number | null>(null)
   const [totalRequests, setTotalRequests] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -24,11 +26,19 @@ export function DashboardGeneral() {
       if (!auth.user?.access_token) return
 
       try {
-        const [packs, statistics] = await Promise.all([
+        const [packs, statistics, designer] = await Promise.all([
           getIconPacks(auth.user.access_token),
           getDesignerStatistics(auth.user.access_token),
+          getDesignerMe(auth.user.access_token),
         ])
+
+        // Count owned vs collaborated
+        const owned = packs.filter((pack) => pack.designer?.id === designer.id)
+        const collaborated = packs.filter((pack) => pack.designer?.id !== designer.id)
+
         setIconPackCount(packs.length)
+        setOwnedPackCount(owned.length)
+        setCollaboratedPackCount(collaborated.length)
         setTotalRequests(statistics.distinctRequestCount)
       } catch (error) {
         console.error("Failed to fetch stats:", error)
@@ -58,9 +68,16 @@ export function DashboardGeneral() {
             {isLoading ? (
               <Skeleton className="h-8 w-12" />
             ) : (
-              <div className="text-2xl font-bold">{iconPackCount ?? 0}</div>
+              <>
+                <div className="text-2xl font-bold">{iconPackCount ?? 0}</div>
+                <p className="text-xs text-muted-foreground">
+                  {t("dashboard.ownedAndCollaborated", {
+                    owned: ownedPackCount ?? 0,
+                    collaborated: collaboratedPackCount ?? 0,
+                  })}
+                </p>
+              </>
             )}
-            <p className="text-xs text-muted-foreground">{t("dashboard.activeIconPacks")}</p>
           </CardContent>
         </Card>
 

@@ -18,7 +18,10 @@
     "next": "Next",
     "previous": "Previous",
     "confirm": "Confirm",
-    "retry": "Retry"
+    "retry": "Retry",
+    "shared": "Shared",
+    "owner": "Owner",
+    "collaborator": "Collaborator"
   },
   "nav": {
     "upload": "Upload",
@@ -150,7 +153,8 @@
     "daysAgo": "Days ago",
     "recentActivity": "Recent Activity",
     "recentActivityDesc": "Your recent icon pack requests and updates.",
-    "activityNotReady": "Activity data will be available when the API is ready."
+    "activityNotReady": "Activity data will be available when the API is ready.",
+    "ownedAndCollaborated": "{{owned}} owned, {{collaborated}} shared"
   },
   "iconPack": {
     "management": "Icon Pack Management",
@@ -221,7 +225,28 @@
     "previewStatusDuplicate": "Multiple conflicting drawable names in XML",
     "previewStatusAlreadyAdapted": "Already adapted to this icon pack",
     "drawable": "Drawable",
+    "collaborators": "Collaborators",
+    "manageCollaborators": "Manage Collaborators",
+    "collaboratorsDescOwner": "Share this icon pack with other designers",
+    "collaboratorsDescCollaborator": "You are a collaborator on this icon pack",
+    "noCollaborators": "No collaborators yet",
+    "andMoreCollaborators": "... and {{count}} more",
+    "onlyOwnerCanDelete": "Only the owner can delete this icon pack",
+    "addCollaborator": "Add Collaborator",
+    "removeCollaborator": "Remove Collaborator",
+    "collaboratorAdded": "Collaborator added successfully",
+    "collaboratorRemoved": "Collaborator removed successfully",
+    "cannotAddYourself": "You cannot add yourself as a collaborator",
+    "alreadyCollaborator": "This designer is already a collaborator",
+    "designerNotFound": "Designer not found",
+    "failedToAddCollaborator": "Failed to add collaborator",
+    "failedToRemoveCollaborator": "Failed to remove collaborator",
+    "failedToFetchCollaborators": "Failed to fetch collaborators",
+    "onlyOwnerCanManage": "Only the owner can manage collaborators",
+    "designerSearchNotImplemented": "Designer search API not yet implemented. Please contact backend team to add GET /designer/search endpoint.",
     "dangerZone": "Danger Zone",
+    "dangerZoneDescOwner": "Permanently delete this icon pack and all its data",
+    "dangerZoneDescCollaborator": "You cannot delete this icon pack as you are not the owner",
     "deleteIconPack": "Delete Icon Pack",
     "deleteVersion": "Delete Version",
     "deletePackConfirm": "This action cannot be undone. This will permanently delete the icon pack \"{{name}}\" and all its versions.",
@@ -300,6 +325,19 @@
         "title": "From Suggestions",
         "description": "Choose from existing suggestions"
       }
+    },
+    "manageCollaborators": {
+      "title": "Manage Collaborators",
+      "description": "Add or remove collaborators for this icon pack",
+      "currentCollaborators": "Current Collaborators",
+      "addNew": "Add New Collaborator",
+      "selectDesigner": "Select a designer...",
+      "searchPlaceholder": "Search by email...",
+      "typeToSearch": "Type to search for designers",
+      "searchHint": "Search for designers by their email address",
+      "searching": "Searching...",
+      "adding": "Adding...",
+      "removing": "Removing..."
     }
   },
   "appDetail": {

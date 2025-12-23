@@ -1,9 +1,13 @@
+import type { DesignerDTO } from "./user"
+
 export interface IconPackDTO {
   id?: string
   name: string
   createdAt?: string
   updatedAt?: string
   versions?: IconPackVersionDTO[]
+  designer?: DesignerDTO
+  collaborators?: DesignerDTO[]
 }
 
 export interface IconPackVersionDTO {
@@ -104,4 +108,12 @@ export type SuggestionSource = "none" | "iconpack" | "designer"
 export interface DrawableNameSuggestion {
   drawable: string
   from: SuggestionSource
+}
+
+export interface IconPackAddCollaboratorsRequest {
+  designerIds: string[]
+}
+
+export interface IconPackRemoveCollaboratorsRequest {
+  designerIds: string[]
 }

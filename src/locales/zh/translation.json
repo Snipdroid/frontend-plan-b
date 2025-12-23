@@ -18,7 +18,10 @@
     "next": "下一页",
     "previous": "上一页",
     "confirm": "确认",
-    "retry": "重试"
+    "retry": "重试",
+    "shared": "已共享",
+    "owner": "所有者",
+    "collaborator": "协作者"
   },
   "nav": {
     "upload": "上传",
@@ -150,7 +153,8 @@
     "daysAgo": "天前",
     "recentActivity": "近期活动",
     "recentActivityDesc": "您近期的图标包申请和更新。",
-    "activityNotReady": "API 就绪后将显示活动数据。"
+    "activityNotReady": "API 就绪后将显示活动数据。",
+    "ownedAndCollaborated": "{{owned}} 个已拥有，{{collaborated}} 个已共享"
   },
   "iconPack": {
     "management": "图标包管理",
@@ -221,7 +225,28 @@
     "previewStatusDuplicate": "XML 中存在多个冲突的资源名",
     "previewStatusAlreadyAdapted": "已适配到此图标包",
     "drawable": "资源名",
+    "collaborators": "协作者",
+    "manageCollaborators": "管理协作者",
+    "collaboratorsDescOwner": "与其他设计师共享此图标包",
+    "collaboratorsDescCollaborator": "您是此图标包的协作者",
+    "noCollaborators": "暂无协作者",
+    "andMoreCollaborators": "... 及 {{count}} 位更多",
+    "onlyOwnerCanDelete": "仅所有者可以删除此图标包",
+    "addCollaborator": "添加协作者",
+    "removeCollaborator": "移除协作者",
+    "collaboratorAdded": "协作者添加成功",
+    "collaboratorRemoved": "协作者移除成功",
+    "cannotAddYourself": "您不能将自己添加为协作者",
+    "alreadyCollaborator": "此设计师已是协作者",
+    "designerNotFound": "设计师未找到",
+    "failedToAddCollaborator": "添加协作者失败",
+    "failedToRemoveCollaborator": "移除协作者失败",
+    "failedToFetchCollaborators": "获取协作者列表失败",
+    "onlyOwnerCanManage": "仅所有者可以管理协作者",
+    "designerSearchNotImplemented": "设计师搜索 API 尚未实现。请联系后端团队以添加 GET /designer/search 端点。",
     "dangerZone": "危险",
+    "dangerZoneDescOwner": "永久删除此图标包及其所有数据",
+    "dangerZoneDescCollaborator": "您无法删除此图标包，因为您不是所有者",
     "deleteIconPack": "删除图标包",
     "deleteVersion": "删除版本",
     "deletePackConfirm": "此操作无法撤销。这将永久删除图标包「{{name}}」及其所有版本。",
@@ -300,6 +325,19 @@
         "title": "从建议中选择",
         "description": "从现有建议中选择"
       }
+    },
+    "manageCollaborators": {
+      "title": "管理协作者",
+      "description": "为此图标包添加或移除协作者",
+      "currentCollaborators": "当前协作者",
+      "addNew": "添加新协作者",
+      "selectDesigner": "选择设计师...",
+      "searchPlaceholder": "按电子邮件搜索...",
+      "typeToSearch": "输入以搜索设计师",
+      "searchHint": "按电子邮件地址搜索设计师",
+      "searching": "搜索中...",
+      "adding": "添加中...",
+      "removing": "移除中..."
     }
   },
   "appDetail": {

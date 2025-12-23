@@ -43,11 +43,13 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import { SidebarMenuSkeleton } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { extractUserProfile } from "@/types/user"
 import type { IconPackDTO } from "@/types/icon-pack"
 import { getIconPacks } from "@/services/icon-pack"
+import { getDesignerMe } from "@/services/designer"
 import { CreateIconPackDialog } from "./CreateIconPackDialog"
 import { useTheme } from "@/components/theme-provider"
 
@@ -59,6 +61,7 @@ export function DashboardSidebar() {
   const [iconPacks, setIconPacks] = useState<IconPackDTO[]>([])
   const [isLoadingPacks, setIsLoadingPacks] = useState(true)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   const profile = auth.user
     ? extractUserProfile(auth.user.profile as Record<string, unknown>)
@@ -97,6 +100,21 @@ export function DashboardSidebar() {
     }
 
     fetchIconPacks()
+  }, [auth.user?.access_token])
+
+  useEffect(() => {
+    async function fetchCurrentUser() {
+      if (!auth.user?.access_token) return
+
+      try {
+        const designer = await getDesignerMe(auth.user.access_token)
+        setCurrentUserId(designer.id || null)
+      } catch (error) {
+        console.error("Failed to fetch current user:", error)
+      }
+    }
+
+    fetchCurrentUser()
   }, [auth.user?.access_token])
 
   return (
@@ -156,22 +174,30 @@ export function DashboardSidebar() {
                     </>
                   ) : (
                     <>
-                      {iconPacks.map((pack) => (
-                        <SidebarMenuItem key={pack.id}>
-                          <SidebarMenuButton
-                            asChild
-                            isActive={isActive(`/dashboard/icon-pack/${pack.id}`)}
-                          >
-                            <Link
-                              to={`/dashboard/icon-pack/${pack.id}`}
-                              state={{ iconPackName: pack.name }}
+                      {iconPacks.map((pack) => {
+                        const isOwner = pack.designer?.id === currentUserId
+                        return (
+                          <SidebarMenuItem key={pack.id}>
+                            <SidebarMenuButton
+                              asChild
+                              isActive={isActive(`/dashboard/icon-pack/${pack.id}`)}
                             >
-                              <Package />
-                              <span>{pack.name}</span>
-                            </Link>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      ))}
+                              <Link
+                                to={`/dashboard/icon-pack/${pack.id}`}
+                                state={{ iconPackName: pack.name }}
+                              >
+                                <Package />
+                                <span className="flex-1">{pack.name}</span>
+                                {!isOwner && (
+                                  <Badge variant="secondary" className="ml-auto text-xs">
+                                    {t("common.shared")}
+                                  </Badge>
+                                )}
+                              </Link>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        )
+                      })}
                       <SidebarMenuItem>
                         <Button
                           variant="ghost"

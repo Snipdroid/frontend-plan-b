@@ -385,6 +385,11 @@
     "renderTemplate": "渲染模板失败",
     "deleteIconPack": "删除图标包失败",
     "deleteVersion": "删除版本失败",
-    "importAppFilter": "导入 appfilter.xml 失败"
+    "importAppFilter": "导入 appfilter.xml 失败",
+    "drawableNameEmpty": "资源名称不能为空",
+    "drawableNameMustStartWithLetter": "必须以小写字母开头",
+    "drawableNameInvalidChars": "只能包含小写字母、数字和下划线",
+    "searchFailed": "搜索失败",
+    "batchCreationFailed": "批量创建失败"
   }
 }

@@ -385,6 +385,11 @@
     "renderTemplate": "Failed to render template",
     "deleteIconPack": "Failed to delete icon pack",
     "deleteVersion": "Failed to delete version",
-    "importAppFilter": "Failed to import appfilter.xml"
+    "importAppFilter": "Failed to import appfilter.xml",
+    "drawableNameEmpty": "Drawable name cannot be empty",
+    "drawableNameMustStartWithLetter": "Must start with a lowercase letter",
+    "drawableNameInvalidChars": "Can only contain lowercase letters, numbers, and underscores",
+    "searchFailed": "Search failed",
+    "batchCreationFailed": "Batch creation failed"
   }
 }

@@ -177,17 +177,17 @@ export function ImportAppFilterDialog({
 
   const validateDrawableName = (name: string): string | null => {
     if (!name || name.length === 0) {
-      return "Drawable name cannot be empty"
+      return t("errors.drawableNameEmpty")
     }
 
     // Must start with a letter
     if (!/^[a-z]/.test(name)) {
-      return "Must start with a lowercase letter"
+      return t("errors.drawableNameMustStartWithLetter")
     }
 
     // Can only contain lowercase letters, numbers, and underscores
     if (!/^[a-z][a-z0-9_]*$/.test(name)) {
-      return "Can only contain lowercase letters, numbers, and underscores"
+      return t("errors.drawableNameInvalidChars")
     }
 
     return null
@@ -230,7 +230,7 @@ export function ImportAppFilterDialog({
             return {
               entry,
               app: null,
-              error: error instanceof Error ? error.message : "Search failed",
+              error: error instanceof Error ? error.message : t("errors.searchFailed"),
             }
           }
         })
@@ -428,7 +428,7 @@ export function ImportAppFilterDialog({
           } catch (error) {
             // Record all apps in failed batch as creation failures
             // Do NOT retry individually due to strict rate limits
-            const errorMessage = error instanceof Error ? error.message : "Batch creation failed"
+            const errorMessage = error instanceof Error ? error.message : t("errors.batchCreationFailed")
             for (let j = 0; j < batch.length; j++) {
               const originalApp = missingApps[batchStart + j]
               creationFails.push({

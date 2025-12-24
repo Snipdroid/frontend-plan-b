@@ -1,3 +1,4 @@
+import '@fontsource-variable/noto-sans-sc'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router'
@@ -8,6 +9,12 @@ import App from './App.tsx'
 import { oidcConfig } from './lib/auth-config'
 import { ThemeProvider } from './components/theme-provider'
 import { Toaster } from './components/ui/sonner'
+import { isWindows } from './lib/platform'
+
+// Apply Windows-specific font
+if (isWindows()) {
+  document.documentElement.classList.add('windows-font')
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

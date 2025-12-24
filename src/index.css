@@ -121,6 +121,6 @@
     @apply bg-background text-foreground;
   }
   .windows-font body {
-    font-family: "Source Han Sans SC VF", system-ui, -apple-system, sans-serif;
+    font-family: "Noto Sans SC Variable", system-ui, -apple-system, sans-serif;
   }
 }

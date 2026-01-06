@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react"
 import { useParams, useNavigate, Link } from "react-router"
 import { useAuth } from "react-oidc-context"
 import { useTranslation } from "react-i18next"
-import { Upload, Sparkles } from "lucide-react"
+import { Upload, Sparkles, Download } from "lucide-react"
 import {
   Card,
   CardContent,
@@ -91,6 +91,7 @@ export function IconPackManage() {
   const [adaptedTotal, setAdaptedTotal] = useState(0)
   const [adaptedPage, setAdaptedPage] = useState(1)
   const [isLoadingAdapted, setIsLoadingAdapted] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
 
   // Derive ownership status
   const isOwner = useMemo(() => {
@@ -210,6 +211,66 @@ export function IconPackManage() {
   const handleAdaptedPageChange = (page: number) => {
     if (page >= 1 && page <= adaptedTotalPages) {
       setAdaptedPage(page)
+    }
+  }
+
+  const handleExportAppFilter = async () => {
+    if (!packId || !auth.user?.access_token) return
+
+    setIsExporting(true)
+    try {
+      // Fetch all adapted apps by paginating through all pages
+      const allApps: { packageName: string; mainActivity: string; drawable: string }[] = []
+      let page = 1
+      const perPage = 100
+      let hasMore = true
+
+      while (hasMore) {
+        const response = await getIconPackAdaptedApps(
+          auth.user.access_token,
+          packId,
+          page,
+          perPage
+        )
+
+        for (const item of response.items) {
+          if (item.appInfo?.packageName && item.appInfo?.mainActivity && item.drawable) {
+            allApps.push({
+              packageName: item.appInfo.packageName,
+              mainActivity: item.appInfo.mainActivity,
+              drawable: item.drawable,
+            })
+          }
+        }
+
+        hasMore = response.items.length === perPage
+        page++
+      }
+
+      // Generate appfilter.xml content
+      const xmlLines = ['<?xml version="1.0" encoding="utf-8"?>', "<appfilter>"]
+      for (const app of allApps) {
+        xmlLines.push(
+          `\t<item component="ComponentInfo{${app.packageName}/${app.mainActivity}}" drawable="${app.drawable}"/>`
+        )
+      }
+      xmlLines.push("</appfilter>")
+      const xmlContent = xmlLines.join("\n")
+
+      // Trigger download
+      const blob = new Blob([xmlContent], { type: "application/xml" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = "appfilter.xml"
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error("Failed to export appfilter:", err)
+    } finally {
+      setIsExporting(false)
     }
   }
 
@@ -713,6 +774,15 @@ export function IconPackManage() {
               >
                 <Upload className="mr-2 h-4 w-4" />
                 {t("iconPack.importAppFilter")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportAppFilter}
+                disabled={isExporting || adaptedTotal === 0}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                {isExporting ? t("iconPack.exportingAppFilter") : t("iconPack.exportAppFilter")}
               </Button>
               <Button
                 variant="outline"

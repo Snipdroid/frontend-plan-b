@@ -162,9 +162,11 @@ export function ImportAppFilterDialog({
         perPage
       )
 
-      for (const app of response.items) {
-        const key = `${app.packageName}|${app.mainActivity}`
-        adaptedSet.add(key)
+      for (const item of response.items) {
+        if (item.appInfo) {
+          const key = `${item.appInfo.packageName}|${item.appInfo.mainActivity}`
+          adaptedSet.add(key)
+        }
       }
 
       const totalPages = Math.ceil(response.metadata.total / perPage)

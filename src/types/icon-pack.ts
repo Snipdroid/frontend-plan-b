@@ -88,6 +88,11 @@ export interface IconPackAppDTO {
   drawable: string
 }
 
+export interface PageIconPackAppDTO {
+  items: IconPackAppDTO[]
+  metadata: PageMetadata
+}
+
 export interface IconPackVersionRequestRecordResponse {
   requestRecord: RequestRecordDTO
   iconPackApp?: IconPackAppDTO

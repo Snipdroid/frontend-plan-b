@@ -7,7 +7,7 @@ import type {
   PageIconPackVersionDTO,
   PageIconPackVersionRequestRecordResponse,
   PageAppInfoWithRequestCount,
-  PageAppInfoDTO,
+  PageIconPackAppDTO,
   IconPackAppDTO,
   AppInfoDTO,
   DrawableNameSuggestion,
@@ -280,7 +280,7 @@ export async function getIconPackAdaptedApps(
   iconPackId: string,
   page?: number,
   per?: number
-): Promise<PageAppInfoDTO> {
+): Promise<PageIconPackAppDTO> {
   const params = new URLSearchParams()
   if (page !== undefined) params.set("page", String(page))
   if (per !== undefined) params.set("per", String(per))

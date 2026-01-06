@@ -191,7 +191,9 @@ export function IconPackManage() {
         adaptedPage,
         ADAPTED_PER_PAGE
       )
-      setAdaptedApps(response.items)
+      setAdaptedApps(
+        response.items.map((item) => item.appInfo).filter(Boolean) as AppInfoDTO[]
+      )
       setAdaptedTotal(response.metadata.total)
     } catch (err) {
       console.error(t("errors.loadAdaptedApps"), err)

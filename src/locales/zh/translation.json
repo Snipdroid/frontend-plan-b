@@ -368,6 +368,14 @@
       "searching": "搜索中...",
       "adding": "添加中...",
       "removing": "移除中..."
+    },
+    "markAsAdapted": {
+      "title": "标记为已适配",
+      "description": "选择一个图标包以将此应用标记为已适配。",
+      "selectIconPack": "选择图标包",
+      "searchIconPack": "搜索图标包...",
+      "noIconPacks": "未找到图标包。请先在控制面板中创建一个。",
+      "noIconPackFound": "未找到图标包。"
     }
   },
   "appDetail": {
@@ -376,7 +384,8 @@
     "activity": "Activity",
     "count": "请求次数",
     "tags": "标签",
-    "localizedNames": "本地化名称"
+    "localizedNames": "本地化名称",
+    "markAsAdapted": "标记为已适配"
   },
   "errors": {
     "fetchIconPacks": "获取图标包失败",

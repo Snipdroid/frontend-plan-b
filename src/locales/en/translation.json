@@ -368,6 +368,14 @@
       "searching": "Searching...",
       "adding": "Adding...",
       "removing": "Removing..."
+    },
+    "markAsAdapted": {
+      "title": "Mark as Adapted",
+      "description": "Select an icon pack to mark this app as adapted.",
+      "selectIconPack": "Select icon pack",
+      "searchIconPack": "Search icon packs...",
+      "noIconPacks": "No icon packs found. Create one in the dashboard first.",
+      "noIconPackFound": "No icon pack found."
     }
   },
   "appDetail": {
@@ -376,7 +384,8 @@
     "activity": "Activity",
     "count": "Count",
     "tags": "Tags",
-    "localizedNames": "Localized Names"
+    "localizedNames": "Localized Names",
+    "markAsAdapted": "Mark as Adapted"
   },
   "errors": {
     "fetchIconPacks": "Failed to fetch icon packs",

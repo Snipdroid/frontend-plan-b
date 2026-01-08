@@ -9,6 +9,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
@@ -21,6 +22,7 @@ import { API_BASE_URL } from "@/services/api"
 import { getTagsForApp } from "@/services/app-info"
 import { LocalizedNamesList } from "./LocalizedNamesList"
 import { AddTagDialog } from "./AddTagDialog"
+import { MarkAsAdaptedDialog } from "./MarkAsAdaptedDialog"
 import type { AppInfo, Tag } from "@/types"
 
 function getAppIconUrl(packageName: string): string {
@@ -42,6 +44,7 @@ export function AppDetailSheet({ app, open, onOpenChange }: AppDetailSheetProps)
   const [tags, setTags] = useState<Tag[]>([])
   const [isLoadingTags, setIsLoadingTags] = useState(false)
   const [isAddTagDialogOpen, setIsAddTagDialogOpen] = useState(false)
+  const [isMarkAsAdaptedDialogOpen, setIsMarkAsAdaptedDialogOpen] = useState(false)
 
   // Reset icon error when app changes
   useEffect(() => {
@@ -96,6 +99,16 @@ export function AppDetailSheet({ app, open, onOpenChange }: AppDetailSheetProps)
 
         <div className="space-y-4 px-4 pb-4">
           {iconElement}
+
+          {auth.isAuthenticated && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsMarkAsAdaptedDialogOpen(true)}
+            >
+              {t("appDetail.markAsAdapted")}
+            </Button>
+          )}
 
           <div className="space-y-3 text-sm">
             <div>
@@ -166,6 +179,12 @@ export function AppDetailSheet({ app, open, onOpenChange }: AppDetailSheetProps)
           open={isAddTagDialogOpen}
           onOpenChange={setIsAddTagDialogOpen}
           onTagAdded={(newTags) => setTags(newTags)}
+        />
+
+        <MarkAsAdaptedDialog
+          app={app}
+          open={isMarkAsAdaptedDialogOpen}
+          onOpenChange={setIsMarkAsAdaptedDialogOpen}
         />
       </SheetContent>
     </Sheet>

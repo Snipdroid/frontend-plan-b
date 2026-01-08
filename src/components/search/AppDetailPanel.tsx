@@ -16,6 +16,7 @@ import { API_BASE_URL } from "@/services/api"
 import { getTagsForApp } from "@/services/app-info"
 import { LocalizedNamesList } from "./LocalizedNamesList"
 import { AddTagDialog } from "./AddTagDialog"
+import { MarkAsAdaptedDialog } from "./MarkAsAdaptedDialog"
 import type { AppInfo, Tag } from "@/types"
 
 function getAppIconUrl(packageName: string): string {
@@ -36,6 +37,7 @@ export function AppDetailPanel({ app, onClose }: AppDetailPanelProps) {
   const [tags, setTags] = useState<Tag[]>([])
   const [isLoadingTags, setIsLoadingTags] = useState(false)
   const [isAddTagDialogOpen, setIsAddTagDialogOpen] = useState(false)
+  const [isMarkAsAdaptedDialogOpen, setIsMarkAsAdaptedDialogOpen] = useState(false)
 
   // Reset icon error when app changes
   useEffect(() => {
@@ -98,6 +100,16 @@ export function AppDetailPanel({ app, onClose }: AppDetailPanelProps) {
 
       <div className="space-y-4">
         {iconElement}
+
+        {auth.isAuthenticated && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsMarkAsAdaptedDialogOpen(true)}
+          >
+            {t("appDetail.markAsAdapted")}
+          </Button>
+        )}
 
         <div className="space-y-3 text-sm">
           <div>
@@ -168,6 +180,12 @@ export function AppDetailPanel({ app, onClose }: AppDetailPanelProps) {
         open={isAddTagDialogOpen}
         onOpenChange={setIsAddTagDialogOpen}
         onTagAdded={(newTags) => setTags(newTags)}
+      />
+
+      <MarkAsAdaptedDialog
+        app={app}
+        open={isMarkAsAdaptedDialogOpen}
+        onOpenChange={setIsMarkAsAdaptedDialogOpen}
       />
     </div>
   )

@@ -1,10 +1,16 @@
 import { useState, useEffect } from "react"
-import { X, Plus } from "lucide-react"
+import { X, Plus, ChevronDown } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { useAuth } from "react-oidc-context"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Tooltip,
   TooltipContent,
@@ -102,13 +108,32 @@ export function AppDetailPanel({ app, onClose }: AppDetailPanelProps) {
         {iconElement}
 
         {auth.isAuthenticated && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsMarkAsAdaptedDialogOpen(true)}
-          >
-            {t("appDetail.markAsAdapted")}
-          </Button>
+          <div className="flex w-full">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 rounded-r-none"
+              onClick={() => setIsMarkAsAdaptedDialogOpen(true)}
+            >
+              {t("appDetail.markAsAdapted")}
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-l-none border-l-0 px-2"
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => setIsMarkAsAdaptedDialogOpen(true)}>
+                  {t("appDetail.markAsAdapted")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         )}
 
         <div className="space-y-3 text-sm">

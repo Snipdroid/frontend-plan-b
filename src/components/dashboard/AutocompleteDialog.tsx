@@ -238,7 +238,7 @@ export function AutocompleteDialog({
     setExpandedGroups(newExpanded)
   }
 
-  const handleDrawableNameConfirm = (drawableName: string) => {
+  const handleDrawableNameConfirm = (drawableName: string, _categories: string[]) => {
     const newMap = new Map(drawableNameMap)
 
     if (selectedApp) {
@@ -300,7 +300,7 @@ export function AutocompleteDialog({
 
       // Use Promise.allSettled to handle partial failures
       const results = await Promise.allSettled(
-        [markAppsAsAdapted(accessToken, iconPackId, appInfoIDs, true, drawables)]
+        [markAppsAsAdapted(accessToken, iconPackId, appInfoIDs, true, drawables, {})]
       )
 
       const successResults = results.filter((r) => r.status === "fulfilled")

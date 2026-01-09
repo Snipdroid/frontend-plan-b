@@ -128,7 +128,8 @@ export function VersionDetail() {
         packId,
         [appInfoId],
         false,
-        {} // Empty drawables dictionary when unmarking
+        {}, // Empty drawables dictionary when unmarking
+        {} // Empty categories when unmarking
       )
       await fetchRequests()
     } catch (err) {
@@ -138,7 +139,7 @@ export function VersionDetail() {
     }
   }
 
-  const handleDrawableNameConfirm = async (drawableName: string) => {
+  const handleDrawableNameConfirm = async (drawableName: string, categories: string[]) => {
     if (!packId || !auth.user?.access_token || !pendingAdaptApp) return
 
     setIsMarking(true)
@@ -148,7 +149,8 @@ export function VersionDetail() {
         packId,
         [pendingAdaptApp.appInfoId],
         true,
-        { [pendingAdaptApp.appInfoId]: drawableName }
+        { [pendingAdaptApp.appInfoId]: drawableName },
+        { [pendingAdaptApp.appInfoId]: categories }
       )
       await fetchRequests()
       setDrawableDialogOpen(false)

@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { Plus, Minus, ChevronDown } from "lucide-react"
+import { Plus, Minus, ChevronDown, Tags } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -15,25 +15,31 @@ import type {
   AppInfoDTO,
   AppInfoWithRequestCount,
   IconPackVersionRequestRecordResponse,
+  IconPackAppDTO,
 } from "@/types/icon-pack"
 
 interface AppActionDropdownProps {
-  item: AppInfoWithRequestCount | IconPackVersionRequestRecordResponse | AppInfoDTO
+  item: AppInfoWithRequestCount | IconPackVersionRequestRecordResponse | AppInfoDTO | IconPackAppDTO
   isAdapted: boolean
   isMarking: boolean
   onToggleAdapted: (adapted: boolean) => void
   disabled?: boolean
+  onEditCategories?: () => void
 }
 
 /**
  * Extracts AppInfoDTO from various item types used in different tables
  */
 function extractAppInfoDTO(
-  item: AppInfoWithRequestCount | IconPackVersionRequestRecordResponse | AppInfoDTO
+  item: AppInfoWithRequestCount | IconPackVersionRequestRecordResponse | AppInfoDTO | IconPackAppDTO
 ): AppInfoDTO | null {
   // AppInfoWithRequestCount has nested appInfo
-  if ("appInfo" in item) {
-    return item.appInfo ?? null
+  if ("appInfo" in item && "count" in item) {
+    return (item as AppInfoWithRequestCount).appInfo ?? null
+  }
+  // IconPackAppDTO has nested appInfo and drawable
+  if ("appInfo" in item && "drawable" in item) {
+    return (item as IconPackAppDTO).appInfo ?? null
   }
   // IconPackVersionRequestRecordResponse has nested requestRecord.appInfo
   if ("requestRecord" in item) {
@@ -49,6 +55,7 @@ export function AppActionDropdown({
   isMarking,
   onToggleAdapted,
   disabled,
+  onEditCategories,
 }: AppActionDropdownProps) {
   const { t } = useTranslation()
   const [customDialogOpen, setCustomDialogOpen] = useState(false)
@@ -110,6 +117,12 @@ export function AppActionDropdown({
               </>
             )}
           </DropdownMenuItem>
+          {isAdapted && onEditCategories && (
+            <DropdownMenuItem onSelect={onEditCategories}>
+              <Tags className="h-4 w-4 mr-2" />
+              {t("iconPack.editCategories")}
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={handleCopyAppfilter}>
             {t("actions.copyAppfilter")}
@@ -156,6 +169,15 @@ export function AppActionDropdown({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            {isAdapted && onEditCategories && (
+              <>
+                <DropdownMenuItem onSelect={onEditCategories}>
+                  <Tags className="h-4 w-4 mr-2" />
+                  {t("iconPack.editCategories")}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )}
             <DropdownMenuItem onSelect={handleCopyAppfilter}>
               {t("actions.copyAppfilter")}
             </DropdownMenuItem>

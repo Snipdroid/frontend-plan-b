@@ -290,7 +290,12 @@
     "manageVersion": "Manage version: {{version}}",
     "requestCount": "{{count}} request for this version.",
     "requestCount_other": "{{count}} requests for this version.",
-    "requested": "Requested"
+    "requested": "Requested",
+    "categories": "Categories",
+    "categoriesPlaceholder": "Type and press Enter to add",
+    "editCategories": "Edit Categories",
+    "categoryTooLong": "Category must be 50 characters or less",
+    "noCategories": "No categories"
   },
   "dialogs": {
     "createIconPack": {

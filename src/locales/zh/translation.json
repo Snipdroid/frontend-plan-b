@@ -290,7 +290,12 @@
     "manageVersion": "管理版本：{{version}}",
     "requestCount": "此版本有 {{count}} 个申请。",
     "requestCount_other": "此版本有 {{count}} 个申请。",
-    "requested": "申请时间"
+    "requested": "申请时间",
+    "categories": "分类",
+    "categoriesPlaceholder": "输入并按 Enter 添加",
+    "editCategories": "编辑分类",
+    "categoryTooLong": "分类名不能超过50个字符",
+    "noCategories": "无分类"
   },
   "dialogs": {
     "createIconPack": {

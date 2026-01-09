@@ -491,7 +491,8 @@ export function ImportAppFilterDialog({
           iconPackId,
           appInfoIDs,
           true,
-          drawables
+          drawables,
+          {} // Empty categories for XML import
         )
 
         successfulCount += batch.length

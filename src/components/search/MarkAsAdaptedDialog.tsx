@@ -163,7 +163,7 @@ export function MarkAsAdaptedDialog({
     }
   }
 
-  const handleDrawableConfirm = async (drawableName: string) => {
+  const handleDrawableConfirm = async (drawableName: string, categories: string[]) => {
     if (!auth.user?.access_token || !selectedIconPackId) return
 
     setIsSubmitting(true)
@@ -175,7 +175,8 @@ export function MarkAsAdaptedDialog({
         selectedIconPackId,
         [app.id],
         true,
-        { [app.id]: drawableName }
+        { [app.id]: drawableName },
+        { [app.id]: categories }
       )
       onOpenChange(false)
       onSuccess?.()

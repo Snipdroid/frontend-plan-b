@@ -9,6 +9,7 @@ import type {
   PageAppInfoWithRequestCount,
   PageIconPackAppDTO,
   IconPackAppDTO,
+  IconPackAppUpdate,
   AppInfoDTO,
   DrawableNameSuggestion,
   IconPackAddCollaboratorsRequest,
@@ -247,16 +248,14 @@ export async function markAppsAsAdapted(
   iconPackId: string,
   appInfoIDs: string[],
   adapted: boolean,
-  drawables?: Record<string, string>
+  drawables: Record<string, string> = {},
+  categories: Record<string, string[]> = {}
 ): Promise<IconPackAppDTO[]> {
-  const body: {
-    appInfoIDs: string[]
-    adapted: boolean
-    drawables?: Record<string, string>
-  } = { appInfoIDs, adapted }
-
-  if (drawables !== undefined) {
-    body.drawables = drawables
+  const body = {
+    appInfoIDs,
+    adapted,
+    drawables,
+    categories,
   }
 
   const response = await fetch(`${API_BASE_URL}/icon-pack/${iconPackId}`, {
@@ -267,6 +266,31 @@ export async function markAppsAsAdapted(
     },
     body: JSON.stringify(body),
   })
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`)
+  }
+
+  return response.json()
+}
+
+export async function updateAdaptedApp(
+  accessToken: string,
+  iconPackId: string,
+  iconPackAppId: string,
+  update: IconPackAppUpdate
+): Promise<IconPackAppDTO> {
+  const response = await fetch(
+    `${API_BASE_URL}/icon-pack/${iconPackId}/adapted-apps/${iconPackAppId}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(update),
+    }
+  )
 
   if (!response.ok) {
     throw new Error(`API Error: ${response.status} ${response.statusText}`)

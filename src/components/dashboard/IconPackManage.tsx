@@ -40,6 +40,7 @@ import {
   getIconPackRequests,
   getIconPackAdaptedApps,
   markAppsAsAdapted,
+  updateAdaptedApp,
 } from "@/services/icon-pack"
 import { API_BASE_URL } from "@/services/api"
 import { CreateVersionDialog } from "./CreateVersionDialog"
@@ -49,9 +50,11 @@ import { DrawableNameDialog } from "./DrawableNameDialog"
 import { ImportAppFilterDialog } from "./ImportAppFilterDialog"
 import { AutocompleteDialog } from "./AutocompleteDialog"
 import { ManageCollaboratorsDialog } from "./ManageCollaboratorsDialog"
+import { CategoriesEditDialog } from "./CategoriesEditDialog"
 import { AppRequestsTable, type AppRequestsTableColumn } from "./AppRequestsTable"
 import { AppActionDropdown } from "./AppActionDropdown"
-import type { IconPackDTO, IconPackVersionDTO, AppInfoWithRequestCount, AppInfoDTO } from "@/types/icon-pack"
+import { Badge } from "@/components/ui/badge"
+import type { IconPackDTO, IconPackVersionDTO, AppInfoWithRequestCount, AppInfoDTO, IconPackAppDTO } from "@/types/icon-pack"
 
 const REQUESTS_PER_PAGE = 10
 const ADAPTED_PER_PAGE = 10
@@ -87,11 +90,16 @@ export function IconPackManage() {
   const [collaboratorsDialogOpen, setCollaboratorsDialogOpen] = useState(false)
 
   // Adapted apps state
-  const [adaptedApps, setAdaptedApps] = useState<AppInfoDTO[]>([])
+  const [adaptedApps, setAdaptedApps] = useState<IconPackAppDTO[]>([])
   const [adaptedTotal, setAdaptedTotal] = useState(0)
   const [adaptedPage, setAdaptedPage] = useState(1)
   const [isLoadingAdapted, setIsLoadingAdapted] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
+
+  // Categories edit dialog state
+  const [categoriesDialogOpen, setCategoriesDialogOpen] = useState(false)
+  const [editingAdaptedApp, setEditingAdaptedApp] = useState<IconPackAppDTO | null>(null)
+  const [isUpdatingCategories, setIsUpdatingCategories] = useState(false)
 
   // Derive ownership status
   const isOwner = useMemo(() => {
@@ -192,9 +200,7 @@ export function IconPackManage() {
         adaptedPage,
         ADAPTED_PER_PAGE
       )
-      setAdaptedApps(
-        response.items.map((item) => item.appInfo).filter(Boolean) as AppInfoDTO[]
-      )
+      setAdaptedApps(response.items)
       setAdaptedTotal(response.metadata.total)
     } catch (err) {
       console.error(t("errors.loadAdaptedApps"), err)
@@ -307,7 +313,8 @@ export function IconPackManage() {
         packId,
         [appInfoId],
         false,
-        {} // Empty drawables dictionary when unmarking
+        {}, // Empty drawables dictionary when unmarking
+        {} // Empty categories when unmarking
       )
       await Promise.all([fetchRequests(), fetchAdaptedApps()])
     } catch (err) {
@@ -317,7 +324,7 @@ export function IconPackManage() {
     }
   }
 
-  const handleDrawableNameConfirm = async (drawableName: string) => {
+  const handleDrawableNameConfirm = async (drawableName: string, categories: string[]) => {
     if (!packId || !auth.user?.access_token || !pendingAdaptApp) return
 
     setIsMarking(true)
@@ -327,7 +334,8 @@ export function IconPackManage() {
         packId,
         [pendingAdaptApp.appInfoId],
         true,
-        { [pendingAdaptApp.appInfoId]: drawableName }
+        { [pendingAdaptApp.appInfoId]: drawableName },
+        { [pendingAdaptApp.appInfoId]: categories }
       )
       await Promise.all([fetchRequests(), fetchAdaptedApps()])
       setDrawableDialogOpen(false)
@@ -337,6 +345,32 @@ export function IconPackManage() {
       // Keep dialog open on error
     } finally {
       setIsMarking(false)
+    }
+  }
+
+  const handleEditCategories = (item: IconPackAppDTO) => {
+    setEditingAdaptedApp(item)
+    setCategoriesDialogOpen(true)
+  }
+
+  const handleCategoriesConfirm = async (categories: string[]) => {
+    if (!packId || !auth.user?.access_token || !editingAdaptedApp?.id) return
+
+    setIsUpdatingCategories(true)
+    try {
+      await updateAdaptedApp(
+        auth.user.access_token,
+        packId,
+        editingAdaptedApp.id,
+        { categories }
+      )
+      await fetchAdaptedApps()
+      setCategoriesDialogOpen(false)
+      setEditingAdaptedApp(null)
+    } catch (err) {
+      console.error(t("errors.updateAdaptedStatus"), err)
+    } finally {
+      setIsUpdatingCategories(false)
     }
   }
 
@@ -513,9 +547,9 @@ export function IconPackManage() {
       key: "appName",
       header: t("iconPack.appName"),
       width: "w-[15%]",
-      render: (item: AppInfoDTO) => (
-        <div className="truncate font-medium" title={item.defaultName ?? "-"}>
-          {item.defaultName ?? "-"}
+      render: (item: IconPackAppDTO) => (
+        <div className="truncate font-medium" title={item.appInfo?.defaultName ?? "-"}>
+          {item.appInfo?.defaultName ?? "-"}
         </div>
       ),
       showInMobile: false,
@@ -524,11 +558,11 @@ export function IconPackManage() {
       key: "packageName",
       header: t("iconPack.packageName"),
       mobileLabel: t("iconPack.packageName"),
-      width: "w-[30%]",
+      width: "w-[25%]",
       className: "font-mono text-sm break-all",
-      render: (item: AppInfoDTO) => (
-        <div className="truncate" title={item.packageName ?? "-"}>
-          {item.packageName ?? "-"}
+      render: (item: IconPackAppDTO) => (
+        <div className="truncate" title={item.appInfo?.packageName ?? "-"}>
+          {item.appInfo?.packageName ?? "-"}
         </div>
       ),
     },
@@ -536,11 +570,30 @@ export function IconPackManage() {
       key: "mainActivity",
       header: t("iconPack.mainActivity"),
       mobileLabel: t("iconPack.mainActivity"),
-      width: "w-[30%]",
+      width: "w-[25%]",
       className: "font-mono text-sm break-all",
-      render: (item: AppInfoDTO) => (
-        <div className="truncate" title={item.mainActivity ?? "-"}>
-          {item.mainActivity ?? "-"}
+      render: (item: IconPackAppDTO) => (
+        <div className="truncate" title={item.appInfo?.mainActivity ?? "-"}>
+          {item.appInfo?.mainActivity ?? "-"}
+        </div>
+      ),
+    },
+    {
+      key: "categories",
+      header: t("iconPack.categories"),
+      mobileLabel: t("iconPack.categories"),
+      width: "w-[20%]",
+      render: (item: IconPackAppDTO) => (
+        <div className="flex flex-wrap gap-1">
+          {item.categories && item.categories.length > 0 ? (
+            item.categories.map((category) => (
+              <Badge key={category} variant="secondary" className="text-xs">
+                {category}
+              </Badge>
+            ))
+          ) : (
+            <span className="text-muted-foreground text-sm">{t("iconPack.noCategories")}</span>
+          )}
         </div>
       ),
     },
@@ -807,20 +860,23 @@ export function IconPackManage() {
               <AppRequestsTable
                 items={adaptedApps}
                 columns={adaptedColumns}
-                getIconUrl={(item: AppInfoDTO) => getIconUrl(item.packageName)}
-                getAppName={(item: AppInfoDTO) => item.defaultName ?? "-"}
-                renderActions={(item: AppInfoDTO) => (
-                  <AppActionDropdown
-                    item={item}
-                    isAdapted={true}
-                    isMarking={isMarking}
-                    onToggleAdapted={(adapted) =>
-                      item.id && handleMarkAsAdapted(item.id, item, adapted)
-                    }
-                    disabled={!item.id}
-                  />
+                getIconUrl={(item: IconPackAppDTO) => getIconUrl(item.appInfo?.packageName)}
+                getAppName={(item: IconPackAppDTO) => item.appInfo?.defaultName ?? "-"}
+                renderActions={(item: IconPackAppDTO) => (
+                  <div className="flex items-center gap-2">
+                    <AppActionDropdown
+                      item={item}
+                      isAdapted={true}
+                      isMarking={isMarking}
+                      onToggleAdapted={(adapted) =>
+                        item.appInfo?.id && item.appInfo && handleMarkAsAdapted(item.appInfo.id, item.appInfo, adapted)
+                      }
+                      disabled={!item.appInfo?.id}
+                      onEditCategories={() => handleEditCategories(item)}
+                    />
+                  </div>
                 )}
-                getItemKey={(item: AppInfoDTO) => item.id ?? ""}
+                getItemKey={(item: IconPackAppDTO) => item.id ?? ""}
               />
               {adaptedTotalPages > 1 && (
                 <Pagination>
@@ -1041,6 +1097,20 @@ export function IconPackManage() {
               setIconPack(updated)
             }
           }}
+        />
+      )}
+
+      {editingAdaptedApp && (
+        <CategoriesEditDialog
+          open={categoriesDialogOpen}
+          onOpenChange={(open) => {
+            setCategoriesDialogOpen(open)
+            if (!open) setEditingAdaptedApp(null)
+          }}
+          appName={editingAdaptedApp.appInfo?.defaultName ?? "-"}
+          initialCategories={editingAdaptedApp.categories ?? []}
+          onConfirm={handleCategoriesConfirm}
+          isSubmitting={isUpdatingCategories}
         />
       )}
     </div>

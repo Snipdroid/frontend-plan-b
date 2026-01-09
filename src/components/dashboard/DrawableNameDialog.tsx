@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
-import { Check, ChevronsUpDown, Edit2, Sparkles } from "lucide-react"
+import { Check, ChevronsUpDown, Edit2, Sparkles, X } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -38,6 +38,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import { toDrawableName } from "@/lib/drawable"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -48,13 +49,15 @@ import type {
   SuggestionSource,
 } from "@/types/icon-pack"
 
+const MAX_CATEGORY_LENGTH = 50
+
 interface DrawableNameDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   app: AppInfoDTO
   iconPackId: string
   designerId: string
-  onConfirm: (drawableName: string) => void
+  onConfirm: (drawableName: string, categories: string[]) => void
   isSubmitting?: boolean
 }
 
@@ -118,6 +121,11 @@ export function DrawableNameDialog({
   const [validationError, setValidationError] = useState<string | null>(null)
   const [comboboxOpen, setComboboxOpen] = useState(false)
   const [mode, setMode] = useState<"custom" | "suggestions">("custom")
+
+  // Categories state
+  const [categories, setCategories] = useState<string[]>([])
+  const [categoryInput, setCategoryInput] = useState("")
+  const [categoryError, setCategoryError] = useState<string | null>(null)
 
   // Fetch suggestions when dialog opens
   useEffect(() => {
@@ -201,6 +209,37 @@ export function DrawableNameDialog({
     setComboboxOpen(false)
   }
 
+  // Category handling
+  const handleCategoryKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      addCategory()
+    }
+  }
+
+  const addCategory = () => {
+    const trimmed = categoryInput.trim()
+    if (!trimmed) return
+
+    if (trimmed.length > MAX_CATEGORY_LENGTH) {
+      setCategoryError(t("iconPack.categoryTooLong"))
+      return
+    }
+
+    if (categories.includes(trimmed)) {
+      setCategoryInput("")
+      return
+    }
+
+    setCategories([...categories, trimmed])
+    setCategoryInput("")
+    setCategoryError(null)
+  }
+
+  const removeCategory = (category: string) => {
+    setCategories(categories.filter((c) => c !== category))
+  }
+
   // Handle form submit
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -211,7 +250,7 @@ export function DrawableNameDialog({
       return
     }
 
-    onConfirm(inputValue.trim())
+    onConfirm(inputValue.trim(), categories)
   }
 
   // Handle dialog close
@@ -222,6 +261,9 @@ export function DrawableNameDialog({
       setValidationError(null)
       setComboboxOpen(false)
       setMode("custom") // Reset mode
+      setCategories([])
+      setCategoryInput("")
+      setCategoryError(null)
     }
     onOpenChange(open)
   }
@@ -388,6 +430,55 @@ export function DrawableNameDialog({
                   </Card>
                 )}
               </>
+            )}
+
+            {/* Categories Section */}
+            {!isLoadingSuggestions && (
+              <div className="space-y-2 pt-2 border-t">
+                <Label htmlFor="categories-input">
+                  {t("iconPack.categories")}
+                </Label>
+
+                {/* Category chips */}
+                {categories.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {categories.map((category) => (
+                      <Badge
+                        key={category}
+                        variant="secondary"
+                        className="gap-1 pr-1"
+                      >
+                        {category}
+                        <button
+                          type="button"
+                          onClick={() => removeCategory(category)}
+                          className="ml-1 rounded-full hover:bg-muted-foreground/20 p-0.5"
+                          disabled={isSubmitting}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
+                {/* Category input */}
+                <Input
+                  id="categories-input"
+                  value={categoryInput}
+                  onChange={(e) => {
+                    setCategoryInput(e.target.value)
+                    setCategoryError(null)
+                  }}
+                  onKeyDown={handleCategoryKeyDown}
+                  placeholder={t("iconPack.categoriesPlaceholder")}
+                  disabled={isSubmitting}
+                  className={cn(categoryError && "border-destructive")}
+                />
+                {categoryError && (
+                  <p className="text-sm text-destructive">{categoryError}</p>
+                )}
+              </div>
             )}
           </div>
 

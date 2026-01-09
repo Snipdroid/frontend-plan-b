@@ -86,6 +86,11 @@ export interface IconPackAppDTO {
   appInfo?: AppInfoDTO
   iconPack?: IconPackDTO
   drawable: string
+  categories: string[]
+}
+
+export interface IconPackAppUpdate {
+  categories: string[]
 }
 
 export interface PageIconPackAppDTO {

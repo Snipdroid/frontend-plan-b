@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react"
 import { useParams, useNavigate, Link } from "react-router"
 import { useAuth } from "react-oidc-context"
 import { useTranslation } from "react-i18next"
-import { Upload, Sparkles, Download } from "lucide-react"
+import { Upload, Sparkles, Download, ChevronDown } from "lucide-react"
 import {
   Card,
   CardContent,
@@ -54,6 +54,12 @@ import { CategoriesEditDialog } from "./CategoriesEditDialog"
 import { AppRequestsTable, type AppRequestsTableColumn } from "./AppRequestsTable"
 import { AppActionDropdown } from "./AppActionDropdown"
 import { Badge } from "@/components/ui/badge"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import type { IconPackDTO, IconPackVersionDTO, AppInfoWithRequestCount, AppInfoDTO, IconPackAppDTO } from "@/types/icon-pack"
 
 const REQUESTS_PER_PAGE = 10
@@ -275,6 +281,135 @@ export function IconPackManage() {
       URL.revokeObjectURL(url)
     } catch (err) {
       console.error("Failed to export appfilter:", err)
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const handleExportDrawable = async () => {
+    if (!packId || !auth.user?.access_token) return
+
+    setIsExporting(true)
+    try {
+      // Fetch all adapted apps by paginating through all pages
+      const allApps: IconPackAppDTO[] = []
+      let page = 1
+      const perPage = 100
+      let hasMore = true
+
+      while (hasMore) {
+        const response = await getIconPackAdaptedApps(
+          auth.user.access_token,
+          packId,
+          page,
+          perPage
+        )
+        allApps.push(...response.items)
+        hasMore = response.items.length === perPage
+        page++
+      }
+
+      // Get latest version (versions are sorted by createdAt descending)
+      const latestVersion = versions.length > 0 ? versions[0] : null
+      const latestVersionDate = latestVersion?.createdAt
+        ? new Date(latestVersion.createdAt)
+        : null
+
+      // Build drawable map: drawable -> { categories: Set<string>, isNew: boolean }
+      const drawableMap = new Map<string, { categories: Set<string>; isNew: boolean }>()
+
+      for (const app of allApps) {
+        if (!app.drawable) continue
+
+        const existing = drawableMap.get(app.drawable)
+        const appDate = app.createdAt ? new Date(app.createdAt) : null
+        const isNewApp = latestVersionDate && appDate && appDate > latestVersionDate
+
+        if (existing) {
+          // Merge categories
+          for (const cat of app.categories ?? []) {
+            existing.categories.add(cat)
+          }
+          // Mark as new if any entry is new
+          if (isNewApp) {
+            existing.isNew = true
+          }
+        } else {
+          drawableMap.set(app.drawable, {
+            categories: new Set(app.categories ?? []),
+            isNew: !!isNewApp,
+          })
+        }
+      }
+
+      // Collect all unique categories and sort alphabetically
+      const allCategories = new Set<string>()
+      for (const { categories } of drawableMap.values()) {
+        for (const cat of categories) {
+          allCategories.add(cat)
+        }
+      }
+      const sortedCategories = Array.from(allCategories).sort((a, b) =>
+        a.localeCompare(b)
+      )
+
+      // Generate XML content
+      const xmlLines = ['<?xml version="1.0" encoding="utf-8"?>', "<resources>", "  <version>1</version>", ""]
+
+      // "New" category (only if there's a latest version and new drawables exist)
+      const newDrawables = Array.from(drawableMap.entries())
+        .filter(([, data]) => data.isNew)
+        .map(([drawable]) => drawable)
+        .sort((a, b) => a.localeCompare(b))
+
+      if (latestVersion && newDrawables.length > 0) {
+        xmlLines.push('  <category title="New" />')
+        for (const drawable of newDrawables) {
+          xmlLines.push(`  <item drawable="${drawable}" />`)
+        }
+        xmlLines.push("")
+      }
+
+      // Regular categories
+      for (const category of sortedCategories) {
+        const categoryDrawables = Array.from(drawableMap.entries())
+          .filter(([, data]) => data.categories.has(category))
+          .map(([drawable]) => drawable)
+          .sort((a, b) => a.localeCompare(b))
+
+        if (categoryDrawables.length > 0) {
+          xmlLines.push(`  <category title="${category}" />`)
+          for (const drawable of categoryDrawables) {
+            xmlLines.push(`  <item drawable="${drawable}" />`)
+          }
+          xmlLines.push("")
+        }
+      }
+
+      // "All" category
+      const allDrawables = Array.from(drawableMap.keys()).sort((a, b) =>
+        a.localeCompare(b)
+      )
+      xmlLines.push('  <category title="All" />')
+      for (const drawable of allDrawables) {
+        xmlLines.push(`  <item drawable="${drawable}" />`)
+      }
+
+      xmlLines.push("</resources>")
+      const xmlContent = xmlLines.join("\n")
+
+      // Trigger download
+      const blob = new Blob([xmlContent], { type: "application/xml" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = "drawable.xml"
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error("Failed to export drawable:", err)
     } finally {
       setIsExporting(false)
     }
@@ -828,15 +963,27 @@ export function IconPackManage() {
                 <Upload className="mr-2 h-4 w-4" />
                 {t("iconPack.importAppFilter")}
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportAppFilter}
-                disabled={isExporting || adaptedTotal === 0}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                {isExporting ? t("iconPack.exportingAppFilter") : t("iconPack.exportAppFilter")}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isExporting || adaptedTotal === 0}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    {isExporting ? t("iconPack.exporting") : t("iconPack.export")}
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleExportAppFilter}>
+                    {t("iconPack.exportAppFilter")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportDrawable}>
+                    {t("iconPack.exportDrawable")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button
                 variant="outline"
                 size="sm"

@@ -849,14 +849,14 @@ export function IconPackManage() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoadingRequests ? (
+          {isLoadingRequests && requests.length === 0 ? (
             <div className="space-y-2">
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
             </div>
           ) : requests.length > 0 ? (
-            <div className="space-y-4">
+            <div className={`space-y-4 transition-opacity ${isLoadingRequests ? "opacity-50 pointer-events-none" : ""}`}>
               <AppRequestsTable
                 items={requests}
                 columns={requestColumns}
@@ -964,14 +964,14 @@ export function IconPackManage() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoadingAdapted ? (
+          {isLoadingAdapted && adaptedApps.length === 0 ? (
             <div className="space-y-2">
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
             </div>
           ) : adaptedApps.length > 0 ? (
-            <div className="space-y-4">
+            <div className={`space-y-4 transition-opacity ${isLoadingAdapted ? "opacity-50 pointer-events-none" : ""}`}>
               <AppRequestsTable
                 items={adaptedApps}
                 columns={adaptedColumns}

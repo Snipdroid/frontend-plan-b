@@ -303,11 +303,13 @@ export async function getIconPackAdaptedApps(
   accessToken: string,
   iconPackId: string,
   page?: number,
-  per?: number
+  per?: number,
+  query?: string
 ): Promise<PageIconPackAppDTO> {
   const params = new URLSearchParams()
   if (page !== undefined) params.set("page", String(page))
   if (per !== undefined) params.set("per", String(per))
+  if (query) params.set("query", query)
 
   const queryString = params.toString()
   const url = `${API_BASE_URL}/icon-pack/${iconPackId}/adapted-apps${queryString ? `?${queryString}` : ""}`

@@ -4,7 +4,7 @@ import xmlFormat from "xml-formatter"
 import { useParams, useNavigate, Link } from "react-router"
 import { useAuth } from "react-oidc-context"
 import { useTranslation } from "react-i18next"
-import { Upload, Sparkles, Download } from "lucide-react"
+import { Upload, Sparkles, Download, Search } from "lucide-react"
 import {
   Card,
   CardContent,
@@ -24,6 +24,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import {
   Pagination,
   PaginationContent,
@@ -96,6 +97,8 @@ export function IconPackManage() {
   const [adaptedTotal, setAdaptedTotal] = useState(0)
   const [adaptedPage, setAdaptedPage] = useState(1)
   const [isLoadingAdapted, setIsLoadingAdapted] = useState(false)
+  const [adaptedQuery, setAdaptedQuery] = useState("")
+  const [debouncedAdaptedQuery, setDebouncedAdaptedQuery] = useState("")
   const [isExporting, setIsExporting] = useState(false)
 
   // Categories edit dialog state
@@ -190,6 +193,15 @@ export function IconPackManage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [packId, auth.user?.access_token, requestsPage, includingAdapted])
 
+  // Debounce adapted query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedAdaptedQuery(adaptedQuery)
+      setAdaptedPage(1)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [adaptedQuery])
+
   // Fetch adapted apps
   const fetchAdaptedApps = async () => {
     if (!packId || !auth.user?.access_token) return
@@ -200,7 +212,8 @@ export function IconPackManage() {
         auth.user.access_token,
         packId,
         adaptedPage,
-        ADAPTED_PER_PAGE
+        ADAPTED_PER_PAGE,
+        debouncedAdaptedQuery || undefined
       )
       setAdaptedApps(response.items)
       setAdaptedTotal(response.metadata.total)
@@ -214,12 +227,16 @@ export function IconPackManage() {
   useEffect(() => {
     fetchAdaptedApps()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [packId, auth.user?.access_token, adaptedPage])
+  }, [packId, auth.user?.access_token, adaptedPage, debouncedAdaptedQuery])
 
   const handleAdaptedPageChange = (page: number) => {
     if (page >= 1 && page <= adaptedTotalPages) {
       setAdaptedPage(page)
     }
+  }
+
+  const handleAdaptedQueryChange = (query: string) => {
+    setAdaptedQuery(query)
   }
 
   const serializeXml = (doc: Document): string => {
@@ -673,7 +690,7 @@ export function IconPackManage() {
       key: "packageName",
       header: t("iconPack.packageName"),
       mobileLabel: t("iconPack.packageName"),
-      width: "w-[25%]",
+      width: "w-[20%]",
       className: "font-mono text-sm break-all",
       render: (item: IconPackAppDTO) => (
         <div className="truncate" title={item.appInfo?.packageName ?? "-"}>
@@ -685,11 +702,23 @@ export function IconPackManage() {
       key: "mainActivity",
       header: t("iconPack.mainActivity"),
       mobileLabel: t("iconPack.mainActivity"),
-      width: "w-[25%]",
+      width: "w-[20%]",
       className: "font-mono text-sm break-all",
       render: (item: IconPackAppDTO) => (
         <div className="truncate" title={item.appInfo?.mainActivity ?? "-"}>
           {item.appInfo?.mainActivity ?? "-"}
+        </div>
+      ),
+    },
+    {
+      key: "drawable",
+      header: t("iconPack.drawable"),
+      mobileLabel: t("iconPack.drawable"),
+      width: "w-[15%]",
+      className: "font-mono text-sm",
+      render: (item: IconPackAppDTO) => (
+        <div className="truncate" title={item.drawable}>
+          {item.drawable}
         </div>
       ),
     },
@@ -961,6 +990,16 @@ export function IconPackManage() {
                 {t("iconPack.autocomplete")}
               </Button>
             </div>
+          </div>
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder={t("iconPack.searchAdaptedApps")}
+              className="pl-8"
+              value={adaptedQuery}
+              onChange={(e) => handleAdaptedQueryChange(e.target.value)}
+            />
           </div>
         </CardHeader>
         <CardContent>

@@ -175,7 +175,7 @@ export function DashboardSidebar() {
                   ) : (
                     <>
                       {iconPacks.map((pack) => {
-                        const isOwner = pack.designer?.id === currentUserId
+                        const isOwner = !currentUserId || pack.designer?.id === currentUserId
                         return (
                           <SidebarMenuItem key={pack.id}>
                             <SidebarMenuButton

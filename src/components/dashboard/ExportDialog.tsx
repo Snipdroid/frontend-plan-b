@@ -281,6 +281,112 @@ export function ExportDialog({
     return serializeXml(doc)
   }
 
+  const generateIconPackXml = (
+    apps: IconPackAppDTO[],
+    cutoff: number
+  ): string => {
+    const doc = document.implementation.createDocument(null, "resources", null)
+    const root = doc.documentElement
+    root.setAttribute("xmlns:tools", "http://schemas.android.com/tools")
+    root.setAttribute("tools:ignore", "ExtraTranslation")
+
+    // Build drawable map: drawable -> { categories: Set<string>, isNew: boolean }
+    const drawableMap = new Map<
+      string,
+      { categories: Set<string>; isNew: boolean }
+    >()
+
+    for (const app of apps) {
+      if (!app.drawable) continue
+
+      const existing = drawableMap.get(app.drawable)
+      const appDate = app.createdAt ? new Date(app.createdAt).getTime() : null
+      const isNewApp = appDate !== null && appDate > cutoff
+
+      if (existing) {
+        for (const cat of app.categories ?? []) {
+          existing.categories.add(cat)
+        }
+        if (isNewApp) {
+          existing.isNew = true
+        }
+      } else {
+        drawableMap.set(app.drawable, {
+          categories: new Set(app.categories ?? []),
+          isNew: isNewApp,
+        })
+      }
+    }
+
+    // Get all drawables sorted
+    const allDrawables = Array.from(drawableMap.keys()).sort((a, b) =>
+      a.localeCompare(b)
+    )
+
+    // Get new drawables
+    const newDrawables = Array.from(drawableMap.entries())
+      .filter(([, data]) => data.isNew)
+      .map(([drawable]) => drawable)
+      .sort((a, b) => a.localeCompare(b))
+
+    // Get all unique categories sorted
+    const allCategories = new Set<string>()
+    for (const { categories } of drawableMap.values()) {
+      for (const cat of categories) {
+        allCategories.add(cat)
+      }
+    }
+    const sortedCategories = Array.from(allCategories).sort((a, b) =>
+      a.localeCompare(b)
+    )
+
+    // Helper to add a string-array
+    const addStringArray = (name: string, items: string[]) => {
+      const stringArray = doc.createElement("string-array")
+      stringArray.setAttribute("name", name)
+      root.appendChild(stringArray)
+
+      for (const item of items) {
+        const itemEl = doc.createElement("item")
+        itemEl.textContent = item
+        stringArray.appendChild(itemEl)
+      }
+    }
+
+    // icons_preview - all drawables
+    addStringArray("icons_preview", allDrawables)
+
+    // icon_filters - list of filter names
+    const filters = ["All"]
+    if (newDrawables.length > 0) {
+      filters.push("New")
+    }
+    filters.push(...sortedCategories)
+    addStringArray("icon_filters", filters)
+
+    // All category
+    addStringArray("All", allDrawables)
+
+    // New category (if any)
+    if (newDrawables.length > 0) {
+      addStringArray("New", newDrawables)
+    }
+
+    // Regular categories
+    for (const categoryName of sortedCategories) {
+      const categoryDrawables = Array.from(drawableMap.entries())
+        .filter(([, data]) => data.categories.has(categoryName))
+        .map(([drawable]) => drawable)
+        .sort((a, b) => a.localeCompare(b))
+
+      if (categoryDrawables.length > 0) {
+        addStringArray(categoryName, categoryDrawables)
+      }
+    }
+
+    return serializeXml(doc)
+  }
+
   const downloadBlob = (blob: Blob, filename: string) => {
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
@@ -299,6 +405,7 @@ export function ExportDialog({
 
       zip.file("appfilter.xml", generateAppfilterXml(allApps))
       zip.file("drawable.xml", generateDrawableXml(allApps, cutoffTimestamp))
+      zip.file("icon_pack.xml", generateIconPackXml(allApps, cutoffTimestamp))
 
       const zipBlob = await zip.generateAsync({ type: "blob" })
       downloadBlob(zipBlob, "xml.zip")

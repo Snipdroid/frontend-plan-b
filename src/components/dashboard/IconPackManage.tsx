@@ -1,6 +1,4 @@
 import { useState, useEffect, useMemo } from "react"
-import JSZip from "jszip"
-import xmlFormat from "xml-formatter"
 import { useParams, useNavigate, Link } from "react-router"
 import { useAuth } from "react-oidc-context"
 import { useTranslation } from "react-i18next"
@@ -51,6 +49,7 @@ import { CreateAccessTokenDialog } from "./CreateAccessTokenDialog"
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog"
 import { DrawableNameDialog } from "./DrawableNameDialog"
 import { ImportAppFilterDialog } from "./ImportAppFilterDialog"
+import { ExportDialog } from "./ExportDialog"
 import { AutocompleteDialog } from "./AutocompleteDialog"
 import { ManageCollaboratorsDialog } from "./ManageCollaboratorsDialog"
 import { CategoriesEditDialog } from "./CategoriesEditDialog"
@@ -99,7 +98,7 @@ export function IconPackManage() {
   const [isLoadingAdapted, setIsLoadingAdapted] = useState(false)
   const [adaptedQuery, setAdaptedQuery] = useState("")
   const [debouncedAdaptedQuery, setDebouncedAdaptedQuery] = useState("")
-  const [isExporting, setIsExporting] = useState(false)
+  const [exportDialogOpen, setExportDialogOpen] = useState(false)
 
   // Categories edit dialog state
   const [categoriesDialogOpen, setCategoriesDialogOpen] = useState(false)
@@ -237,179 +236,6 @@ export function IconPackManage() {
 
   const handleAdaptedQueryChange = (query: string) => {
     setAdaptedQuery(query)
-  }
-
-  const serializeXml = (doc: Document): string => {
-    const serializer = new XMLSerializer()
-    const xmlString = serializer.serializeToString(doc)
-    return xmlFormat('<?xml version="1.0" encoding="utf-8"?>' + xmlString, {
-      indentation: "\t",
-      collapseContent: true,
-    })
-  }
-
-  const generateAppfilterXml = (apps: IconPackAppDTO[]): string => {
-    const doc = document.implementation.createDocument(null, "appfilter", null)
-    const root = doc.documentElement
-
-    for (const app of apps) {
-      if (app.appInfo?.packageName && app.appInfo?.mainActivity && app.drawable) {
-        const item = doc.createElement("item")
-        item.setAttribute(
-          "component",
-          `ComponentInfo{${app.appInfo.packageName}/${app.appInfo.mainActivity}}`
-        )
-        item.setAttribute("drawable", app.drawable)
-        root.appendChild(item)
-      }
-    }
-
-    return serializeXml(doc)
-  }
-
-  const generateDrawableXml = (
-    apps: IconPackAppDTO[],
-    latestVersion: IconPackVersionDTO | null
-  ): string => {
-    const doc = document.implementation.createDocument(null, "resources", null)
-    const root = doc.documentElement
-
-    // Add version element
-    const versionEl = doc.createElement("version")
-    versionEl.textContent = "1"
-    root.appendChild(versionEl)
-
-    const latestVersionDate = latestVersion?.createdAt
-      ? new Date(latestVersion.createdAt)
-      : null
-
-    // Build drawable map: drawable -> { categories: Set<string>, isNew: boolean }
-    const drawableMap = new Map<string, { categories: Set<string>; isNew: boolean }>()
-
-    for (const app of apps) {
-      if (!app.drawable) continue
-
-      const existing = drawableMap.get(app.drawable)
-      const appDate = app.createdAt ? new Date(app.createdAt) : null
-      const isNewApp = latestVersionDate && appDate && appDate > latestVersionDate
-
-      if (existing) {
-        for (const cat of app.categories ?? []) {
-          existing.categories.add(cat)
-        }
-        if (isNewApp) {
-          existing.isNew = true
-        }
-      } else {
-        drawableMap.set(app.drawable, {
-          categories: new Set(app.categories ?? []),
-          isNew: !!isNewApp,
-        })
-      }
-    }
-
-    // Collect all unique categories and sort alphabetically
-    const allCategories = new Set<string>()
-    for (const { categories } of drawableMap.values()) {
-      for (const cat of categories) {
-        allCategories.add(cat)
-      }
-    }
-    const sortedCategories = Array.from(allCategories).sort((a, b) =>
-      a.localeCompare(b)
-    )
-
-    // Helper to add a category section
-    const addCategorySection = (title: string, drawables: string[]) => {
-      const category = doc.createElement("category")
-      category.setAttribute("title", title)
-      root.appendChild(category)
-
-      for (const drawable of drawables) {
-        const item = doc.createElement("item")
-        item.setAttribute("drawable", drawable)
-        root.appendChild(item)
-      }
-    }
-
-    // "New" category
-    const newDrawables = Array.from(drawableMap.entries())
-      .filter(([, data]) => data.isNew)
-      .map(([drawable]) => drawable)
-      .sort((a, b) => a.localeCompare(b))
-
-    if (latestVersion && newDrawables.length > 0) {
-      addCategorySection("New", newDrawables)
-    }
-
-    // Regular categories
-    for (const categoryName of sortedCategories) {
-      const categoryDrawables = Array.from(drawableMap.entries())
-        .filter(([, data]) => data.categories.has(categoryName))
-        .map(([drawable]) => drawable)
-        .sort((a, b) => a.localeCompare(b))
-
-      if (categoryDrawables.length > 0) {
-        addCategorySection(categoryName, categoryDrawables)
-      }
-    }
-
-    // "All" category
-    const allDrawables = Array.from(drawableMap.keys()).sort((a, b) =>
-      a.localeCompare(b)
-    )
-    addCategorySection("All", allDrawables)
-
-    return serializeXml(doc)
-  }
-
-  const downloadBlob = (blob: Blob, filename: string) => {
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = filename
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
-
-  const handleExport = async () => {
-    if (!packId || !auth.user?.access_token) return
-
-    setIsExporting(true)
-    try {
-      // Fetch all adapted apps by paginating through all pages
-      const allApps: IconPackAppDTO[] = []
-      let page = 1
-      const perPage = 100
-      let hasMore = true
-
-      while (hasMore) {
-        const response = await getIconPackAdaptedApps(
-          auth.user.access_token,
-          packId,
-          page,
-          perPage
-        )
-        allApps.push(...response.items)
-        hasMore = response.items.length === perPage
-        page++
-      }
-
-      const zip = new JSZip()
-      const latestVersion = versions.length > 0 ? versions[0] : null
-
-      zip.file("appfilter.xml", generateAppfilterXml(allApps))
-      zip.file("drawable.xml", generateDrawableXml(allApps, latestVersion))
-
-      const zipBlob = await zip.generateAsync({ type: "blob" })
-      downloadBlob(zipBlob, "xml.zip")
-    } catch (err) {
-      console.error("Failed to export:", err)
-    } finally {
-      setIsExporting(false)
-    }
   }
 
   const handleRequestsPageChange = (page: number) => {
@@ -975,11 +801,11 @@ export function IconPackManage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleExport}
-                disabled={isExporting || adaptedTotal === 0}
+                onClick={() => setExportDialogOpen(true)}
+                disabled={adaptedTotal === 0}
               >
                 <Download className="mr-2 h-4 w-4" />
-                {isExporting ? t("iconPack.exporting") : t("iconPack.export")}
+                {t("iconPack.export")}
               </Button>
               <Button
                 variant="outline"
@@ -1234,6 +1060,16 @@ export function IconPackManage() {
           accessToken={auth.user.access_token}
           onComplete={fetchAdaptedApps}
           designerId={designerId}
+        />
+      )}
+
+      {packId && auth.user?.access_token && (
+        <ExportDialog
+          open={exportDialogOpen}
+          onOpenChange={setExportDialogOpen}
+          iconPackId={packId}
+          accessToken={auth.user.access_token}
+          versions={versions}
         />
       )}
 

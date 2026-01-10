@@ -299,7 +299,19 @@
     "categoriesPlaceholder": "输入并按 Enter 添加",
     "editCategories": "编辑分类",
     "categoryTooLong": "分类名不能超过50个字符",
-    "noCategories": "无分类"
+    "noCategories": "无分类",
+    "exportDialogTitle": "导出已适配应用",
+    "exportDialogDesc": "配置导出选项并选择标记为新应用的范围。",
+    "exportFetching": "正在获取已适配应用（{{current}}/{{total}}）...",
+    "exportSliderLabel": "新应用截止日期",
+    "exportSliderDesc": "在此日期之后适配的应用将在 drawable.xml 中标记为「新」",
+    "exportNewAppsAfterDate": "{{count}} 个应用于 {{date}} 后适配",
+    "exportNewAppsAfterDate_other": "{{count}} 个应用于 {{date}} 后适配",
+    "exportNoNewApps": "没有应用将被标记为新",
+    "exportNow": "现在",
+    "exportConfirm": "导出",
+    "exportSuccess": "成功导出已适配应用",
+    "exportError": "导出已适配应用失败"
   },
   "dialogs": {
     "createIconPack": {

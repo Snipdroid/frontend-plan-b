@@ -299,7 +299,19 @@
     "categoriesPlaceholder": "Type and press Enter to add",
     "editCategories": "Edit Categories",
     "categoryTooLong": "Category must be 50 characters or less",
-    "noCategories": "No categories"
+    "noCategories": "No categories",
+    "exportDialogTitle": "Export Adapted Apps",
+    "exportDialogDesc": "Configure export options and select which apps to mark as new.",
+    "exportFetching": "Fetching adapted apps ({{current}}/{{total}})...",
+    "exportSliderLabel": "New apps cutoff date",
+    "exportSliderDesc": "Apps adapted after this date will be marked as \"New\" in drawable.xml",
+    "exportNewAppsAfterDate": "{{count}} app adapted after {{date}}",
+    "exportNewAppsAfterDate_other": "{{count}} apps adapted after {{date}}",
+    "exportNoNewApps": "No apps will be marked as new",
+    "exportNow": "Now",
+    "exportConfirm": "Export",
+    "exportSuccess": "Successfully exported adapted apps",
+    "exportError": "Failed to export adapted apps"
   },
   "dialogs": {
     "createIconPack": {

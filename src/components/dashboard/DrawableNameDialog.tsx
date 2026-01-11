@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback, startTransition } from "react"
 import { useTranslation } from "react-i18next"
 import { Check, ChevronsUpDown, Edit2, Sparkles, X } from "lucide-react"
 import {
@@ -127,12 +127,40 @@ export function DrawableNameDialog({
   const [categoryInput, setCategoryInput] = useState("")
   const [categoryError, setCategoryError] = useState<string | null>(null)
 
+  // Validation - must be declared before useEffect that uses it
+  const validateDrawableName = useCallback((name: string): string | null => {
+    if (!name.trim()) {
+      return t("dialogs.drawableName.errorRequired")
+    }
+
+    if (!/^[a-z][a-z0-9_]*$/.test(name)) {
+      return t("dialogs.drawableName.errorInvalidFormat")
+    }
+
+    return null
+  }, [t])
+
+  // Handle input change
+  const handleInputChange = useCallback((value: string) => {
+    setInputValue(value)
+    setValidationError(validateDrawableName(value))
+  }, [validateDrawableName])
+
+  // Handle suggestion selection
+  const handleSuggestionSelect = useCallback((drawable: string) => {
+    setInputValue(drawable)
+    setValidationError(validateDrawableName(drawable))
+    setComboboxOpen(false)
+  }, [validateDrawableName])
+
   // Fetch suggestions when dialog opens
   useEffect(() => {
     if (!open) return
 
     const controller = new AbortController()
-    setIsLoadingSuggestions(true)
+    startTransition(() => {
+      setIsLoadingSuggestions(true)
+    })
 
     getDrawableNameSuggestions(app.packageName, iconPackId, designerId)
       .then((data) => {
@@ -181,33 +209,7 @@ export function DrawableNameDialog({
       .finally(() => setIsLoadingSuggestions(false))
 
     return () => controller.abort()
-  }, [open, app.packageName, app.defaultName, iconPackId, designerId])
-
-  // Validation
-  const validateDrawableName = (name: string): string | null => {
-    if (!name.trim()) {
-      return t("dialogs.drawableName.errorRequired")
-    }
-
-    if (!/^[a-z][a-z0-9_]*$/.test(name)) {
-      return t("dialogs.drawableName.errorInvalidFormat")
-    }
-
-    return null
-  }
-
-  // Handle input change
-  const handleInputChange = (value: string) => {
-    setInputValue(value)
-    setValidationError(validateDrawableName(value))
-  }
-
-  // Handle suggestion selection
-  const handleSuggestionSelect = (drawable: string) => {
-    setInputValue(drawable)
-    setValidationError(validateDrawableName(drawable))
-    setComboboxOpen(false)
-  }
+  }, [open, app.packageName, app.defaultName, iconPackId, designerId, validateDrawableName])
 
   // Category handling
   const handleCategoryKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

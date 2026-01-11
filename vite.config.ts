@@ -8,6 +8,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // Use browser bundle for xmlbuilder2
+      "xmlbuilder2": path.resolve(__dirname, "./node_modules/xmlbuilder2/lib/xmlbuilder2.min.js"),
     },
   },
   build: {

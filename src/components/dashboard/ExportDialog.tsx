@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react"
 import JSZip from "jszip"
-import xmlFormat from "xml-formatter"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { ImageOff } from "lucide-react"
@@ -18,6 +17,14 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Slider } from "@/components/ui/slider"
 import { getIconPackAdaptedApps } from "@/services/icon-pack"
 import { API_BASE_URL } from "@/services/api"
+import {
+  generateAppfilterXml,
+  generateDrawableXml,
+  generateIconPackXml,
+  buildDrawableMap,
+  extractCategories,
+  type AppfilterItem,
+} from "@/lib/xml-generator"
 import type { IconPackVersionDTO, IconPackAppDTO } from "@/types/icon-pack"
 
 type ExportStage = "fetching" | "configuring" | "exporting" | "complete" | "error"
@@ -158,235 +165,6 @@ export function ExportDialog({
     }
   }, [accessToken, iconPackId, t])
 
-  const serializeXml = (doc: Document): string => {
-    const serializer = new XMLSerializer()
-    const xmlString = serializer.serializeToString(doc)
-    return xmlFormat('<?xml version="1.0" encoding="utf-8"?>' + xmlString, {
-      indentation: "\t",
-      collapseContent: true,
-    })
-  }
-
-  const generateAppfilterXml = (apps: IconPackAppDTO[]): string => {
-    const doc = document.implementation.createDocument(null, "appfilter", null)
-    const root = doc.documentElement
-
-    for (const app of apps) {
-      if (app.appInfo?.packageName && app.appInfo?.mainActivity && app.drawable) {
-        const item = doc.createElement("item")
-        item.setAttribute(
-          "component",
-          `ComponentInfo{${app.appInfo.packageName}/${app.appInfo.mainActivity}}`
-        )
-        item.setAttribute("drawable", app.drawable)
-        root.appendChild(item)
-      }
-    }
-
-    return serializeXml(doc)
-  }
-
-  const generateDrawableXml = (
-    apps: IconPackAppDTO[],
-    cutoff: number
-  ): string => {
-    const doc = document.implementation.createDocument(null, "resources", null)
-    const root = doc.documentElement
-
-    // Add version element
-    const versionEl = doc.createElement("version")
-    versionEl.textContent = "1"
-    root.appendChild(versionEl)
-
-    // Build drawable map: drawable -> { categories: Set<string>, isNew: boolean }
-    const drawableMap = new Map<
-      string,
-      { categories: Set<string>; isNew: boolean }
-    >()
-
-    for (const app of apps) {
-      if (!app.drawable) continue
-
-      const existing = drawableMap.get(app.drawable)
-      const appDate = app.createdAt ? new Date(app.createdAt).getTime() : null
-      const isNewApp = appDate !== null && appDate > cutoff
-
-      if (existing) {
-        for (const cat of app.categories ?? []) {
-          existing.categories.add(cat)
-        }
-        if (isNewApp) {
-          existing.isNew = true
-        }
-      } else {
-        drawableMap.set(app.drawable, {
-          categories: new Set(app.categories ?? []),
-          isNew: isNewApp,
-        })
-      }
-    }
-
-    // Collect all unique categories and sort alphabetically
-    const allCategories = new Set<string>()
-    for (const { categories } of drawableMap.values()) {
-      for (const cat of categories) {
-        allCategories.add(cat)
-      }
-    }
-    const sortedCategories = Array.from(allCategories).sort((a, b) =>
-      a.localeCompare(b)
-    )
-
-    // Helper to add a category section
-    const addCategorySection = (title: string, drawables: string[]) => {
-      const category = doc.createElement("category")
-      category.setAttribute("title", title)
-      root.appendChild(category)
-
-      for (const drawable of drawables) {
-        const item = doc.createElement("item")
-        item.setAttribute("drawable", drawable)
-        root.appendChild(item)
-      }
-    }
-
-    // "New" category
-    const newDrawables = Array.from(drawableMap.entries())
-      .filter(([, data]) => data.isNew)
-      .map(([drawable]) => drawable)
-      .sort((a, b) => a.localeCompare(b))
-
-    if (newDrawables.length > 0) {
-      addCategorySection("New", newDrawables)
-    }
-
-    // Regular categories
-    for (const categoryName of sortedCategories) {
-      const categoryDrawables = Array.from(drawableMap.entries())
-        .filter(([, data]) => data.categories.has(categoryName))
-        .map(([drawable]) => drawable)
-        .sort((a, b) => a.localeCompare(b))
-
-      if (categoryDrawables.length > 0) {
-        addCategorySection(categoryName, categoryDrawables)
-      }
-    }
-
-    // "All" category
-    const allDrawables = Array.from(drawableMap.keys()).sort((a, b) =>
-      a.localeCompare(b)
-    )
-    addCategorySection("All", allDrawables)
-
-    return serializeXml(doc)
-  }
-
-  const generateIconPackXml = (
-    apps: IconPackAppDTO[],
-    cutoff: number
-  ): string => {
-    const doc = document.implementation.createDocument(null, "resources", null)
-    const root = doc.documentElement
-    root.setAttribute("xmlns:tools", "http://schemas.android.com/tools")
-    root.setAttribute("tools:ignore", "ExtraTranslation")
-
-    // Build drawable map: drawable -> { categories: Set<string>, isNew: boolean }
-    const drawableMap = new Map<
-      string,
-      { categories: Set<string>; isNew: boolean }
-    >()
-
-    for (const app of apps) {
-      if (!app.drawable) continue
-
-      const existing = drawableMap.get(app.drawable)
-      const appDate = app.createdAt ? new Date(app.createdAt).getTime() : null
-      const isNewApp = appDate !== null && appDate > cutoff
-
-      if (existing) {
-        for (const cat of app.categories ?? []) {
-          existing.categories.add(cat)
-        }
-        if (isNewApp) {
-          existing.isNew = true
-        }
-      } else {
-        drawableMap.set(app.drawable, {
-          categories: new Set(app.categories ?? []),
-          isNew: isNewApp,
-        })
-      }
-    }
-
-    // Get all drawables sorted
-    const allDrawables = Array.from(drawableMap.keys()).sort((a, b) =>
-      a.localeCompare(b)
-    )
-
-    // Get new drawables
-    const newDrawables = Array.from(drawableMap.entries())
-      .filter(([, data]) => data.isNew)
-      .map(([drawable]) => drawable)
-      .sort((a, b) => a.localeCompare(b))
-
-    // Get all unique categories sorted
-    const allCategories = new Set<string>()
-    for (const { categories } of drawableMap.values()) {
-      for (const cat of categories) {
-        allCategories.add(cat)
-      }
-    }
-    const sortedCategories = Array.from(allCategories).sort((a, b) =>
-      a.localeCompare(b)
-    )
-
-    // Helper to add a string-array
-    const addStringArray = (name: string, items: string[]) => {
-      const stringArray = doc.createElement("string-array")
-      stringArray.setAttribute("name", name)
-      root.appendChild(stringArray)
-
-      for (const item of items) {
-        const itemEl = doc.createElement("item")
-        itemEl.textContent = item
-        stringArray.appendChild(itemEl)
-      }
-    }
-
-    // icons_preview - all drawables
-    addStringArray("icons_preview", allDrawables)
-
-    // icon_filters - list of filter names
-    const filters = ["All"]
-    if (newDrawables.length > 0) {
-      filters.push("New")
-    }
-    filters.push(...sortedCategories)
-    addStringArray("icon_filters", filters)
-
-    // All category
-    addStringArray("All", allDrawables)
-
-    // New category (if any)
-    if (newDrawables.length > 0) {
-      addStringArray("New", newDrawables)
-    }
-
-    // Regular categories
-    for (const categoryName of sortedCategories) {
-      const categoryDrawables = Array.from(drawableMap.entries())
-        .filter(([, data]) => data.categories.has(categoryName))
-        .map(([drawable]) => drawable)
-        .sort((a, b) => a.localeCompare(b))
-
-      if (categoryDrawables.length > 0) {
-        addStringArray(categoryName, categoryDrawables)
-      }
-    }
-
-    return serializeXml(doc)
-  }
-
   const downloadBlob = (blob: Blob, filename: string) => {
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
@@ -401,11 +179,26 @@ export function ExportDialog({
   const handleExport = async () => {
     setStage("exporting")
     try {
-      const zip = new JSZip()
+      // Convert apps to appfilter items
+      const appfilterItems: AppfilterItem[] = allApps
+        .filter(
+          (app) =>
+            app.appInfo?.packageName && app.appInfo?.mainActivity && app.drawable
+        )
+        .map((app) => ({
+          packageName: app.appInfo!.packageName,
+          mainActivity: app.appInfo!.mainActivity,
+          drawable: app.drawable,
+        }))
 
-      zip.file("appfilter.xml", generateAppfilterXml(allApps))
-      zip.file("drawable.xml", generateDrawableXml(allApps, cutoffTimestamp))
-      zip.file("icon_pack.xml", generateIconPackXml(allApps, cutoffTimestamp))
+      // Build drawable map and extract categories
+      const drawableMap = buildDrawableMap(allApps, cutoffTimestamp)
+      const categories = extractCategories(drawableMap)
+
+      const zip = new JSZip()
+      zip.file("appfilter.xml", generateAppfilterXml(appfilterItems))
+      zip.file("drawable.xml", generateDrawableXml(drawableMap, categories))
+      zip.file("icon_pack.xml", generateIconPackXml(drawableMap, categories))
 
       const zipBlob = await zip.generateAsync({ type: "blob" })
       downloadBlob(zipBlob, "xml.zip")

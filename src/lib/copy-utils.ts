@@ -1,5 +1,10 @@
 import { toast } from "sonner"
 import { getBestDrawableName } from "./drawable"
+import {
+  generateAppfilterSnippet,
+  generateDrawableSnippet,
+  generateIconPackSnippet,
+} from "./xml-generator"
 import type { AppInfo, AppInfoDTO } from "@/types"
 
 /**
@@ -30,12 +35,13 @@ export async function copyAppfilter(
   successMessage: string,
   errorMessage: string
 ): Promise<void> {
-  const text = apps
-    .map((app) => {
-      const drawable = getBestDrawableName(app)
-      return `<item component="ComponentInfo{${app.packageName}/${app.mainActivity}}" drawable="${drawable}"/>`
-    })
-    .join("\n")
+  const items = apps.map((app) => ({
+    packageName: app.packageName,
+    mainActivity: app.mainActivity,
+    drawable: getBestDrawableName(app),
+  }))
+
+  const text = generateAppfilterSnippet(items)
 
   try {
     await navigator.clipboard.writeText(text)
@@ -54,12 +60,28 @@ export async function copyDrawable(
   successMessage: string,
   errorMessage: string
 ): Promise<void> {
-  const text = apps
-    .map((app) => {
-      const drawable = getBestDrawableName(app)
-      return `<item drawable="${drawable}" />`
-    })
-    .join("\n")
+  const drawables = apps.map((app) => getBestDrawableName(app))
+  const text = generateDrawableSnippet(drawables)
+
+  try {
+    await navigator.clipboard.writeText(text)
+    toast.success(successMessage)
+  } catch {
+    toast.error(errorMessage)
+  }
+}
+
+/**
+ * Copies icon_pack XML to clipboard with toast notification.
+ * Format: <item>drawable_name</item>
+ */
+export async function copyIconPack(
+  apps: AppInfo[],
+  successMessage: string,
+  errorMessage: string
+): Promise<void> {
+  const drawables = apps.map((app) => getBestDrawableName(app))
+  const text = generateIconPackSnippet(drawables)
 
   try {
     await navigator.clipboard.writeText(text)

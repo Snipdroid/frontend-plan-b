@@ -66,10 +66,12 @@
     "copy": "复制",
     "appfilter": "Appfilter",
     "drawable": "Drawable",
+    "iconpack": "IconPack",
     "plainText": "纯文本",
     "custom": "自定义",
     "appfilterCopied": "Appfilter 已复制到剪贴板",
     "drawableCopied": "Drawable 已复制到剪贴板",
+    "iconpackCopied": "IconPack 已复制到剪贴板",
     "copied": "已复制到剪贴板",
     "copyFailed": "复制到剪贴板失败"
   },

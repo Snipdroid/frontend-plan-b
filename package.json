@@ -47,7 +47,7 @@
     "tailwindcss": "^4.1.17",
     "transliteration": "^2.4.0",
     "vaul": "^1.1.2",
-    "xml-formatter": "^3.6.7"
+    "xmlbuilder2": "^4.0.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { CustomTemplateDialog } from "./CustomTemplateDialog"
-import { getBestDrawableName } from "@/lib/drawable"
+import { copyAppfilter, copyDrawable, copyIconPack } from "@/lib/copy-utils"
 import type { AppInfo } from "@/types"
 
 interface ExportButtonGroupProps {
@@ -27,39 +27,19 @@ export function ExportButtonGroup({
   const { t } = useTranslation()
   const [customDialogOpen, setCustomDialogOpen] = useState(false)
 
-  const handleCopyAppfilter = async () => {
-    const text = apps
-      .map((app) => {
-        const drawable = getBestDrawableName(app)
-        return `<item component="ComponentInfo{${app.packageName}/${app.mainActivity}}" drawable="${drawable}"/>`
-      })
-      .join("\n")
-
-    try {
-      await navigator.clipboard.writeText(text)
-      toast.success(t("export.appfilterCopied"))
-    } catch {
-      toast.error(t("export.copyFailed"))
-    }
+  const handleCopyAppfilter = () => {
+    copyAppfilter(apps, t("export.appfilterCopied"), t("export.copyFailed"))
   }
 
-  const handleCopyDrawable = async () => {
-    const text = apps
-      .map((app) => {
-        const drawable = getBestDrawableName(app)
-        return `<item drawable="${drawable}" />`
-      })
-      .join("\n")
-
-    try {
-      await navigator.clipboard.writeText(text)
-      toast.success(t("export.drawableCopied"))
-    } catch {
-      toast.error(t("export.copyFailed"))
-    }
+  const handleCopyDrawable = () => {
+    copyDrawable(apps, t("export.drawableCopied"), t("export.copyFailed"))
   }
 
-  const handleCopy = async () => {
+  const handleCopyIconPack = () => {
+    copyIconPack(apps, t("export.iconpackCopied"), t("export.copyFailed"))
+  }
+
+  const handleCopy = () => {
     onCopy()
     toast.success(t("export.copied"))
   }
@@ -85,6 +65,9 @@ export function ExportButtonGroup({
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={handleCopyDrawable}>
             {t("export.drawable")}
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={handleCopyIconPack}>
+            {t("export.iconpack")}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={handleCopy}>
             {t("export.plainText")}
@@ -119,6 +102,15 @@ export function ExportButtonGroup({
           onClick={handleCopyDrawable}
         >
           {t("export.drawable")}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="rounded-none border-r-0"
+          disabled={disabled}
+          onClick={handleCopyIconPack}
+        >
+          {t("export.iconpack")}
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

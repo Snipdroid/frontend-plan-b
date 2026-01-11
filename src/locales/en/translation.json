@@ -66,10 +66,12 @@
     "copy": "Copy",
     "appfilter": "Appfilter",
     "drawable": "Drawable",
+    "iconpack": "IconPack",
     "plainText": "Plain Text",
     "custom": "Custom",
     "appfilterCopied": "Appfilter copied to clipboard",
     "drawableCopied": "Drawable copied to clipboard",
+    "iconpackCopied": "IconPack copied to clipboard",
     "copied": "Copied to clipboard",
     "copyFailed": "Failed to copy to clipboard"
   },

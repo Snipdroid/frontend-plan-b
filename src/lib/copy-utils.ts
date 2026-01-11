@@ -1,10 +1,5 @@
 import { toast } from "sonner"
 import { getBestDrawableName } from "./drawable"
-import {
-  generateAppfilterSnippet,
-  generateDrawableSnippet,
-  generateIconPackSnippet,
-} from "./xml-generator"
 import type { AppInfo, AppInfoDTO } from "@/types"
 
 /**
@@ -35,6 +30,8 @@ export async function copyAppfilter(
   successMessage: string,
   errorMessage: string
 ): Promise<void> {
+  const { generateAppfilterSnippet } = await import("./xml-generator")
+
   const items = apps.map((app) => ({
     packageName: app.packageName,
     mainActivity: app.mainActivity,
@@ -60,6 +57,8 @@ export async function copyDrawable(
   successMessage: string,
   errorMessage: string
 ): Promise<void> {
+  const { generateDrawableSnippet } = await import("./xml-generator")
+
   const drawables = apps.map((app) => getBestDrawableName(app))
   const text = generateDrawableSnippet(drawables)
 
@@ -80,6 +79,8 @@ export async function copyIconPack(
   successMessage: string,
   errorMessage: string
 ): Promise<void> {
+  const { generateIconPackSnippet } = await import("./xml-generator")
+
   const drawables = apps.map((app) => getBestDrawableName(app))
   const text = generateIconPackSnippet(drawables)
 

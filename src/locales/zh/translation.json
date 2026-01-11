@@ -35,7 +35,16 @@
     "toggle": "切换主题",
     "light": "浅色",
     "dark": "深色",
-    "system": "跟随系统"
+    "system": "跟随系统",
+    "colorTheme": "配色主题",
+    "themes": {
+      "default": "默认",
+      "vscode": "VS Code",
+      "marshmallow": "棉花糖",
+      "twitter": "Twitter",
+      "doom64": "Doom 64",
+      "neobrutalism": "新野兽派"
+    }
   },
   "language": {
     "label": "语言",

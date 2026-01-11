@@ -1,0 +1,6 @@
+/* Theme aggregator - import all theme CSS files here */
+@import "./theme-vscode.css";
+@import "./theme-marshmallow.css";
+@import "./theme-twitter.css";
+@import "./theme-doom64.css";
+@import "./theme-neobrutalism.css";

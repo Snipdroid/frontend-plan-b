@@ -20,7 +20,7 @@ if (isWindows()) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ThemeProvider defaultTheme="system">
+    <ThemeProvider defaultColorScheme="system">
       <AuthProvider {...oidcConfig}>
         <SWRConfig value={{ ...swrConfig, fetcher: publicFetcher }}>
           <BrowserRouter>

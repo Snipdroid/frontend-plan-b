@@ -91,17 +91,17 @@ export function UploadSidebar({
         {fileList.files.length > 0 && (
           <>
             <div>
-              <Label className="hover:bg-accent/50 flex items-start gap-3 rounded-lg border p-3 cursor-pointer has-[[aria-checked=true]]:border-primary has-[[aria-checked=true]]:bg-accent">
+              <Label className="group/checkbox hover:bg-accent/50 flex items-start gap-3 rounded-lg border p-3 cursor-pointer has-[[aria-checked=true]]:border-primary has-[[aria-checked=true]]:bg-accent">
                 <Checkbox
                   id="upload-icons-desktop"
                   checked={uploadIcons}
                   onCheckedChange={(checked) => onUploadIconsChange(checked as boolean)}
                 />
                 <div className="grid gap-1.5 font-normal">
-                  <p className="text-sm leading-none font-medium">
+                  <p className="text-sm leading-none font-medium group-hover/checkbox:text-accent-foreground group-has-[[aria-checked=true]]/checkbox:text-accent-foreground">
                     {t("upload.uploadIcons")}
                   </p>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-muted-foreground text-sm group-hover/checkbox:text-accent-foreground group-has-[[aria-checked=true]]/checkbox:text-accent-foreground">
                     {t("upload.uploadIconsDesc")}
                   </p>
                 </div>

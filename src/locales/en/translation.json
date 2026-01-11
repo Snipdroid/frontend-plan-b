@@ -35,7 +35,16 @@
     "toggle": "Toggle theme",
     "light": "Light",
     "dark": "Dark",
-    "system": "System"
+    "system": "System",
+    "colorTheme": "Color theme",
+    "themes": {
+      "default": "Default",
+      "vscode": "VS Code",
+      "marshmallow": "Marshmallow",
+      "twitter": "Twitter",
+      "doom64": "Doom 64",
+      "neobrutalism": "Neo Brutalism"
+    }
   },
   "language": {
     "label": "Language",

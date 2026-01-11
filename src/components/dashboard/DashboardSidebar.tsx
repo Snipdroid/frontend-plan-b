@@ -261,7 +261,7 @@ export function DashboardSidebar() {
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton size="lg">
+                <SidebarMenuButton size="lg" className="group/user">
                   <Avatar className="h-8 w-8">
                     {profile?.picture && (
                       <AvatarImage src={profile.picture} alt={profile.name} />
@@ -270,7 +270,7 @@ export function DashboardSidebar() {
                   </Avatar>
                   <div className="flex flex-col gap-0.5 leading-none">
                     <span className="font-medium">{profile?.name}</span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground group-hover/user:text-sidebar-accent-foreground group-data-[state=open]/user:text-sidebar-accent-foreground">
                       {profile?.email}
                     </span>
                   </div>

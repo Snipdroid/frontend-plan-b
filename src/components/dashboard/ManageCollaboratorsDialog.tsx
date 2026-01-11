@@ -260,6 +260,7 @@ export function ManageCollaboratorsDialog({
                                     setSelectedDesigner(designer)
                                     setComboboxOpen(false)
                                   }}
+                                  className="group/designer"
                                 >
                                   <Check
                                     className={cn(
@@ -274,7 +275,7 @@ export function ManageCollaboratorsDialog({
                                       {designer.name || designer.email}
                                     </span>
                                     {designer.name && designer.email && (
-                                      <span className="text-xs text-muted-foreground">
+                                      <span className="text-xs text-muted-foreground group-data-[selected=true]/designer:text-accent-foreground">
                                         {designer.email}
                                       </span>
                                     )}

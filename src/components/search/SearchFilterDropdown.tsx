@@ -70,14 +70,18 @@ export function SearchFilterDropdown({
             key={option.type}
             onClick={() => onSelect(option.type)}
             className={cn(
-              "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
+              "group relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
               "hover:bg-accent hover:text-accent-foreground",
               highlightedIndex === index && "bg-accent text-accent-foreground"
             )}
           >
             <div>
               <div className="font-medium">{t(option.labelKey)}</div>
-              <div className="text-xs text-muted-foreground">
+              <div className={cn(
+                "text-xs text-muted-foreground",
+                "group-hover:text-accent-foreground",
+                highlightedIndex === index && "text-accent-foreground"
+              )}>
                 {t(option.descriptionKey)}
               </div>
             </div>

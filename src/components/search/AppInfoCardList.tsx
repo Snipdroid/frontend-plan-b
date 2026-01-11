@@ -1,10 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton"
 import { AppInfoCard } from "./AppInfoCard"
+import { getRowKey } from "./utils"
 import type { AppInfo } from "@/types"
-
-function getRowKey(app: AppInfo): string {
-  return `${app.packageName}-${app.mainActivity}`
-}
 
 interface AppInfoCardListProps {
   data: AppInfo[]
@@ -93,5 +90,3 @@ export function AppInfoCardList({
     </div>
   )
 }
-
-export { getRowKey }

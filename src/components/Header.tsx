@@ -2,8 +2,7 @@ import { Link } from "react-router"
 import { useTranslation } from "react-i18next"
 import { Package, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { ThemePicker } from "@/components/theme-picker"
+import { ThemeMenu } from "@/components/theme-menu"
 import { UserProfile } from "@/components/UserProfile"
 
 export function Header() {
@@ -25,8 +24,7 @@ export function Header() {
               {t("nav.upload")}
             </Link>
           </Button>
-          <ThemePicker />
-          <ThemeToggle />
+          <ThemeMenu />
           <UserProfile />
         </div>
       </div>

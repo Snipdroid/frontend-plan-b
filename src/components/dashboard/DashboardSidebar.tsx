@@ -14,7 +14,6 @@ import {
   Sun,
   Moon,
 } from "lucide-react"
-import type { Theme } from "@/components/theme"
 
 import {
   Sidebar,
@@ -32,8 +31,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -51,13 +48,12 @@ import type { IconPackDTO } from "@/types/icon-pack"
 import { getIconPacks } from "@/services/icon-pack"
 import { getDesignerMe } from "@/services/designer"
 import { CreateIconPackDialog } from "./CreateIconPackDialog"
-import { useTheme } from "@/components/theme"
+import { ThemeMenu } from "@/components/theme-menu"
 
 export function DashboardSidebar() {
   const auth = useAuth()
   const location = useLocation()
   const { t } = useTranslation()
-  const { theme, setTheme } = useTheme()
   const [iconPacks, setIconPacks] = useState<IconPackDTO[]>([])
   const [isLoadingPacks, setIsLoadingPacks] = useState(true)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
@@ -234,25 +230,17 @@ export function DashboardSidebar() {
         {/* Theme toggle */}
         <SidebarMenu>
           <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            <ThemeMenu
+              align="start"
+              side="top"
+              trigger={
                 <SidebarMenuButton>
                   <Sun className="!size-4 scale-100 rotate-0 dark:scale-0 dark:-rotate-90" />
                   <Moon className="absolute !size-4 scale-0 rotate-90 dark:scale-100 dark:rotate-0" />
                   <span>{t("theme.toggle")}</span>
                 </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent side="top" align="start">
-                <DropdownMenuRadioGroup
-                  value={theme}
-                  onValueChange={(value) => setTheme(value as Theme)}
-                >
-                  <DropdownMenuRadioItem value="light">{t("theme.light")}</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="dark">{t("theme.dark")}</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="system">{t("theme.system")}</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              }
+            />
           </SidebarMenuItem>
         </SidebarMenu>
 

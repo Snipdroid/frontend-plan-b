@@ -5,31 +5,8 @@ import {
   PopoverAnchor,
 } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
+import { FILTER_OPTIONS } from "./utils"
 import type { SearchFilterType } from "@/types"
-
-interface FilterOption {
-  type: SearchFilterType
-  labelKey: string
-  descriptionKey: string
-}
-
-const FILTER_OPTIONS: FilterOption[] = [
-  {
-    type: "byName",
-    labelKey: "search.byName",
-    descriptionKey: "search.byNameDesc",
-  },
-  {
-    type: "byPackageName",
-    labelKey: "search.byPackageName",
-    descriptionKey: "search.byPackageNameDesc",
-  },
-  {
-    type: "byMainActivity",
-    labelKey: "search.byMainActivity",
-    descriptionKey: "search.byMainActivityDesc",
-  },
-]
 
 interface SearchFilterDropdownProps {
   open: boolean
@@ -96,5 +73,3 @@ export function SearchFilterDropdown({
     </Popover>
   )
 }
-
-export { FILTER_OPTIONS }

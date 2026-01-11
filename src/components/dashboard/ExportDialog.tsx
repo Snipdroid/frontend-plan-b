@@ -37,19 +37,20 @@ interface ExportDialogProps {
   versions: IconPackVersionDTO[]
 }
 
-export function ExportDialog({
-  open,
-  onOpenChange,
+interface ExportDialogContentProps {
+  onClose: () => void
+  iconPackId: string
+  accessToken: string
+  versions: IconPackVersionDTO[]
+}
+
+function ExportDialogContent({
+  onClose,
   iconPackId,
   accessToken,
   versions,
-}: ExportDialogProps) {
+}: ExportDialogContentProps) {
   const { t } = useTranslation()
-  const [stage, setStage] = useState<ExportStage>("fetching")
-  const [allApps, setAllApps] = useState<IconPackAppDTO[]>([])
-  const [fetchProgress, setFetchProgress] = useState({ current: 0, total: 0 })
-  const [cutoffTimestamp, setCutoffTimestamp] = useState<number>(Date.now())
-  const [error, setError] = useState<string | null>(null)
 
   // Sort versions by createdAt descending (newest first)
   const sortedVersions = useMemo(() => {
@@ -61,8 +62,8 @@ export function ExportDialog({
       )
   }, [versions])
 
-  // Calculate slider bounds
-  const sliderBounds = useMemo(() => {
+  // Compute initial slider bounds (captured at mount time)
+  const initialBounds = useMemo(() => {
     const now = Date.now()
 
     if (sortedVersions.length === 0) {
@@ -83,20 +84,27 @@ export function ExportDialog({
     const initial = new Date(sortedVersions[0].createdAt!).getTime()
 
     return { min: leftBound, max: now, initial }
-  }, [sortedVersions])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Empty deps - only compute once on mount
+
+  const [stage, setStage] = useState<ExportStage>("fetching")
+  const [allApps, setAllApps] = useState<IconPackAppDTO[]>([])
+  const [fetchProgress, setFetchProgress] = useState({ current: 0, total: 0 })
+  const [cutoffTimestamp, setCutoffTimestamp] = useState<number>(initialBounds.initial)
+  const [error, setError] = useState<string | null>(null)
 
   // Version markers for the slider
   const versionMarkers = useMemo(() => {
     return sortedVersions
       .filter((v) => {
         const ts = new Date(v.createdAt!).getTime()
-        return ts >= sliderBounds.min && ts <= sliderBounds.max
+        return ts >= initialBounds.min && ts <= initialBounds.max
       })
       .map((v) => ({
         timestamp: new Date(v.createdAt!).getTime(),
         label: v.versionString,
       }))
-  }, [sortedVersions, sliderBounds])
+  }, [sortedVersions, initialBounds])
 
   // Filter "New" apps based on cutoff timestamp
   const newApps = useMemo(() => {
@@ -112,18 +120,6 @@ export function ExportDialog({
         return dateB - dateA
       })
   }, [allApps, cutoffTimestamp])
-
-  // Reset state when dialog opens
-  useEffect(() => {
-    if (open) {
-      setStage("fetching")
-      setAllApps([])
-      setFetchProgress({ current: 0, total: 0 })
-      setCutoffTimestamp(sliderBounds.initial)
-      setError(null)
-      fetchAllApps()
-    }
-  }, [open, sliderBounds.initial])
 
   const fetchAllApps = useCallback(async () => {
     try {
@@ -164,6 +160,11 @@ export function ExportDialog({
       setStage("error")
     }
   }, [accessToken, iconPackId, t])
+
+  // Start fetching on mount
+  useEffect(() => {
+    fetchAllApps()
+  }, [fetchAllApps])
 
   const downloadBlob = (blob: Blob, filename: string) => {
     const url = URL.createObjectURL(blob)
@@ -220,10 +221,6 @@ export function ExportDialog({
     fetchAllApps()
   }
 
-  const handleClose = () => {
-    onOpenChange(false)
-  }
-
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString(undefined, {
       year: "numeric",
@@ -237,200 +234,212 @@ export function ExportDialog({
     return `${API_BASE_URL}/app-icon?packageName=${encodeURIComponent(packageName)}`
   }
 
-  const renderContent = () => {
-    switch (stage) {
-      case "fetching":
-        return (
-          <div className="space-y-4 py-4">
-            <Progress
-              value={
-                fetchProgress.total > 0
-                  ? (fetchProgress.current / fetchProgress.total) * 100
-                  : 0
-              }
-            />
-            <p className="text-sm text-muted-foreground text-center">
-              {fetchProgress.total > 0
-                ? t("iconPack.exportFetching", {
-                    current: fetchProgress.current,
-                    total: fetchProgress.total,
-                  })
-                : t("common.loading")}
-            </p>
-          </div>
-        )
+  switch (stage) {
+    case "fetching":
+      return (
+        <div className="space-y-4 py-4">
+          <Progress
+            value={
+              fetchProgress.total > 0
+                ? (fetchProgress.current / fetchProgress.total) * 100
+                : 0
+            }
+          />
+          <p className="text-sm text-muted-foreground text-center">
+            {fetchProgress.total > 0
+              ? t("iconPack.exportFetching", {
+                  current: fetchProgress.current,
+                  total: fetchProgress.total,
+                })
+              : t("common.loading")}
+          </p>
+        </div>
+      )
 
-      case "configuring":
-        return (
-          <div className="space-y-6 py-4">
-            {/* Timeline Slider */}
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-sm font-medium mb-1">
-                  {t("iconPack.exportSliderLabel")}
-                </h4>
-                <p className="text-xs text-muted-foreground">
-                  {t("iconPack.exportSliderDesc")}
-                </p>
-              </div>
-
-              {/* Slider with markers */}
-              <div className="relative pt-6 pb-2">
-                {/* Version markers */}
-                <div className="absolute top-0 left-0 right-0 h-6">
-                  {versionMarkers.map((marker) => {
-                    const percent =
-                      ((marker.timestamp - sliderBounds.min) /
-                        (sliderBounds.max - sliderBounds.min)) *
-                      100
-                    return (
-                      <div
-                        key={marker.timestamp}
-                        className="absolute flex flex-col items-center"
-                        style={{
-                          left: `${percent}%`,
-                          transform: "translateX(-50%)",
-                        }}
-                      >
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {marker.label}
-                        </span>
-                        <div className="w-px h-2 bg-muted-foreground/50" />
-                      </div>
-                    )
-                  })}
-                  {/* "Now" marker on the right */}
-                  <div
-                    className="absolute flex flex-col items-center"
-                    style={{ left: "100%", transform: "translateX(-50%)" }}
-                  >
-                    <span className="text-xs text-muted-foreground">
-                      {t("iconPack.exportNow")}
-                    </span>
-                    <div className="w-px h-2 bg-muted-foreground/50" />
-                  </div>
-                </div>
-
-                <Slider
-                  value={[cutoffTimestamp]}
-                  min={sliderBounds.min}
-                  max={sliderBounds.max}
-                  step={1000 * 60 * 60} // 1 hour steps
-                  onValueChange={([value]) => setCutoffTimestamp(value)}
-                  className="mt-2"
-                />
-              </div>
+    case "configuring":
+      return (
+        <div className="space-y-6 py-4">
+          {/* Timeline Slider */}
+          <div className="space-y-4">
+            <div>
+              <h4 className="text-sm font-medium mb-1">
+                {t("iconPack.exportSliderLabel")}
+              </h4>
+              <p className="text-xs text-muted-foreground">
+                {t("iconPack.exportSliderDesc")}
+              </p>
             </div>
 
-            {/* New apps preview */}
-            {newApps.length > 0 && (
-              <ScrollArea className="h-[300px] border rounded-md">
-                <div className="divide-y">
-                  {newApps.map((app) => {
-                    const iconUrl = getIconUrl(app.appInfo?.packageName)
-                    return (
-                      <div
-                        key={app.id}
-                        className="flex items-start gap-3 p-3"
-                      >
-                        <div className="flex-shrink-0">
-                          {iconUrl ? (
-                            <img
-                              src={iconUrl}
-                              alt={`${app.appInfo?.defaultName ?? "App"} icon`}
-                              className="h-8 w-8 rounded object-contain"
-                              onError={(e) => {
-                                e.currentTarget.style.display = "none"
-                                e.currentTarget.nextElementSibling?.classList.remove(
-                                  "hidden"
-                                )
-                              }}
-                            />
-                          ) : null}
-                          <div
-                            className={`${iconUrl ? "hidden" : ""} flex h-8 w-8 items-center justify-center rounded bg-muted`}
-                          >
-                            <ImageOff className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm truncate">
-                            {app.appInfo?.defaultName ?? "-"}
-                          </div>
-                          <div className="text-xs text-muted-foreground font-mono truncate">
-                            {app.appInfo?.packageName ?? "-"}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            drawable: <span className="font-mono">{app.drawable}</span>
-                          </div>
+            {/* Slider with markers */}
+            <div className="relative pt-6 pb-2">
+              {/* Version markers */}
+              <div className="absolute top-0 left-0 right-0 h-6">
+                {versionMarkers.map((marker) => {
+                  const percent =
+                    ((marker.timestamp - initialBounds.min) /
+                      (initialBounds.max - initialBounds.min)) *
+                    100
+                  return (
+                    <div
+                      key={marker.timestamp}
+                      className="absolute flex flex-col items-center"
+                      style={{
+                        left: `${percent}%`,
+                        transform: "translateX(-50%)",
+                      }}
+                    >
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        {marker.label}
+                      </span>
+                      <div className="w-px h-2 bg-muted-foreground/50" />
+                    </div>
+                  )
+                })}
+                {/* "Now" marker on the right */}
+                <div
+                  className="absolute flex flex-col items-center"
+                  style={{ left: "100%", transform: "translateX(-50%)" }}
+                >
+                  <span className="text-xs text-muted-foreground">
+                    {t("iconPack.exportNow")}
+                  </span>
+                  <div className="w-px h-2 bg-muted-foreground/50" />
+                </div>
+              </div>
+
+              <Slider
+                value={[cutoffTimestamp]}
+                min={initialBounds.min}
+                max={initialBounds.max}
+                step={1000 * 60 * 60} // 1 hour steps
+                onValueChange={([value]) => setCutoffTimestamp(value)}
+                className="mt-2"
+              />
+            </div>
+          </div>
+
+          {/* New apps preview */}
+          {newApps.length > 0 && (
+            <ScrollArea className="h-[300px] border rounded-md">
+              <div className="divide-y">
+                {newApps.map((app) => {
+                  const iconUrl = getIconUrl(app.appInfo?.packageName)
+                  return (
+                    <div
+                      key={app.id}
+                      className="flex items-start gap-3 p-3"
+                    >
+                      <div className="flex-shrink-0">
+                        {iconUrl ? (
+                          <img
+                            src={iconUrl}
+                            alt={`${app.appInfo?.defaultName ?? "App"} icon`}
+                            className="h-8 w-8 rounded object-contain"
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none"
+                              e.currentTarget.nextElementSibling?.classList.remove(
+                                "hidden"
+                              )
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className={`${iconUrl ? "hidden" : ""} flex h-8 w-8 items-center justify-center rounded bg-muted`}
+                        >
+                          <ImageOff className="h-4 w-4 text-muted-foreground" />
                         </div>
                       </div>
-                    )
-                  })}
-                </div>
-              </ScrollArea>
-            )}
-
-            <div className="flex items-center justify-between gap-2">
-              <Badge variant={newApps.length > 0 ? "default" : "secondary"}>
-                {newApps.length > 0
-                  ? t("iconPack.exportNewAppsAfterDate", { count: newApps.length, date: formatDate(cutoffTimestamp) })
-                  : t("iconPack.exportNoNewApps")}
-              </Badge>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={handleClose}>
-                  {t("common.cancel")}
-                </Button>
-                <Button onClick={handleExport}>{t("iconPack.exportConfirm")}</Button>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">
+                          {app.appInfo?.defaultName ?? "-"}
+                        </div>
+                        <div className="text-xs text-muted-foreground font-mono truncate">
+                          {app.appInfo?.packageName ?? "-"}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          drawable: <span className="font-mono">{app.drawable}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
+            </ScrollArea>
+          )}
+
+          <div className="flex items-center justify-between gap-2">
+            <Badge variant={newApps.length > 0 ? "default" : "secondary"}>
+              {newApps.length > 0
+                ? t("iconPack.exportNewAppsAfterDate", { count: newApps.length, date: formatDate(cutoffTimestamp) })
+                : t("iconPack.exportNoNewApps")}
+            </Badge>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={onClose}>
+                {t("common.cancel")}
+              </Button>
+              <Button onClick={handleExport}>{t("iconPack.exportConfirm")}</Button>
             </div>
           </div>
-        )
+        </div>
+      )
 
-      case "exporting":
-        return (
-          <div className="space-y-4 py-4">
-            <Progress value={undefined} />
-            <p className="text-sm text-muted-foreground text-center">
-              {t("iconPack.exporting")}
-            </p>
+    case "exporting":
+      return (
+        <div className="space-y-4 py-4">
+          <Progress value={undefined} />
+          <p className="text-sm text-muted-foreground text-center">
+            {t("iconPack.exporting")}
+          </p>
+        </div>
+      )
+
+    case "complete":
+      return (
+        <div className="space-y-4 py-4">
+          <div className="text-center">
+            <Badge variant="default" className="text-sm">
+              {t("iconPack.exportSuccess")}
+            </Badge>
           </div>
-        )
+          <Button onClick={onClose} className="w-full">
+            {t("common.close")}
+          </Button>
+        </div>
+      )
 
-      case "complete":
-        return (
-          <div className="space-y-4 py-4">
-            <div className="text-center">
-              <Badge variant="default" className="text-sm">
-                {t("iconPack.exportSuccess")}
-              </Badge>
-            </div>
-            <Button onClick={handleClose} className="w-full">
+    case "error":
+      return (
+        <div className="space-y-4 py-4">
+          <div className="rounded-lg border border-destructive p-4">
+            <p className="text-sm text-destructive">{error}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={handleRetry} variant="default" className="flex-1">
+              {t("common.retry")}
+            </Button>
+            <Button onClick={onClose} variant="outline" className="flex-1">
               {t("common.close")}
             </Button>
           </div>
-        )
+        </div>
+      )
 
-      case "error":
-        return (
-          <div className="space-y-4 py-4">
-            <div className="rounded-lg border border-destructive p-4">
-              <p className="text-sm text-destructive">{error}</p>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={handleRetry} variant="default" className="flex-1">
-                {t("common.retry")}
-              </Button>
-              <Button onClick={handleClose} variant="outline" className="flex-1">
-                {t("common.close")}
-              </Button>
-            </div>
-          </div>
-        )
+    default:
+      return null
+  }
+}
 
-      default:
-        return null
-    }
+export function ExportDialog({
+  open,
+  onOpenChange,
+  iconPackId,
+  accessToken,
+  versions,
+}: ExportDialogProps) {
+  const { t } = useTranslation()
+
+  const handleClose = () => {
+    onOpenChange(false)
   }
 
   return (
@@ -440,7 +449,14 @@ export function ExportDialog({
           <DialogTitle>{t("iconPack.exportDialogTitle")}</DialogTitle>
           <DialogDescription>{t("iconPack.exportDialogDesc")}</DialogDescription>
         </DialogHeader>
-        {renderContent()}
+        {open && (
+          <ExportDialogContent
+            onClose={handleClose}
+            iconPackId={iconPackId}
+            accessToken={accessToken}
+            versions={versions}
+          />
+        )}
       </DialogContent>
     </Dialog>
   )

@@ -46,35 +46,32 @@ export function AppDetailSheet({ app, open, onOpenChange }: AppDetailSheetProps)
   const { t } = useTranslation()
   const auth = useAuth()
   const displayName = useLocalizedName(app?.localizedNames ?? [])
-  const [iconError, setIconError] = useState(false)
-  const [tags, setTags] = useState<Tag[]>([])
-  const [isLoadingTags, setIsLoadingTags] = useState(false)
+  const [failedIconPackage, setFailedIconPackage] = useState<string | null>(null)
+  const [tagData, setTagData] = useState<{ appId: string | null; tags: Tag[] }>({ appId: null, tags: [] })
   const [isAddTagDialogOpen, setIsAddTagDialogOpen] = useState(false)
   const [isMarkAsAdaptedDialogOpen, setIsMarkAsAdaptedDialogOpen] = useState(false)
 
-  // Reset icon error when app changes
-  useEffect(() => {
-    setIconError(false)
-  }, [app?.packageName])
+  // Derive iconError - automatically resets when app changes
+  const iconError = failedIconPackage === app?.packageName
+
+  // Derive tags and loading state - automatically resets when app changes
+  const tags = tagData.appId === app?.id ? tagData.tags : []
+  const isLoadingTags = !!app?.id && tagData.appId !== app.id
 
   // Fetch tags when app changes
   useEffect(() => {
-    if (!app?.id) {
-      setTags([])
-      return
-    }
+    if (!app?.id) return
 
-    setIsLoadingTags(true)
+    const appId = app.id
     const controller = new AbortController()
-    getTagsForApp(app.id, controller.signal)
-      .then(setTags)
+    getTagsForApp(appId, controller.signal)
+      .then((fetchedTags) => setTagData({ appId, tags: fetchedTags }))
       .catch((error) => {
         if (error.name !== "AbortError") {
           console.error("Failed to fetch tags:", error)
-          setTags([])
+          setTagData({ appId, tags: [] })
         }
       })
-      .finally(() => setIsLoadingTags(false))
 
     return () => controller.abort()
   }, [app?.id])
@@ -92,7 +89,7 @@ export function AppDetailSheet({ app, open, onOpenChange }: AppDetailSheetProps)
       src={getAppIconUrl(app.packageName)}
       alt={`${displayName} icon`}
       className="h-16 w-16 shrink-0 rounded-xl object-cover"
-      onError={() => setIconError(true)}
+      onError={() => setFailedIconPackage(app.packageName)}
     />
   )
 
@@ -203,7 +200,7 @@ export function AppDetailSheet({ app, open, onOpenChange }: AppDetailSheetProps)
           currentTags={tags}
           open={isAddTagDialogOpen}
           onOpenChange={setIsAddTagDialogOpen}
-          onTagAdded={(newTags) => setTags(newTags)}
+          onTagAdded={(newTags) => setTagData({ appId: app.id, tags: newTags })}
         />
 
         <MarkAsAdaptedDialog

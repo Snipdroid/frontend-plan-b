@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { useTheme } from "@/components/theme-provider"
+import { useTheme } from "@/components/theme"
 import { renderLeafTemplate } from "@/services/render"
 import { registerLeafLanguage, leafLanguageId } from "@/lib/leaf-language"
 import type { AppInfo } from "@/types"

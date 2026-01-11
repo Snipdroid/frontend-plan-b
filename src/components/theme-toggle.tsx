@@ -9,8 +9,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useTheme } from "@/components/theme-provider"
-import type { Theme } from "@/components/theme-provider"
+import { useTheme, type Theme } from "@/components/theme"
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme()

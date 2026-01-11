@@ -1,10 +1,10 @@
-import { createContext, useCallback, useContext, useEffect, useSyncExternalStore } from "react"
+import { useCallback, useEffect, useSyncExternalStore } from "react"
 import { type ColorTheme, colorThemeKeys, getThemeDefinition } from "@/lib/themes"
-
-export type ColorScheme = "dark" | "light" | "system"
-
-// Keep "Theme" as alias for backwards compatibility
-export type Theme = ColorScheme
+import {
+  type ColorScheme,
+  type ThemeProviderState,
+  ThemeProviderContext,
+} from "./context"
 
 type ThemeProviderProps = {
   children: React.ReactNode
@@ -13,32 +13,6 @@ type ThemeProviderProps = {
   storageKeyColorScheme?: string
   storageKeyColorTheme?: string
 }
-
-type ThemeProviderState = {
-  // Color scheme (light/dark/system)
-  colorScheme: ColorScheme
-  setColorScheme: (scheme: ColorScheme) => void
-  // Color theme (default/vscode/etc)
-  colorTheme: ColorTheme
-  setColorTheme: (theme: ColorTheme) => void
-  // Resolved color scheme (light or dark, never system)
-  resolvedColorScheme: "light" | "dark"
-  // Legacy aliases for backwards compatibility
-  theme: ColorScheme
-  setTheme: (theme: ColorScheme) => void
-}
-
-const initialState: ThemeProviderState = {
-  colorScheme: "system",
-  setColorScheme: () => null,
-  colorTheme: "default",
-  setColorTheme: () => null,
-  resolvedColorScheme: "light",
-  theme: "system",
-  setTheme: () => null,
-}
-
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 
 // Subscribe to system color scheme changes
 function subscribeToSystemTheme(callback: () => void) {
@@ -164,13 +138,4 @@ export function ThemeProvider({
       {children}
     </ThemeProviderContext.Provider>
   )
-}
-
-export const useTheme = () => {
-  const context = useContext(ThemeProviderContext)
-
-  if (context === undefined)
-    throw new Error("useTheme must be used within a ThemeProvider")
-
-  return context
 }

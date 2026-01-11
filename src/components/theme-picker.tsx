@@ -9,7 +9,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useTheme } from "@/components/theme-provider"
+import { useTheme } from "@/components/theme"
 import { type ColorTheme, colorThemeKeys, themes } from "@/lib/themes"
 
 function ThemeSwatch({ theme, isDark }: { theme: ColorTheme; isDark: boolean }) {

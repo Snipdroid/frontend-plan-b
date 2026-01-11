@@ -14,7 +14,7 @@ import {
   Sun,
   Moon,
 } from "lucide-react"
-import type { Theme } from "@/components/theme-provider"
+import type { Theme } from "@/components/theme"
 
 import {
   Sidebar,
@@ -51,7 +51,7 @@ import type { IconPackDTO } from "@/types/icon-pack"
 import { getIconPacks } from "@/services/icon-pack"
 import { getDesignerMe } from "@/services/designer"
 import { CreateIconPackDialog } from "./CreateIconPackDialog"
-import { useTheme } from "@/components/theme-provider"
+import { useTheme } from "@/components/theme"
 
 export function DashboardSidebar() {
   const auth = useAuth()

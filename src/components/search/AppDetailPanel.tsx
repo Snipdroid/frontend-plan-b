@@ -40,37 +40,36 @@ export function AppDetailPanel({ app, onClose }: AppDetailPanelProps) {
   const auth = useAuth()
   const displayName = useLocalizedName(app?.localizedNames ?? [])
   const [iconError, setIconError] = useState(false)
-  const [tags, setTags] = useState<Tag[]>([])
-  const [isLoadingTags, setIsLoadingTags] = useState(false)
+  const [tagsData, setTagsData] = useState<{ appId: string | null; tags: Tag[] }>({
+    appId: null,
+    tags: [],
+  })
   const [isAddTagDialogOpen, setIsAddTagDialogOpen] = useState(false)
   const [isMarkAsAdaptedDialogOpen, setIsMarkAsAdaptedDialogOpen] = useState(false)
 
-  // Reset icon error when app changes
-  useEffect(() => {
-    setIconError(false)
-  }, [app?.packageName])
+  // Derive loading state: tags are loading if they don't belong to current app
+  const appId = app?.id
+  const isLoadingTags = tagsData.appId !== appId
+  const tags = tagsData.tags
 
-  // Fetch tags when app changes
+  // Fetch tags on mount (component is keyed by app.id in parent)
   useEffect(() => {
-    if (!app?.id) {
-      setTags([])
-      return
-    }
+    if (!appId) return
 
-    setIsLoadingTags(true)
     const controller = new AbortController()
-    getTagsForApp(app.id, controller.signal)
-      .then(setTags)
+    getTagsForApp(appId, controller.signal)
+      .then((newTags) => {
+        setTagsData({ appId, tags: newTags })
+      })
       .catch((error) => {
         if (error.name !== "AbortError") {
           console.error("Failed to fetch tags:", error)
-          setTags([])
+          setTagsData({ appId, tags: [] })
         }
       })
-      .finally(() => setIsLoadingTags(false))
 
     return () => controller.abort()
-  }, [app?.id])
+  }, [appId])
 
   if (!app) {
     return null
@@ -204,7 +203,7 @@ export function AppDetailPanel({ app, onClose }: AppDetailPanelProps) {
         currentTags={tags}
         open={isAddTagDialogOpen}
         onOpenChange={setIsAddTagDialogOpen}
-        onTagAdded={(newTags) => setTags(newTags)}
+        onTagAdded={(newTags) => setTagsData({ appId: app.id, tags: newTags })}
       />
 
       <MarkAsAdaptedDialog

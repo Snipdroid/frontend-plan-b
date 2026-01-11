@@ -157,7 +157,7 @@ export function HomePage() {
         {/* Desktop Detail Panel */}
         {selectedApp && (
           <div className="hidden md:block w-80 shrink-0">
-            <AppDetailPanel app={selectedApp} onClose={handleCloseDetail} />
+            <AppDetailPanel key={selectedApp.id} app={selectedApp} onClose={handleCloseDetail} />
           </div>
         )}
       </div>

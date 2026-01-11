@@ -377,7 +377,7 @@ export function IconPackManage() {
     return new Date(dateString).toLocaleDateString()
   }
 
-  const requestColumns: AppRequestsTableColumn[] = [
+  const requestColumns: AppRequestsTableColumn<AppInfoWithRequestCount>[] = [
     {
       key: "appName",
       header: t("iconPack.appName"),
@@ -422,7 +422,7 @@ export function IconPackManage() {
     },
   ]
 
-  const adaptedColumns: AppRequestsTableColumn[] = [
+  const adaptedColumns: AppRequestsTableColumn<IconPackAppDTO>[] = [
     {
       key: "appName",
       header: t("iconPack.appName"),

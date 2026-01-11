@@ -9,27 +9,27 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
-export interface AppRequestsTableColumn {
+export interface AppRequestsTableColumn<T> {
   key: string
   header: string
   mobileLabel?: string
   width?: string
-  render: (item: any) => ReactNode
+  render: (item: T) => ReactNode
   className?: string
   showInMobile?: boolean
 }
 
-interface AppRequestsTableProps {
-  items: any[]
-  columns: AppRequestsTableColumn[]
-  getIconUrl: (item: any) => string | null
-  getAppName: (item: any) => string
-  isSystemApp?: (item: any) => boolean
-  renderActions: (item: any) => ReactNode
-  getItemKey: (item: any) => string
+interface AppRequestsTableProps<T> {
+  items: T[]
+  columns: AppRequestsTableColumn<T>[]
+  getIconUrl: (item: T) => string | null
+  getAppName: (item: T) => string
+  isSystemApp?: (item: T) => boolean
+  renderActions: (item: T) => ReactNode
+  getItemKey: (item: T) => string
 }
 
-export function AppRequestsTable({
+export function AppRequestsTable<T>({
   items,
   columns,
   getIconUrl,
@@ -37,7 +37,7 @@ export function AppRequestsTable({
   isSystemApp,
   renderActions,
   getItemKey,
-}: AppRequestsTableProps) {
+}: AppRequestsTableProps<T>) {
   return (
     <>
       {/* Mobile Card Layout */}

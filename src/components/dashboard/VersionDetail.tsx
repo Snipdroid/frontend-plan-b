@@ -175,7 +175,7 @@ export function VersionDetail() {
     return `${API_BASE_URL}/app-icon?packageName=${encodeURIComponent(packageName)}`
   }
 
-  const columns: AppRequestsTableColumn[] = [
+  const columns: AppRequestsTableColumn<IconPackVersionRequestRecordResponse>[] = [
     {
       key: "appName",
       header: t("iconPack.appName"),

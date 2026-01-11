@@ -1,6 +1,5 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
 import { Plus, Minus, ChevronDown, Tags } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -12,11 +11,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { CustomTemplateDialog } from "@/components/search/CustomTemplateDialog"
 import { convertAppInfoDTOToAppInfo, copyAppfilter, copyDrawable, copyIconPack } from "@/lib/copy-utils"
-import {
-  generateAppfilterSnippet,
-  generateDrawableSnippet,
-  generateIconPackSnippet,
-} from "@/lib/xml-generator"
 import type {
   AppInfoDTO,
   AppInfoWithRequestCount,
@@ -34,43 +28,30 @@ interface AppActionDropdownProps {
 }
 
 /**
- * Extracts AppInfoDTO from various item types used in different tables
+ * Extracts AppInfoDTO and optional drawable from various item types.
  */
-function extractAppInfoDTO(
+function extractAppData(
   item: AppInfoWithRequestCount | IconPackVersionRequestRecordResponse | AppInfoDTO | IconPackAppDTO
-): AppInfoDTO | null {
-  // AppInfoWithRequestCount has nested appInfo
-  if ("appInfo" in item && "count" in item) {
-    return (item as AppInfoWithRequestCount).appInfo ?? null
-  }
+): { appInfoDTO: AppInfoDTO | null; drawable?: string } {
   // IconPackAppDTO has nested appInfo and drawable
   if ("appInfo" in item && "drawable" in item) {
-    return (item as IconPackAppDTO).appInfo ?? null
+    const dto = item as IconPackAppDTO
+    return { appInfoDTO: dto.appInfo ?? null, drawable: dto.drawable }
+  }
+  // AppInfoWithRequestCount has nested appInfo
+  if ("appInfo" in item && "count" in item) {
+    return { appInfoDTO: (item as AppInfoWithRequestCount).appInfo ?? null }
   }
   // IconPackVersionRequestRecordResponse has nested requestRecord.appInfo
   if ("requestRecord" in item) {
-    return item.requestRecord.appInfo ?? null
+    const response = item as IconPackVersionRequestRecordResponse
+    return {
+      appInfoDTO: response.requestRecord.appInfo ?? null,
+      drawable: response.iconPackApp?.drawable,
+    }
   }
   // AppInfoDTO is used directly
-  return item as AppInfoDTO
-}
-
-/**
- * Extracts the drawable name from IconPackAppDTO if available.
- * Returns null for other item types.
- */
-function extractDrawable(
-  item: AppInfoWithRequestCount | IconPackVersionRequestRecordResponse | AppInfoDTO | IconPackAppDTO
-): string | null {
-  // IconPackAppDTO has drawable field
-  if ("appInfo" in item && "drawable" in item) {
-    return (item as IconPackAppDTO).drawable ?? null
-  }
-  // IconPackVersionRequestRecordResponse may have iconPackApp with drawable
-  if ("requestRecord" in item && "iconPackApp" in item) {
-    return (item as IconPackVersionRequestRecordResponse).iconPackApp?.drawable ?? null
-  }
-  return null
+  return { appInfoDTO: item as AppInfoDTO }
 }
 
 export function AppActionDropdown({
@@ -84,62 +65,19 @@ export function AppActionDropdown({
   const { t } = useTranslation()
   const [customDialogOpen, setCustomDialogOpen] = useState(false)
 
-  const appInfoDTO = extractAppInfoDTO(item)
-  const appInfo = appInfoDTO ? convertAppInfoDTOToAppInfo(appInfoDTO) : null
-  const storedDrawable = extractDrawable(item)
+  const { appInfoDTO, drawable } = extractAppData(item)
+  const appInfo = appInfoDTO ? convertAppInfoDTOToAppInfo(appInfoDTO, drawable) : null
 
-  const handleCopyAppfilter = async () => {
-    if (!appInfoDTO) return
-    // Use stored drawable for adapted apps, otherwise use default copy function
-    if (storedDrawable) {
-      const text = generateAppfilterSnippet([{
-        packageName: appInfoDTO.packageName,
-        mainActivity: appInfoDTO.mainActivity,
-        drawable: storedDrawable,
-      }])
-      try {
-        await navigator.clipboard.writeText(text)
-        toast.success(t("export.appfilterCopied"))
-      } catch {
-        toast.error(t("export.copyFailed"))
-      }
-    } else if (appInfo) {
-      await copyAppfilter([appInfo], t("export.appfilterCopied"), t("export.copyFailed"))
-    }
+  const handleCopyAppfilter = () => {
+    if (appInfo) copyAppfilter([appInfo], t("export.appfilterCopied"), t("export.copyFailed"))
   }
 
-  const handleCopyDrawable = async () => {
-    // Use stored drawable for adapted apps, otherwise use default copy function
-    if (storedDrawable) {
-      const text = generateDrawableSnippet([storedDrawable])
-      try {
-        await navigator.clipboard.writeText(text)
-        toast.success(t("export.drawableCopied"))
-      } catch {
-        toast.error(t("export.copyFailed"))
-      }
-    } else if (appInfo) {
-      await copyDrawable([appInfo], t("export.drawableCopied"), t("export.copyFailed"))
-    }
+  const handleCopyDrawable = () => {
+    if (appInfo) copyDrawable([appInfo], t("export.drawableCopied"), t("export.copyFailed"))
   }
 
-  const handleCopyIconPack = async () => {
-    // Use stored drawable for adapted apps, otherwise use default copy function
-    if (storedDrawable) {
-      const text = generateIconPackSnippet([storedDrawable])
-      try {
-        await navigator.clipboard.writeText(text)
-        toast.success(t("export.iconpackCopied"))
-      } catch {
-        toast.error(t("export.copyFailed"))
-      }
-    } else if (appInfo) {
-      await copyIconPack([appInfo], t("export.iconpackCopied"), t("export.copyFailed"))
-    }
-  }
-
-  const handleOpenCustomDialog = () => {
-    setCustomDialogOpen(true)
+  const handleCopyIconPack = () => {
+    if (appInfo) copyIconPack([appInfo], t("export.iconpackCopied"), t("export.copyFailed"))
   }
 
   return (
@@ -190,7 +128,7 @@ export function AppActionDropdown({
           <DropdownMenuItem onSelect={handleCopyIconPack}>
             {t("actions.copyIconpack")}
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={handleOpenCustomDialog}>
+          <DropdownMenuItem onSelect={() => setCustomDialogOpen(true)}>
             {t("actions.customCopy")}
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -247,7 +185,7 @@ export function AppActionDropdown({
             <DropdownMenuItem onSelect={handleCopyIconPack}>
               {t("actions.copyIconpack")}
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={handleOpenCustomDialog}>
+            <DropdownMenuItem onSelect={() => setCustomDialogOpen(true)}>
               {t("actions.customCopy")}
             </DropdownMenuItem>
           </DropdownMenuContent>

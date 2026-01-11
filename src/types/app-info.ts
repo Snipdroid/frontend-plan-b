@@ -9,6 +9,7 @@ export interface AppInfo {
   mainActivity: string
   localizedNames: LocalizedName[]
   count?: number
+  drawable?: string // Custom drawable name (e.g., for adapted apps)
 }
 
 export interface Tag {

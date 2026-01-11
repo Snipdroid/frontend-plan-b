@@ -5,8 +5,9 @@ import type { AppInfo, AppInfoDTO } from "@/types"
 /**
  * Converts AppInfoDTO to AppInfo for use with copy functions.
  * Creates a localizedNames array with the defaultName.
+ * Optionally accepts a custom drawable name (e.g., for adapted apps).
  */
-export function convertAppInfoDTOToAppInfo(dto: AppInfoDTO): AppInfo {
+export function convertAppInfoDTOToAppInfo(dto: AppInfoDTO, drawable?: string): AppInfo {
   return {
     id: dto.id ?? "",
     packageName: dto.packageName,
@@ -18,6 +19,7 @@ export function convertAppInfoDTOToAppInfo(dto: AppInfoDTO): AppInfo {
       },
     ],
     count: dto.count,
+    drawable,
   }
 }
 

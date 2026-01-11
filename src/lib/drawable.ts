@@ -80,6 +80,7 @@ export function enrichAppsForTemplate(apps: AppInfo[]): AppInfoForTemplate[] {
 
 /**
  * Gets the best drawable name for an app using fallback logic:
+ * 0. Custom drawable name if set (e.g., for adapted apps)
  * 1. Localized name with languageCode "--" (default)
  * 2. Localized name with languageCode "en"
  * 3. Localized name matching browser language
@@ -87,6 +88,9 @@ export function enrichAppsForTemplate(apps: AppInfo[]): AppInfoForTemplate[] {
  * 5. Fallback to package name converted to drawable
  */
 export function getBestDrawableName(app: AppInfo): string {
+  // Return custom drawable if set
+  if (app.drawable) return app.drawable
+
   const browserLang = navigator.language.split("-")[0] // e.g., "en" from "en-US"
 
   const defaultName = app.localizedNames.find((ln) => ln.languageCode === "--")

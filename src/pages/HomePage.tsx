@@ -1,6 +1,6 @@
-import { useEffect, useState, useMemo } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
-import { useSearchTags, useAppSearch, useMediaQuery } from "@/hooks"
+import { useSearchTags, useAppSearchSWR, useMediaQuery } from "@/hooks"
 import {
   SearchTagInput,
   ActionBar,
@@ -16,40 +16,53 @@ export function HomePage() {
   const { t } = useTranslation()
   const { tags, inputValue, setInputValue, addTag, removeTag, hasTagType } =
     useSearchTags()
-  const { accumulatedItems, isLoading, error, search, loadMore, hasMore } =
-    useAppSearch()
   const [sortBy, setSortBy] = useState<SortOption>("relevance")
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [selectedApp, setSelectedApp] = useState<AppInfo | null>(null)
   const [detailSheetOpen, setDetailSheetOpen] = useState(false)
 
+  // Debounced query for SWR
+  const [debouncedQuery, setDebouncedQuery] = useState("")
+  const [searchTags, setSearchTags] = useState(tags)
+  const isInitialMount = useRef(true)
+
   const isMobile = useMediaQuery("(max-width: 767px)")
 
+  // SWR hook for search
+  const { items, isLoading, isValidating, error, hasMore, loadMore, reset } =
+    useAppSearchSWR({
+      tags: searchTags,
+      query: debouncedQuery || undefined,
+      sortBy,
+      perPage: 25,
+    })
+
   const selectedApps = useMemo(
-    () => accumulatedItems.filter((app) => selectedIds.has(getRowKey(app))),
-    [accumulatedItems, selectedIds]
+    () => items.filter((app) => selectedIds.has(getRowKey(app))),
+    [items, selectedIds]
   )
 
-  // Fetch initial unfiltered list on mount
+  // Reset search on initial mount to load initial data
   useEffect(() => {
-    search([], 1, undefined, undefined, sortBy)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+    }
   }, [])
 
   const handleSortChange = (newSort: SortOption) => {
     setSortBy(newSort)
-    const query = inputValue.trim() || undefined
-    search(tags, 1, undefined, query, newSort)
+    reset()
   }
 
   const handleSearch = () => {
-    const query = inputValue.trim() || undefined
-    search(tags, 1, undefined, query, sortBy)
+    const query = inputValue.trim()
+    setDebouncedQuery(query)
+    setSearchTags([...tags])
+    reset()
   }
 
   const handleLoadMore = () => {
-    const query = inputValue.trim() || undefined
-    loadMore(tags, query, sortBy)
+    loadMore()
   }
 
   const handleCardClick = (app: AppInfo) => {
@@ -95,7 +108,7 @@ export function HomePage() {
           onAddTag={addTag}
           onRemoveTag={removeTag}
           onSearch={handleSearch}
-          isLoading={isLoading}
+          isLoading={isLoading || isValidating}
           hasTagType={hasTagType}
         />
       </div>
@@ -120,8 +133,8 @@ export function HomePage() {
         {/* Card List */}
         <div className="flex-1 min-w-0">
           <AppInfoCardList
-            data={accumulatedItems}
-            isLoading={isLoading}
+            data={items}
+            isLoading={isLoading && items.length === 0}
             selectedIds={selectedIds}
             onSelectionChange={setSelectedIds}
             onCardClick={handleCardClick}
@@ -133,9 +146,9 @@ export function HomePage() {
               <Button
                 variant="outline"
                 onClick={handleLoadMore}
-                disabled={isLoading}
+                disabled={isLoading || isValidating}
               >
-                {isLoading ? t("common.loading") : t("search.loadMore")}
+                {isValidating ? t("common.loading") : t("search.loadMore")}
               </Button>
             </div>
           )}

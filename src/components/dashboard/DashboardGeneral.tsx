@@ -1,5 +1,3 @@
-import { useState, useEffect } from "react"
-import { useAuth } from "react-oidc-context"
 import { useTranslation } from "react-i18next"
 import {
   Card,
@@ -9,46 +7,22 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { getIconPacks } from "@/services/icon-pack"
-import { getDesignerStatistics, getDesignerMe } from "@/services/designer"
+import { useIconPacks, useDesignerStatistics, useDesignerMe } from "@/hooks"
 
 export function DashboardGeneral() {
-  const auth = useAuth()
   const { t } = useTranslation()
-  const [iconPackCount, setIconPackCount] = useState<number | null>(null)
-  const [ownedPackCount, setOwnedPackCount] = useState<number | null>(null)
-  const [collaboratedPackCount, setCollaboratedPackCount] = useState<number | null>(null)
-  const [totalRequests, setTotalRequests] = useState<number | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    async function fetchStats() {
-      if (!auth.user?.access_token) return
+  const { data: packs, isLoading: packsLoading } = useIconPacks()
+  const { data: statistics, isLoading: statsLoading } = useDesignerStatistics()
+  const { data: designer, isLoading: designerLoading } = useDesignerMe()
 
-      try {
-        const [packs, statistics, designer] = await Promise.all([
-          getIconPacks(auth.user.access_token),
-          getDesignerStatistics(auth.user.access_token),
-          getDesignerMe(auth.user.access_token),
-        ])
+  const isLoading = packsLoading || statsLoading || designerLoading
 
-        // Count owned vs collaborated
-        const owned = packs.filter((pack) => pack.designer?.id === designer.id)
-        const collaborated = packs.filter((pack) => pack.designer?.id !== designer.id)
-
-        setIconPackCount(packs.length)
-        setOwnedPackCount(owned.length)
-        setCollaboratedPackCount(collaborated.length)
-        setTotalRequests(statistics.distinctRequestCount)
-      } catch (error) {
-        console.error("Failed to fetch stats:", error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchStats()
-  }, [auth.user?.access_token])
+  // Derived state - computed from SWR data
+  const iconPackCount = packs?.length ?? 0
+  const ownedPackCount = packs?.filter((p) => p.designer?.id === designer?.id).length ?? 0
+  const collaboratedPackCount = packs?.filter((p) => p.designer?.id !== designer?.id).length ?? 0
+  const totalRequests = statistics?.distinctRequestCount ?? 0
 
   return (
     <div className="space-y-6">
@@ -69,11 +43,11 @@ export function DashboardGeneral() {
               <Skeleton className="h-8 w-12" />
             ) : (
               <>
-                <div className="text-2xl font-bold">{iconPackCount ?? 0}</div>
+                <div className="text-2xl font-bold">{iconPackCount}</div>
                 <p className="text-xs text-muted-foreground">
                   {t("dashboard.ownedAndCollaborated", {
-                    owned: ownedPackCount ?? 0,
-                    collaborated: collaboratedPackCount ?? 0,
+                    owned: ownedPackCount,
+                    collaborated: collaboratedPackCount,
                   })}
                 </p>
               </>
@@ -89,7 +63,7 @@ export function DashboardGeneral() {
             {isLoading ? (
               <Skeleton className="h-8 w-12" />
             ) : (
-              <div className="text-2xl font-bold">{totalRequests ?? 0}</div>
+              <div className="text-2xl font-bold">{totalRequests}</div>
             )}
             <p className="text-xs text-muted-foreground">{t("dashboard.uniqueAppsRequested")}</p>
           </CardContent>

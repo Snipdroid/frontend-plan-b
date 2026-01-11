@@ -5,7 +5,6 @@ import type {
   IconPackVersionTokenRequest,
   IconPackVersionTokenResponse,
   PageIconPackVersionDTO,
-  PageIconPackVersionRequestRecordResponse,
   PageAppInfoWithRequestCount,
   PageIconPackAppDTO,
   IconPackAppDTO,
@@ -66,24 +65,6 @@ export async function deleteIconPack(
   if (!response.ok) {
     throw new Error(`API Error: ${response.status} ${response.statusText}`)
   }
-}
-
-export async function getIconPack(
-  accessToken: string,
-  iconPackId: string
-): Promise<IconPackDTO> {
-  const response = await fetch(`${API_BASE_URL}/icon-pack/${iconPackId}`, {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`API Error: ${response.status} ${response.statusText}`)
-  }
-
-  return response.json()
 }
 
 export async function getIconPackVersions(
@@ -176,36 +157,6 @@ export async function deleteIconPackVersion(
       },
     }
   )
-
-  if (!response.ok) {
-    throw new Error(`API Error: ${response.status} ${response.statusText}`)
-  }
-
-  return response.json()
-}
-
-export async function getVersionRequests(
-  accessToken: string,
-  iconPackId: string,
-  versionId: string,
-  page?: number,
-  per?: number,
-  includingAdapted?: boolean
-): Promise<PageIconPackVersionRequestRecordResponse> {
-  const params = new URLSearchParams()
-  if (page !== undefined) params.set("page", String(page))
-  if (per !== undefined) params.set("per", String(per))
-  if (includingAdapted !== undefined) params.set("includingAdapted", String(includingAdapted))
-
-  const queryString = params.toString()
-  const url = `${API_BASE_URL}/icon-pack/${iconPackId}/version/${versionId}/requests${queryString ? `?${queryString}` : ""}`
-
-  const response = await fetch(url, {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-    },
-  })
 
   if (!response.ok) {
     throw new Error(`API Error: ${response.status} ${response.statusText}`)

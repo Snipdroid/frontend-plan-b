@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useParams } from "react-router"
 import { useAuth } from "react-oidc-context"
 import { useTranslation } from "react-i18next"
@@ -21,11 +21,12 @@ import {
 } from "@/components/ui/pagination"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { getVersionRequests, markAppsAsAdapted } from "@/services/icon-pack"
+import { markAppsAsAdapted } from "@/services/icon-pack"
 import { API_BASE_URL } from "@/services/api"
 import { AppRequestsTable, type AppRequestsTableColumn } from "./AppRequestsTable"
 import { AppActionDropdown } from "./AppActionDropdown"
 import { DrawableNameDialog } from "./DrawableNameDialog"
+import { useVersionRequests, useDesignerMe } from "@/hooks"
 import type { IconPackVersionRequestRecordResponse, AppInfoDTO } from "@/types/icon-pack"
 
 const PER_PAGE = 10
@@ -34,66 +35,36 @@ export function VersionDetail() {
   const { packId, versionId } = useParams()
   const auth = useAuth()
   const { t } = useTranslation()
-  const [requests, setRequests] = useState<IconPackVersionRequestRecordResponse[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [total, setTotal] = useState(0)
+
+  // Pagination and filter state
   const [currentPage, setCurrentPage] = useState(1)
   const [includingAdapted, setIncludingAdapted] = useState(false)
-  const [isMarking, setIsMarking] = useState(false)
 
-  // Drawable name dialog state
+  // SWR hooks
+  const {
+    data: requestsData,
+    isLoading,
+    isValidating,
+    error: requestsError,
+    mutate: mutateRequests,
+  } = useVersionRequests(packId, versionId, currentPage, PER_PAGE, includingAdapted)
+  const { data: designer } = useDesignerMe()
+
+  // Derived data
+  const requests = requestsData?.items ?? []
+  const total = requestsData?.metadata.total ?? 0
+  const designerId = designer?.id
+
+  // UI state
+  const [isMarking, setIsMarking] = useState(false)
   const [drawableDialogOpen, setDrawableDialogOpen] = useState(false)
   const [pendingAdaptApp, setPendingAdaptApp] = useState<{
     appInfoId: string
     app: AppInfoDTO
   } | null>(null)
-  const [designerId, setDesignerId] = useState<string | null>(null)
 
   const totalPages = Math.ceil(total / PER_PAGE)
-
-  const fetchRequests = async () => {
-    if (!packId || !versionId || !auth.user?.access_token) return
-
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      const response = await getVersionRequests(
-        auth.user.access_token,
-        packId,
-        versionId,
-        currentPage,
-        PER_PAGE,
-        includingAdapted
-      )
-      setRequests(response.items)
-      setTotal(response.metadata.total)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("errors.loadRequests"))
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchRequests()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [packId, versionId, auth.user?.access_token, currentPage, includingAdapted])
-
-  // Fetch designer ID
-  useEffect(() => {
-    if (!auth.user?.access_token) return
-
-    fetch(`${API_BASE_URL}/designer/me`, {
-      headers: {
-        Authorization: `Bearer ${auth.user.access_token}`,
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => setDesignerId(data.id))
-      .catch((err) => console.error("Failed to fetch designer:", err))
-  }, [auth.user?.access_token])
+  const error = requestsError?.message
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -131,9 +102,9 @@ export function VersionDetail() {
         {}, // Empty drawables dictionary when unmarking
         {} // Empty categories when unmarking
       )
-      await fetchRequests()
+      await mutateRequests()
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("errors.updateAdaptedStatus"))
+      console.error(t("errors.updateAdaptedStatus"), err)
     } finally {
       setIsMarking(false)
     }
@@ -152,11 +123,11 @@ export function VersionDetail() {
         { [pendingAdaptApp.appInfoId]: drawableName },
         { [pendingAdaptApp.appInfoId]: categories }
       )
-      await fetchRequests()
+      await mutateRequests()
       setDrawableDialogOpen(false)
       setPendingAdaptApp(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("errors.updateAdaptedStatus"))
+      console.error(t("errors.updateAdaptedStatus"), err)
       // Keep dialog open on error
     } finally {
       setIsMarking(false)
@@ -280,7 +251,7 @@ export function VersionDetail() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {isLoading && requests.length === 0 ? (
             <div className="space-y-2">
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
@@ -289,7 +260,7 @@ export function VersionDetail() {
           ) : error ? (
             <p className="text-destructive">{error}</p>
           ) : requests.length > 0 ? (
-            <div className="space-y-4">
+            <div className={`space-y-4 transition-opacity ${isValidating ? "opacity-50 pointer-events-none" : ""}`}>
               <AppRequestsTable
                 items={requests}
                 columns={columns}

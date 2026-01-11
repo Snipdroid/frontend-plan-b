@@ -36,10 +36,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   deleteIconPack,
   deleteIconPackVersion,
-  getIconPack,
-  getIconPackVersions,
-  getIconPackRequests,
-  getIconPackAdaptedApps,
   markAppsAsAdapted,
   updateAdaptedApp,
 } from "@/services/icon-pack"
@@ -56,7 +52,14 @@ import { CategoriesEditDialog } from "./CategoriesEditDialog"
 import { AppRequestsTable, type AppRequestsTableColumn } from "./AppRequestsTable"
 import { AppActionDropdown } from "./AppActionDropdown"
 import { Badge } from "@/components/ui/badge"
-import type { IconPackDTO, IconPackVersionDTO, AppInfoWithRequestCount, AppInfoDTO, IconPackAppDTO } from "@/types/icon-pack"
+import {
+  useIconPack,
+  useIconPackVersions,
+  useIconPackRequests,
+  useIconPackAdaptedApps,
+  useDesignerMe,
+} from "@/hooks"
+import type { IconPackVersionDTO, AppInfoWithRequestCount, AppInfoDTO, IconPackAppDTO } from "@/types/icon-pack"
 
 const REQUESTS_PER_PAGE = 10
 const ADAPTED_PER_PAGE = 10
@@ -66,19 +69,44 @@ export function IconPackManage() {
   const navigate = useNavigate()
   const auth = useAuth()
   const { t } = useTranslation()
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [isDeletingVersion, setIsDeletingVersion] = useState(false)
-  const [iconPack, setIconPack] = useState<IconPackDTO | null>(null)
-  const [versions, setVersions] = useState<IconPackVersionDTO[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
-  // Requests state
-  const [requests, setRequests] = useState<AppInfoWithRequestCount[]>([])
-  const [requestsTotal, setRequestsTotal] = useState(0)
+  // SWR hooks for data fetching
+  const { data: iconPack, isLoading: isLoadingPack, error: packError, mutate: mutatePack } = useIconPack(packId)
+  const { data: versionsData, isLoading: isLoadingVersions, mutate: mutateVersions } = useIconPackVersions(packId)
+  const { data: designer } = useDesignerMe()
+
+  // Pagination and filter state
   const [requestsPage, setRequestsPage] = useState(1)
   const [includingAdapted, setIncludingAdapted] = useState(false)
-  const [isLoadingRequests, setIsLoadingRequests] = useState(false)
+  const [adaptedPage, setAdaptedPage] = useState(1)
+  const [adaptedQuery, setAdaptedQuery] = useState("")
+  const [debouncedAdaptedQuery, setDebouncedAdaptedQuery] = useState("")
+
+  // SWR hooks for paginated data
+  const {
+    data: requestsData,
+    isLoading: isLoadingRequests,
+    isValidating: isValidatingRequests,
+    mutate: mutateRequests,
+  } = useIconPackRequests(packId, requestsPage, REQUESTS_PER_PAGE, includingAdapted)
+
+  const {
+    data: adaptedData,
+    isLoading: isLoadingAdapted,
+    isValidating: isValidatingAdapted,
+    mutate: mutateAdapted,
+  } = useIconPackAdaptedApps(packId, adaptedPage, ADAPTED_PER_PAGE, debouncedAdaptedQuery || undefined)
+
+  // Derived data from SWR
+  const versions = versionsData?.items ?? []
+  const requests = requestsData?.items ?? []
+  const requestsTotal = requestsData?.metadata.total ?? 0
+  const adaptedApps = adaptedData?.items ?? []
+  const adaptedTotal = adaptedData?.metadata.total ?? 0
+
+  // UI state
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isDeletingVersion, setIsDeletingVersion] = useState(false)
   const [isMarking, setIsMarking] = useState(false)
 
   // Drawable name dialog state
@@ -87,17 +115,8 @@ export function IconPackManage() {
     appInfoId: string
     app: AppInfoDTO
   } | null>(null)
-  const [designerId, setDesignerId] = useState<string | null>(null)
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [collaboratorsDialogOpen, setCollaboratorsDialogOpen] = useState(false)
 
-  // Adapted apps state
-  const [adaptedApps, setAdaptedApps] = useState<IconPackAppDTO[]>([])
-  const [adaptedTotal, setAdaptedTotal] = useState(0)
-  const [adaptedPage, setAdaptedPage] = useState(1)
-  const [isLoadingAdapted, setIsLoadingAdapted] = useState(false)
-  const [adaptedQuery, setAdaptedQuery] = useState("")
-  const [debouncedAdaptedQuery, setDebouncedAdaptedQuery] = useState("")
   const [exportDialogOpen, setExportDialogOpen] = useState(false)
 
   // Categories edit dialog state
@@ -106,6 +125,8 @@ export function IconPackManage() {
   const [isUpdatingCategories, setIsUpdatingCategories] = useState(false)
 
   // Derive ownership status
+  const currentUserId = designer?.id
+  const designerId = designer?.id
   const isOwner = useMemo(() => {
     return iconPack?.designer?.id === currentUserId
   }, [iconPack?.designer?.id, currentUserId])
@@ -122,76 +143,6 @@ export function IconPackManage() {
   const [selectedVersion, setSelectedVersion] =
     useState<IconPackVersionDTO | null>(null)
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!packId || !auth.user?.access_token) return
-
-      setIsLoading(true)
-      setError(null)
-
-      try {
-        const [iconPackData, versionsResponse] = await Promise.all([
-          getIconPack(auth.user.access_token, packId),
-          getIconPackVersions(auth.user.access_token, packId),
-        ])
-        setIconPack(iconPackData)
-        setVersions(versionsResponse.items)
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : t("errors.loadIconPack")
-        )
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [packId, auth.user?.access_token])
-
-  // Fetch designer ID
-  useEffect(() => {
-    if (!auth.user?.access_token) return
-
-    fetch(`${API_BASE_URL}/designer/me`, {
-      headers: {
-        Authorization: `Bearer ${auth.user.access_token}`,
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setDesignerId(data.id)
-        setCurrentUserId(data.id)
-      })
-      .catch((err) => console.error("Failed to fetch designer:", err))
-  }, [auth.user?.access_token])
-
-  // Fetch requests
-  const fetchRequests = async () => {
-    if (!packId || !auth.user?.access_token) return
-
-    setIsLoadingRequests(true)
-    try {
-      const response = await getIconPackRequests(
-        auth.user.access_token,
-        packId,
-        requestsPage,
-        REQUESTS_PER_PAGE,
-        includingAdapted
-      )
-      setRequests(response.items)
-      setRequestsTotal(response.metadata.total)
-    } catch (err) {
-      console.error(t("errors.loadRequests"), err)
-    } finally {
-      setIsLoadingRequests(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchRequests()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [packId, auth.user?.access_token, requestsPage, includingAdapted])
-
   // Debounce adapted query
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -200,33 +151,6 @@ export function IconPackManage() {
     }, 300)
     return () => clearTimeout(timer)
   }, [adaptedQuery])
-
-  // Fetch adapted apps
-  const fetchAdaptedApps = async () => {
-    if (!packId || !auth.user?.access_token) return
-
-    setIsLoadingAdapted(true)
-    try {
-      const response = await getIconPackAdaptedApps(
-        auth.user.access_token,
-        packId,
-        adaptedPage,
-        ADAPTED_PER_PAGE,
-        debouncedAdaptedQuery || undefined
-      )
-      setAdaptedApps(response.items)
-      setAdaptedTotal(response.metadata.total)
-    } catch (err) {
-      console.error(t("errors.loadAdaptedApps"), err)
-    } finally {
-      setIsLoadingAdapted(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchAdaptedApps()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [packId, auth.user?.access_token, adaptedPage, debouncedAdaptedQuery])
 
   const handleAdaptedPageChange = (page: number) => {
     if (page >= 1 && page <= adaptedTotalPages) {
@@ -274,7 +198,7 @@ export function IconPackManage() {
         {}, // Empty drawables dictionary when unmarking
         {} // Empty categories when unmarking
       )
-      await Promise.all([fetchRequests(), fetchAdaptedApps()])
+      await Promise.all([mutateRequests(), mutateAdapted()])
     } catch (err) {
       console.error(t("errors.updateAdaptedStatus"), err)
     } finally {
@@ -295,7 +219,7 @@ export function IconPackManage() {
         { [pendingAdaptApp.appInfoId]: drawableName },
         { [pendingAdaptApp.appInfoId]: categories }
       )
-      await Promise.all([fetchRequests(), fetchAdaptedApps()])
+      await Promise.all([mutateRequests(), mutateAdapted()])
       setDrawableDialogOpen(false)
       setPendingAdaptApp(null)
     } catch (err) {
@@ -322,7 +246,7 @@ export function IconPackManage() {
         editingAdaptedApp.id,
         { categories }
       )
-      await fetchAdaptedApps()
+      await mutateAdapted()
       setCategoriesDialogOpen(false)
       setEditingAdaptedApp(null)
     } catch (err) {
@@ -408,7 +332,6 @@ export function IconPackManage() {
       navigate("/dashboard")
     } catch (error) {
       console.error(t("errors.deleteIconPack"), error)
-      setError(t("errors.deleteIconPack"))
     } finally {
       setIsDeleting(false)
       setDeletePackDialogOpen(false)
@@ -425,19 +348,18 @@ export function IconPackManage() {
         packId,
         selectedVersion.id
       )
-      setVersions((prev) => prev.filter((v) => v.id !== selectedVersion.id))
+      await mutateVersions()
       setDeleteVersionDialogOpen(false)
       setSelectedVersion(null)
     } catch (error) {
       console.error(t("errors.deleteVersion"), error)
-      setError(t("errors.deleteVersion"))
     } finally {
       setIsDeletingVersion(false)
     }
   }
 
-  const handleVersionCreated = (version: IconPackVersionDTO) => {
-    setVersions((prev) => [...prev, version])
+  const handleVersionCreated = async () => {
+    await mutateVersions()
   }
 
   const handleCreateToken = (version: IconPackVersionDTO) => {
@@ -568,6 +490,9 @@ export function IconPackManage() {
       ),
     },
   ]
+
+  const isLoading = isLoadingPack || isLoadingVersions
+  const error = packError?.message
 
   if (isLoading) {
     return (
@@ -711,7 +636,7 @@ export function IconPackManage() {
               <Skeleton className="h-10 w-full" />
             </div>
           ) : requests.length > 0 ? (
-            <div className={`space-y-4 transition-opacity ${isLoadingRequests ? "opacity-50 pointer-events-none" : ""}`}>
+            <div className={`space-y-4 transition-opacity ${isValidatingRequests ? "opacity-50 pointer-events-none" : ""}`}>
               <AppRequestsTable
                 items={requests}
                 columns={requestColumns}
@@ -836,7 +761,7 @@ export function IconPackManage() {
               <Skeleton className="h-10 w-full" />
             </div>
           ) : adaptedApps.length > 0 ? (
-            <div className={`space-y-4 transition-opacity ${isLoadingAdapted ? "opacity-50 pointer-events-none" : ""}`}>
+            <div className={`space-y-4 transition-opacity ${isValidatingAdapted ? "opacity-50 pointer-events-none" : ""}`}>
               <AppRequestsTable
                 items={adaptedApps}
                 columns={adaptedColumns}
@@ -1048,7 +973,7 @@ export function IconPackManage() {
           onOpenChange={setImportDialogOpen}
           iconPackId={packId}
           accessToken={auth.user.access_token}
-          onImportComplete={fetchAdaptedApps}
+          onImportComplete={() => mutateAdapted()}
         />
       )}
 
@@ -1058,7 +983,7 @@ export function IconPackManage() {
           onOpenChange={setAutocompleteDialogOpen}
           iconPackId={packId}
           accessToken={auth.user.access_token}
-          onComplete={fetchAdaptedApps}
+          onComplete={() => mutateAdapted()}
           designerId={designerId}
         />
       )}
@@ -1081,12 +1006,7 @@ export function IconPackManage() {
           iconPackName={iconPack.name}
           isOwner={isOwner}
           currentUserId={currentUserId}
-          onCollaboratorsChanged={async () => {
-            if (auth.user?.access_token) {
-              const updated = await getIconPack(auth.user.access_token, packId)
-              setIconPack(updated)
-            }
-          }}
+          onCollaboratorsChanged={() => mutatePack()}
         />
       )}
 

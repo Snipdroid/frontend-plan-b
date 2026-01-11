@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback, startTransition } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { Search, Check, ChevronRight, ChevronDown } from "lucide-react"
@@ -90,21 +90,7 @@ export function AutocompleteDialog({
     setFailedApps([])
   }
 
-  // Fetch missing apps when dialog opens
-  useEffect(() => {
-    if (open && stage === "idle") {
-      fetchMissingApps()
-    }
-  }, [open, stage])
-
-  // Reset when dialog closes
-  useEffect(() => {
-    if (!open) {
-      resetState()
-    }
-  }, [open])
-
-  const fetchMissingApps = async () => {
+  const fetchMissingApps = useCallback(async () => {
     setStage("loading")
     setError(null)
 
@@ -143,7 +129,25 @@ export function AutocompleteDialog({
       setError(t("iconPack.autocomplete.error.fetch"))
       setStage("error")
     }
-  }
+  }, [accessToken, iconPackId, t])
+
+  // Fetch missing apps when dialog opens
+  useEffect(() => {
+    if (open && stage === "idle") {
+      startTransition(() => {
+        fetchMissingApps()
+      })
+    }
+  }, [open, stage, fetchMissingApps])
+
+  // Reset when dialog closes
+  useEffect(() => {
+    if (!open) {
+      startTransition(() => {
+        resetState()
+      })
+    }
+  }, [open])
 
   // Group apps by package name
   const appGroups = useMemo(() => {
@@ -238,7 +242,7 @@ export function AutocompleteDialog({
     setExpandedGroups(newExpanded)
   }
 
-  const handleDrawableNameConfirm = (drawableName: string, _categories: string[]) => {
+  const handleDrawableNameConfirm = (drawableName: string) => {
     const newMap = new Map(drawableNameMap)
 
     if (selectedApp) {

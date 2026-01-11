@@ -52,7 +52,10 @@ export function useIconPackRequests(
 
   return useSWR<PageAppInfoWithRequestCount>(
     packId && token ? swrKeys.iconPackRequests(packId, token, page, per, includingAdapted) : null,
-    authFetcher
+    authFetcher,
+    {
+      keepPreviousData: true,
+    }
   )
 }
 
@@ -91,6 +94,9 @@ export function useVersionRequests(
     packId && versionId && token
       ? swrKeys.versionRequests(packId, versionId, token, page, per, includingAdapted)
       : null,
-    authFetcher
+    authFetcher,
+    {
+      keepPreviousData: true,
+    }
   )
 }

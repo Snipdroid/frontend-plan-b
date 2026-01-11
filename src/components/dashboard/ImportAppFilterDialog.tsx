@@ -90,65 +90,7 @@ export function ImportAppFilterDialog({
     setTotalBatches(0)
   }
 
-  const handleFilesAdded = async (files: File[]) => {
-    if (files.length === 0) return
-
-    const selectedFile = files[0]
-    setFile(selectedFile)
-    await processImport(selectedFile)
-  }
-
-  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (stage === "idle") {
-      setIsDragOver(true)
-    }
-  }, [stage])
-
-  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragOver(false)
-  }, [])
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault()
-      e.stopPropagation()
-      setIsDragOver(false)
-
-      if (stage !== "idle") return
-
-      const files = Array.from(e.dataTransfer.files).filter((file) =>
-        file.name.toLowerCase().endsWith(".xml")
-      )
-
-      if (files.length > 0) {
-        handleFilesAdded(files)
-      }
-    },
-    [stage]
-  )
-
-  const handleClick = useCallback(() => {
-    if (stage === "idle") {
-      inputRef.current?.click()
-    }
-  }, [stage])
-
-  const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(e.target.files ?? [])
-      if (files.length > 0) {
-        handleFilesAdded(files)
-      }
-      e.target.value = ""
-    },
-    []
-  )
-
-  const fetchAllAdaptedApps = async (): Promise<Set<string>> => {
+  const fetchAllAdaptedApps = useCallback(async (): Promise<Set<string>> => {
     const adaptedSet = new Set<string>()
     let page = 1
     const perPage = 100
@@ -175,9 +117,9 @@ export function ImportAppFilterDialog({
     }
 
     return adaptedSet
-  }
+  }, [accessToken, iconPackId])
 
-  const validateDrawableName = (name: string): string | null => {
+  const validateDrawableName = useCallback((name: string): string | null => {
     if (!name || name.length === 0) {
       return t("errors.drawableNameEmpty")
     }
@@ -193,76 +135,9 @@ export function ImportAppFilterDialog({
     }
 
     return null
-  }
+  }, [t])
 
-  const searchForExistingApps = async (
-    entries: ReturnType<typeof parseAppFilterXml>
-  ): Promise<{
-    existing: Map<string, AppInfo>
-    failures: FailedApp[]
-  }> => {
-    const SEARCH_CONCURRENCY = 10
-    const existingMap = new Map<string, AppInfo>()
-    const searchFailures: FailedApp[] = []
-
-    for (let i = 0; i < entries.length; i += SEARCH_CONCURRENCY) {
-      const batch = entries.slice(i, i + SEARCH_CONCURRENCY)
-
-      const batchResults = await Promise.all(
-        batch.map(async (entry) => {
-          try {
-            const result = await searchAppInfo({
-              byPackageName: entry.packageName,
-              byMainActivity: entry.mainActivity,
-              sortBy: "count",
-              page: 1,
-              per: 10,
-            })
-
-            // Find exact match (ILIKE returns partial matches)
-            const exactMatch = result.items.find(
-              (app) =>
-                app.packageName === entry.packageName &&
-                app.mainActivity === entry.mainActivity
-            )
-
-            return { entry, app: exactMatch || null, error: null }
-          } catch (error) {
-            console.warn("Search failed for", entry.packageName, error)
-            return {
-              entry,
-              app: null,
-              error: error instanceof Error ? error.message : t("errors.searchFailed"),
-            }
-          }
-        })
-      )
-
-      batchResults.forEach(({ entry, app, error }) => {
-        const key = `${entry.packageName}|${entry.mainActivity}`
-        if (app) {
-          existingMap.set(key, app)
-        } else if (error) {
-          searchFailures.push({
-            packageName: entry.packageName,
-            mainActivity: entry.mainActivity,
-            drawableName: entry.drawableName,
-            error,
-          })
-        }
-      })
-
-      // Update progress
-      setSearchProgress({
-        current: Math.min(i + SEARCH_CONCURRENCY, entries.length),
-        total: entries.length,
-      })
-    }
-
-    return { existing: existingMap, failures: searchFailures }
-  }
-
-  const processImport = async (file: File) => {
+  const processImport = useCallback(async (file: File) => {
     try {
       // Stage 1: Parse XML
       setStage("parsing")
@@ -358,6 +233,131 @@ export function ImportAppFilterDialog({
       setStage("error")
       toast.error(t("errors.importAppFilter"))
     }
+  }, [fetchAllAdaptedApps, validateDrawableName, t])
+
+  const handleFilesAdded = useCallback(async (files: File[]) => {
+    if (files.length === 0) return
+
+    const selectedFile = files[0]
+    setFile(selectedFile)
+    await processImport(selectedFile)
+  }, [processImport])
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (stage === "idle") {
+      setIsDragOver(true)
+    }
+  }, [stage])
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+  }, [])
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setIsDragOver(false)
+
+      if (stage !== "idle") return
+
+      const files = Array.from(e.dataTransfer.files).filter((file) =>
+        file.name.toLowerCase().endsWith(".xml")
+      )
+
+      if (files.length > 0) {
+        handleFilesAdded(files)
+      }
+    },
+    [stage, handleFilesAdded]
+  )
+
+  const handleClick = useCallback(() => {
+    if (stage === "idle") {
+      inputRef.current?.click()
+    }
+  }, [stage])
+
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files ?? [])
+      if (files.length > 0) {
+        handleFilesAdded(files)
+      }
+      e.target.value = ""
+    },
+    [handleFilesAdded]
+  )
+
+  const searchForExistingApps = async (
+    entries: ReturnType<typeof parseAppFilterXml>
+  ): Promise<{
+    existing: Map<string, AppInfo>
+    failures: FailedApp[]
+  }> => {
+    const SEARCH_CONCURRENCY = 10
+    const existingMap = new Map<string, AppInfo>()
+    const searchFailures: FailedApp[] = []
+
+    for (let i = 0; i < entries.length; i += SEARCH_CONCURRENCY) {
+      const batch = entries.slice(i, i + SEARCH_CONCURRENCY)
+
+      const batchResults = await Promise.all(
+        batch.map(async (entry) => {
+          try {
+            const result = await searchAppInfo({
+              byPackageName: entry.packageName,
+              byMainActivity: entry.mainActivity,
+              sortBy: "count",
+              page: 1,
+              per: 10,
+            })
+
+            // Find exact match (ILIKE returns partial matches)
+            const exactMatch = result.items.find(
+              (app) =>
+                app.packageName === entry.packageName &&
+                app.mainActivity === entry.mainActivity
+            )
+
+            return { entry, app: exactMatch || null, error: null }
+          } catch (error) {
+            console.warn("Search failed for", entry.packageName, error)
+            return {
+              entry,
+              app: null,
+              error: error instanceof Error ? error.message : t("errors.searchFailed"),
+            }
+          }
+        })
+      )
+
+      batchResults.forEach(({ entry, app, error }) => {
+        const key = `${entry.packageName}|${entry.mainActivity}`
+        if (app) {
+          existingMap.set(key, app)
+        } else if (error) {
+          searchFailures.push({
+            packageName: entry.packageName,
+            mainActivity: entry.mainActivity,
+            drawableName: entry.drawableName,
+            error,
+          })
+        }
+      })
+
+      // Update progress
+      setSearchProgress({
+        current: Math.min(i + SEARCH_CONCURRENCY, entries.length),
+        total: entries.length,
+      })
+    }
+
+    return { existing: existingMap, failures: searchFailures }
   }
 
   const handlePreviewConfirm = async () => {

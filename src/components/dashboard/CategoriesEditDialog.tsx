@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, startTransition } from "react"
 import { useTranslation } from "react-i18next"
 import { X } from "lucide-react"
 import {
@@ -43,9 +43,11 @@ export function CategoriesEditDialog({
   // Initialize categories when dialog opens
   useEffect(() => {
     if (open) {
-      setCategories([...initialCategories])
-      setCategoryInput("")
-      setCategoryError(null)
+      startTransition(() => {
+        setCategories([...initialCategories])
+        setCategoryInput("")
+        setCategoryError(null)
+      })
     }
   }, [open, initialCategories])
 

@@ -87,6 +87,7 @@
   "actions": {
     "copyAppfilter": "复制 Appfilter",
     "copyDrawable": "复制 Drawable",
+    "copyIconpack": "复制 IconPack",
     "customCopy": "自定义复制",
     "addToAdapted": "添加到已适配",
     "removeFromAdapted": "从已适配中移除"

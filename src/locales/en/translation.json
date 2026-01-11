@@ -87,6 +87,7 @@
   "actions": {
     "copyAppfilter": "Copy Appfilter",
     "copyDrawable": "Copy Drawable",
+    "copyIconpack": "Copy IconPack",
     "customCopy": "Custom Copy",
     "addToAdapted": "Add to Adapted",
     "removeFromAdapted": "Remove from Adapted"

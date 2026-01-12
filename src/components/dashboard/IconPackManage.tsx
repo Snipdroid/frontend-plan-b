@@ -954,6 +954,7 @@ export function IconPackManage() {
 
       {pendingAdaptApp && designerId && (
         <DrawableNameDialog
+          key={pendingAdaptApp.app.id}
           open={drawableDialogOpen}
           onOpenChange={(open) => {
             setDrawableDialogOpen(open)

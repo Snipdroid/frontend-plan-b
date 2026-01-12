@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import { Check, ChevronsUpDown, Edit2, Sparkles, X } from "lucide-react"
 import {
@@ -115,16 +115,6 @@ export function DrawableNameDialog({
   const { t } = useTranslation()
   const isMobile = useIsMobile()
 
-  const [inputValue, setInputValue] = useState("")
-  const [validationError, setValidationError] = useState<string | null>(null)
-  const [comboboxOpen, setComboboxOpen] = useState(false)
-  const [mode, setMode] = useState<"custom" | "suggestions">("custom")
-
-  // Categories state
-  const [categories, setCategories] = useState<string[]>([])
-  const [categoryInput, setCategoryInput] = useState("")
-  const [categoryError, setCategoryError] = useState<string | null>(null)
-
   // Use SWR hook for fetching suggestions (only when dialog is open)
   const {
     data: rawSuggestions = [],
@@ -152,7 +142,30 @@ export function DrawableNameDialog({
     )
   }, [rawSuggestions])
 
-  // Validation - must be declared before useEffect that uses it
+  // Calculate default value based on suggestions or generated from app name
+  const defaultValue = useMemo(() => {
+    if (suggestions.length > 0) {
+      return suggestions[0].drawable
+    }
+    return toDrawableName(app.defaultName)
+  }, [suggestions, app.defaultName])
+
+  // Calculate default mode based on whether we have suggestions
+  const defaultMode = useMemo(() => {
+    return suggestions.length > 0 ? "suggestions" : "custom"
+  }, [suggestions.length])
+
+  const [inputValue, setInputValue] = useState(defaultValue)
+  const [validationError, setValidationError] = useState<string | null>(null)
+  const [comboboxOpen, setComboboxOpen] = useState(false)
+  const [mode, setMode] = useState<"custom" | "suggestions">(defaultMode)
+
+  // Categories state
+  const [categories, setCategories] = useState<string[]>([])
+  const [categoryInput, setCategoryInput] = useState("")
+  const [categoryError, setCategoryError] = useState<string | null>(null)
+
+  // Validation function
   const validateDrawableName = useCallback((name: string): string | null => {
     if (!name.trim()) {
       return t("dialogs.drawableName.errorRequired")
@@ -164,22 +177,6 @@ export function DrawableNameDialog({
 
     return null
   }, [t])
-
-  // Pre-fill input when dialog opens or suggestions change
-  useEffect(() => {
-    if (open && !inputValue) {
-      if (suggestions.length > 0) {
-        const prefillValue = suggestions[0].drawable
-        setInputValue(prefillValue)
-        setValidationError(validateDrawableName(prefillValue))
-        setMode("suggestions")
-      } else if (!isLoadingSuggestions) {
-        const generatedValue = toDrawableName(app.defaultName)
-        setInputValue(generatedValue)
-        setValidationError(validateDrawableName(generatedValue))
-      }
-    }
-  }, [open, suggestions, app.defaultName, validateDrawableName, isLoadingSuggestions, inputValue])
 
   // Handle input change
   const handleInputChange = useCallback((value: string) => {
@@ -238,17 +235,8 @@ export function DrawableNameDialog({
     onConfirm(inputValue.trim(), categories)
   }
 
-  // Handle dialog close
+  // Handle dialog close - component remounts with key, so no manual reset needed
   const handleOpenChange = (open: boolean) => {
-    if (!open && !isSubmitting) {
-      setInputValue("")
-      setValidationError(null)
-      setComboboxOpen(false)
-      setMode("custom") // Reset mode
-      setCategories([])
-      setCategoryInput("")
-      setCategoryError(null)
-    }
     onOpenChange(open)
   }
 

@@ -777,6 +777,7 @@ export function AutocompleteDialog({
 
       {(selectedPackageName || selectedApp) && designerId && getDialogApp() && (
         <DrawableNameDialog
+          key={getDialogApp()!.id}
           open={selectedPackageName !== null || selectedApp !== null}
           onOpenChange={(open) => {
             if (!open) {

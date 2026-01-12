@@ -181,6 +181,7 @@ export function MarkAsAdaptedDialog({
   if (step === "enterDrawable" && selectedIconPackId && designerId) {
     return (
       <DrawableNameDialog
+        key={app.id}
         open={open}
         onOpenChange={(isOpen) => {
           if (!isOpen) {

@@ -920,6 +920,7 @@ export function IconPackManage() {
 
       {packId && selectedVersion?.id && (
         <CreateAccessTokenDialog
+          key={selectedVersion.id}
           open={tokenDialogOpen}
           onOpenChange={setTokenDialogOpen}
           iconPackId={packId}
@@ -930,6 +931,7 @@ export function IconPackManage() {
 
       {iconPack?.name && (
         <ConfirmDeleteDialog
+          key={iconPack?.id ?? 'delete-pack'}
           open={deletePackDialogOpen}
           onOpenChange={setDeletePackDialogOpen}
           title={t("iconPack.deleteIconPack")}
@@ -942,6 +944,7 @@ export function IconPackManage() {
 
       {selectedVersion && (
         <ConfirmDeleteDialog
+          key={selectedVersion.id}
           open={deleteVersionDialogOpen}
           onOpenChange={setDeleteVersionDialogOpen}
           title={t("iconPack.deleteVersion")}
@@ -1001,6 +1004,7 @@ export function IconPackManage() {
 
       {packId && iconPack && currentUserId && (
         <ManageCollaboratorsDialog
+          key={packId}
           open={collaboratorsDialogOpen}
           onOpenChange={setCollaboratorsDialogOpen}
           iconPackId={packId}
@@ -1013,6 +1017,7 @@ export function IconPackManage() {
 
       {editingAdaptedApp && (
         <CategoriesEditDialog
+          key={editingAdaptedApp.id}
           open={categoriesDialogOpen}
           onOpenChange={(open) => {
             setCategoriesDialogOpen(open)

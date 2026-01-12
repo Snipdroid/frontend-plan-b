@@ -164,6 +164,7 @@ export function HomePage() {
 
       {/* Mobile Detail Sheet */}
       <AppDetailSheet
+        key={selectedApp?.id}
         app={selectedApp}
         open={detailSheetOpen}
         onOpenChange={setDetailSheetOpen}

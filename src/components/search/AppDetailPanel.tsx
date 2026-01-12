@@ -172,6 +172,7 @@ export function AppDetailPanel({ app, onClose }: AppDetailPanelProps) {
       </div>
 
       <AddTagDialog
+        key={app.id}
         app={app}
         currentTags={tags}
         open={isAddTagDialogOpen}
@@ -180,6 +181,7 @@ export function AppDetailPanel({ app, onClose }: AppDetailPanelProps) {
       />
 
       <MarkAsAdaptedDialog
+        key={app.id}
         app={app}
         open={isMarkAsAdaptedDialogOpen}
         onOpenChange={setIsMarkAsAdaptedDialogOpen}

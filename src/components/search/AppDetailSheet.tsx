@@ -174,6 +174,7 @@ export function AppDetailSheet({ app, open, onOpenChange }: AppDetailSheetProps)
         </div>
 
         <AddTagDialog
+          key={app.id}
           app={app}
           currentTags={tags}
           open={isAddTagDialogOpen}
@@ -182,6 +183,7 @@ export function AppDetailSheet({ app, open, onOpenChange }: AppDetailSheetProps)
         />
 
         <MarkAsAdaptedDialog
+          key={app.id}
           app={app}
           open={isMarkAsAdaptedDialogOpen}
           onOpenChange={setIsMarkAsAdaptedDialogOpen}

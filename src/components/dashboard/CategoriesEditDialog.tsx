@@ -1,4 +1,4 @@
-import { useState, useEffect, startTransition } from "react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { X } from "lucide-react"
 import {
@@ -36,20 +36,10 @@ export function CategoriesEditDialog({
 }: CategoriesEditDialogProps) {
   const { t } = useTranslation()
 
-  const [categories, setCategories] = useState<string[]>([])
+  // Initialize state directly from props - component remounts with key
+  const [categories, setCategories] = useState<string[]>(initialCategories)
   const [categoryInput, setCategoryInput] = useState("")
   const [categoryError, setCategoryError] = useState<string | null>(null)
-
-  // Initialize categories when dialog opens
-  useEffect(() => {
-    if (open) {
-      startTransition(() => {
-        setCategories([...initialCategories])
-        setCategoryInput("")
-        setCategoryError(null)
-      })
-    }
-  }, [open, initialCategories])
 
   const handleCategoryKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -86,12 +76,8 @@ export function CategoriesEditDialog({
     onConfirm(categories)
   }
 
+  // Component remounts with key, so no manual reset needed
   const handleOpenChange = (open: boolean) => {
-    if (!open && !isSubmitting) {
-      setCategories([])
-      setCategoryInput("")
-      setCategoryError(null)
-    }
     onOpenChange(open)
   }
 

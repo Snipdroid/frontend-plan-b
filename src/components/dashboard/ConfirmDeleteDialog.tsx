@@ -41,10 +41,8 @@ export function ConfirmDeleteDialog({
     await onConfirm()
   }
 
+  // Component remounts with key, so no manual reset needed
   const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      setInputValue("")
-    }
     onOpenChange(open)
   }
 

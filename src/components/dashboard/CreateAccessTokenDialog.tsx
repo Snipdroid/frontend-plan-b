@@ -74,13 +74,8 @@ export function CreateAccessTokenDialog({
     }
   }
 
+  // Component remounts with key, so no manual reset needed
   const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      setDays(90)
-      setError(null)
-      setToken(null)
-      setCopied(false)
-    }
     onOpenChange(open)
   }
 

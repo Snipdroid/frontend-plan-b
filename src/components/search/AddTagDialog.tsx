@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Check, ChevronsUpDown } from "lucide-react"
 import { useAuth } from "react-oidc-context"
 import { useTranslation } from "react-i18next"
@@ -32,7 +32,8 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { getAllTags, addTagToApp } from "@/services/app-info"
+import { addTagToApp } from "@/services/app-info"
+import { useAllTags } from "@/hooks/swr"
 import type { AppInfo, Tag } from "@/types"
 
 interface AddTagDialogProps {
@@ -89,32 +90,13 @@ export function AddTagDialog({
   const auth = useAuth()
   const { t } = useTranslation()
   const isMobile = useIsMobile()
-  const [allTags, setAllTags] = useState<Tag[]>([])
   const [selectedTagId, setSelectedTagId] = useState<string>("")
-  const [isLoading, setIsLoading] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [comboboxOpen, setComboboxOpen] = useState(false)
 
-  // Fetch all available tags when dialog opens
-  useEffect(() => {
-    if (!open) return
-
-    const controller = new AbortController()
-    setIsLoading(true)
-    setError(null)
-
-    getAllTags(controller.signal)
-      .then(setAllTags)
-      .catch((err) => {
-        if (err.name !== "AbortError") {
-          setError(err instanceof Error ? err.message : "Failed to fetch tags")
-        }
-      })
-      .finally(() => setIsLoading(false))
-
-    return () => controller.abort()
-  }, [open])
+  // Use SWR hook for fetching all tags
+  const { data: allTags = [], isLoading } = useAllTags()
 
   // Filter out tags already on the app
   const availableTags = allTags.filter(

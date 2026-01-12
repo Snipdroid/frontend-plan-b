@@ -29,8 +29,6 @@ import {
   revokeEntryUrls,
 } from "@/lib/appfilter-parser"
 import {
-  getIconPacks,
-  getIconPackVersions,
   createVersionAccessToken,
 } from "@/services/icon-pack"
 import {
@@ -38,8 +36,8 @@ import {
   getIconUploadUrl,
   uploadIconToS3,
 } from "@/services/app-info"
+import { useIconPacks, useIconPackVersions } from "@/hooks/swr"
 import type { ParsedAppEntry, UploadedFile } from "@/types/upload"
-import type { IconPackDTO, IconPackVersionDTO } from "@/types/icon-pack"
 import type { AppInfoCreateSingleRequest } from "@/types/app-info"
 
 const BATCH_SIZE = 25
@@ -75,44 +73,28 @@ export function UploadPage() {
   // Upload icons checkbox
   const [uploadIcons, setUploadIcons] = useState(true)
 
-  // Icon pack selection (for authenticated users)
-  const [iconPacks, setIconPacks] = useState<IconPackDTO[]>([])
+  // Icon pack selection (for authenticated users) - use SWR hooks
+  const { data: iconPacks = [], isLoading: isLoadingPacks } = useIconPacks()
   const [selectedPackId, setSelectedPackId] = useState<string>("")
-  const [versions, setVersions] = useState<IconPackVersionDTO[]>([])
+  const { data: versionsPage, isLoading: isLoadingVersions } = useIconPackVersions(
+    selectedPackId,
+    1,
+    100
+  )
+  const versions = versionsPage?.items || []
   const [selectedVersionId, setSelectedVersionId] = useState<string>("")
-  const [isLoadingPacks, setIsLoadingPacks] = useState(false)
-  const [isLoadingVersions, setIsLoadingVersions] = useState(false)
 
   // Keep entriesRef in sync
   useEffect(() => {
     entriesRef.current = entries
   }, [entries])
 
-  // Fetch icon packs when authenticated
+  // Reset version when pack changes
   useEffect(() => {
-    if (isAuthenticated && auth.user?.access_token) {
-      setIsLoadingPacks(true)
-      getIconPacks(auth.user.access_token)
-        .then(setIconPacks)
-        .catch(console.error)
-        .finally(() => setIsLoadingPacks(false))
-    }
-  }, [isAuthenticated, auth.user?.access_token])
-
-  // Fetch versions when icon pack is selected
-  useEffect(() => {
-    if (selectedPackId && auth.user?.access_token) {
-      setIsLoadingVersions(true)
-      setSelectedVersionId("")
-      getIconPackVersions(auth.user.access_token, selectedPackId)
-        .then((response) => setVersions(response.items))
-        .catch(console.error)
-        .finally(() => setIsLoadingVersions(false))
-    } else {
-      setVersions([])
+    if (!selectedPackId) {
       setSelectedVersionId("")
     }
-  }, [selectedPackId, auth.user?.access_token])
+  }, [selectedPackId])
 
   // Parse files automatically when files change
   useEffect(() => {

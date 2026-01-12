@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, startTransition } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import { Check, ChevronsUpDown, Edit2, Sparkles, X } from "lucide-react"
 import {
@@ -42,7 +42,7 @@ import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import { toDrawableName } from "@/lib/drawable"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { getDrawableNameSuggestions } from "@/services/icon-pack"
+import { useDrawableNameSuggestions } from "@/hooks/swr"
 import type {
   AppInfoDTO,
   DrawableNameSuggestion,
@@ -116,8 +116,6 @@ export function DrawableNameDialog({
   const isMobile = useIsMobile()
 
   const [inputValue, setInputValue] = useState("")
-  const [suggestions, setSuggestions] = useState<DrawableNameSuggestion[]>([])
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
   const [validationError, setValidationError] = useState<string | null>(null)
   const [comboboxOpen, setComboboxOpen] = useState(false)
   const [mode, setMode] = useState<"custom" | "suggestions">("custom")
@@ -126,6 +124,33 @@ export function DrawableNameDialog({
   const [categories, setCategories] = useState<string[]>([])
   const [categoryInput, setCategoryInput] = useState("")
   const [categoryError, setCategoryError] = useState<string | null>(null)
+
+  // Use SWR hook for fetching suggestions (only when dialog is open)
+  const {
+    data: rawSuggestions = [],
+    isLoading: isLoadingSuggestions,
+  } = useDrawableNameSuggestions(open ? app.packageName : undefined, iconPackId, designerId)
+
+  // Process suggestions: filter, sort, deduplicate (keep in component - UI-specific logic)
+  const suggestions = useMemo(() => {
+    // Filter out suggestions with empty drawable names
+    const validSuggestions = rawSuggestions.filter(s => s.drawable && s.drawable.trim() !== "")
+
+    // Sort by priority: iconPack > designer > none
+    const sortOrder = { iconPack: 0, designer: 1, none: 2 }
+    const sorted = validSuggestions.sort((a, b) => sortOrder[a.from] - sortOrder[b.from])
+
+    // Deduplicate by drawable name, keeping the one with highest priority (closest to user)
+    return Array.from(
+      sorted.reduce((map, suggestion) => {
+        // Only add if drawable name doesn't exist yet (first occurrence = highest priority)
+        if (!map.has(suggestion.drawable)) {
+          map.set(suggestion.drawable, suggestion)
+        }
+        return map
+      }, new Map<string, DrawableNameSuggestion>()).values()
+    )
+  }, [rawSuggestions])
 
   // Validation - must be declared before useEffect that uses it
   const validateDrawableName = useCallback((name: string): string | null => {
@@ -140,6 +165,22 @@ export function DrawableNameDialog({
     return null
   }, [t])
 
+  // Pre-fill input when dialog opens or suggestions change
+  useEffect(() => {
+    if (open && !inputValue) {
+      if (suggestions.length > 0) {
+        const prefillValue = suggestions[0].drawable
+        setInputValue(prefillValue)
+        setValidationError(validateDrawableName(prefillValue))
+        setMode("suggestions")
+      } else if (!isLoadingSuggestions) {
+        const generatedValue = toDrawableName(app.defaultName)
+        setInputValue(generatedValue)
+        setValidationError(validateDrawableName(generatedValue))
+      }
+    }
+  }, [open, suggestions, app.defaultName, validateDrawableName, isLoadingSuggestions, inputValue])
+
   // Handle input change
   const handleInputChange = useCallback((value: string) => {
     setInputValue(value)
@@ -152,64 +193,6 @@ export function DrawableNameDialog({
     setValidationError(validateDrawableName(drawable))
     setComboboxOpen(false)
   }, [validateDrawableName])
-
-  // Fetch suggestions when dialog opens
-  useEffect(() => {
-    if (!open) return
-
-    const controller = new AbortController()
-    startTransition(() => {
-      setIsLoadingSuggestions(true)
-    })
-
-    getDrawableNameSuggestions(app.packageName, iconPackId, designerId)
-      .then((data) => {
-        // Filter out suggestions with empty drawable names
-        const validSuggestions = data.filter(s => s.drawable && s.drawable.trim() !== "")
-
-        // Sort by priority: iconPack > designer > none
-        const sortOrder = { iconPack: 0, designer: 1, none: 2 }
-        const sorted = validSuggestions.sort((a, b) => sortOrder[a.from] - sortOrder[b.from])
-
-        // Deduplicate by drawable name, keeping the one with highest priority (closest to user)
-        const deduped = Array.from(
-          sorted.reduce((map, suggestion) => {
-            // Only add if drawable name doesn't exist yet (first occurrence = highest priority)
-            if (!map.has(suggestion.drawable)) {
-              map.set(suggestion.drawable, suggestion)
-            }
-            return map
-          }, new Map<string, DrawableNameSuggestion>()).values()
-        )
-
-        setSuggestions(deduped)
-
-        // Pre-fill with first suggestion or auto-generated name
-        if (deduped.length > 0) {
-          const prefillValue = deduped[0].drawable
-          setInputValue(prefillValue)
-          setValidationError(validateDrawableName(prefillValue))
-          setMode("suggestions") // Default to suggestions when available
-        } else {
-          const generatedValue = toDrawableName(app.defaultName)
-          setInputValue(generatedValue)
-          setValidationError(validateDrawableName(generatedValue))
-        }
-      })
-      .catch((err) => {
-        if (err.name !== "AbortError") {
-          console.error("Failed to fetch suggestions:", err)
-          setSuggestions([])
-          // Fallback to auto-generated name
-          const generatedValue = toDrawableName(app.defaultName)
-          setInputValue(generatedValue)
-          setValidationError(validateDrawableName(generatedValue))
-        }
-      })
-      .finally(() => setIsLoadingSuggestions(false))
-
-    return () => controller.abort()
-  }, [open, app.packageName, app.defaultName, iconPackId, designerId, validateDrawableName])
 
   // Category handling
   const handleCategoryKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -259,7 +242,6 @@ export function DrawableNameDialog({
   const handleOpenChange = (open: boolean) => {
     if (!open && !isSubmitting) {
       setInputValue("")
-      setSuggestions([])
       setValidationError(null)
       setComboboxOpen(false)
       setMode("custom") // Reset mode

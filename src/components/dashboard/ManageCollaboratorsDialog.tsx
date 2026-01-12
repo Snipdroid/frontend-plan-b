@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useCallback } from "react"
 import { useAuth } from "react-oidc-context"
 import { useTranslation } from "react-i18next"
 import { Check, ChevronsUpDown } from "lucide-react"
@@ -28,12 +28,12 @@ import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import {
-  getIconPackCollaborators,
   addIconPackCollaborators,
   removeIconPackCollaborators,
 } from "@/services/icon-pack"
 import { searchDesigners } from "@/services/designer"
 import { CollaboratorListItem } from "./CollaboratorListItem"
+import { useIconPackCollaborators } from "@/hooks/swr"
 import type { DesignerDTO } from "@/types/user"
 
 interface ManageCollaboratorsDialogProps {
@@ -57,8 +57,13 @@ export function ManageCollaboratorsDialog({
   const auth = useAuth()
   const { t } = useTranslation()
 
-  const [collaborators, setCollaborators] = useState<DesignerDTO[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  // Use SWR hook for collaborators
+  const {
+    data: collaborators = [],
+    isLoading,
+    mutate: refreshCollaborators,
+  } = useIconPackCollaborators(iconPackId)
+
   const [isAdding, setIsAdding] = useState(false)
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
@@ -66,28 +71,6 @@ export function ManageCollaboratorsDialog({
   const [isSearching, setIsSearching] = useState(false)
   const [comboboxOpen, setComboboxOpen] = useState(false)
   const [selectedDesigner, setSelectedDesigner] = useState<DesignerDTO | null>(null)
-
-  const fetchCollaborators = useCallback(async () => {
-    if (!auth.user?.access_token) return
-
-    setIsLoading(true)
-    try {
-      const data = await getIconPackCollaborators(auth.user.access_token, iconPackId)
-      setCollaborators(data)
-    } catch (error) {
-      console.error("Failed to fetch collaborators:", error)
-      toast.error(t("iconPack.failedToFetchCollaborators"))
-    } finally {
-      setIsLoading(false)
-    }
-  }, [auth.user?.access_token, iconPackId, t])
-
-  // Fetch collaborators when dialog opens
-  useEffect(() => {
-    if (open && auth.user?.access_token) {
-      fetchCollaborators()
-    }
-  }, [open, auth.user?.access_token, fetchCollaborators])
 
   // Search for designers
   const handleSearch = useCallback(
@@ -143,7 +126,7 @@ export function ManageCollaboratorsDialog({
       setSearchQuery("")
       setSearchResults([])
       setComboboxOpen(false)
-      await fetchCollaborators()
+      await refreshCollaborators()
       onCollaboratorsChanged()
     } catch (error) {
       console.error("Failed to add collaborator:", error)
@@ -161,7 +144,7 @@ export function ManageCollaboratorsDialog({
       await removeIconPackCollaborators(auth.user.access_token, iconPackId, [designerId])
 
       toast.success(t("iconPack.collaboratorRemoved"))
-      await fetchCollaborators()
+      await refreshCollaborators()
       onCollaboratorsChanged()
     } catch (error) {
       console.error("Failed to remove collaborator:", error)

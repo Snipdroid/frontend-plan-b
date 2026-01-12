@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Check, ChevronsUpDown } from "lucide-react"
 import { useAuth } from "react-oidc-context"
 import { useTranslation } from "react-i18next"
@@ -32,9 +32,9 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { getIconPacks, markAppsAsAdapted } from "@/services/icon-pack"
-import { getDesignerMe } from "@/services/designer"
+import { markAppsAsAdapted } from "@/services/icon-pack"
 import { DrawableNameDialog } from "@/components/dashboard/DrawableNameDialog"
+import { useIconPacks, useDesignerMe } from "@/hooks/swr"
 import type { AppInfo } from "@/types"
 import type { IconPackDTO, AppInfoDTO } from "@/types/icon-pack"
 
@@ -114,39 +114,16 @@ export function MarkAsAdaptedDialog({
   const [step, setStep] = useState<"selectIconPack" | "enterDrawable">(
     "selectIconPack"
   )
-  const [iconPacks, setIconPacks] = useState<IconPackDTO[]>([])
   const [selectedIconPackId, setSelectedIconPackId] = useState<string>("")
-  const [designerId, setDesignerId] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [comboboxOpen, setComboboxOpen] = useState(false)
 
-  // Fetch icon packs and designer ID when dialog opens
-  useEffect(() => {
-    if (!open || !auth.user?.access_token) return
-
-    const controller = new AbortController()
-    setIsLoading(true)
-    setError(null)
-
-    Promise.all([
-      getIconPacks(auth.user.access_token),
-      getDesignerMe(auth.user.access_token),
-    ])
-      .then(([packs, designer]) => {
-        setIconPacks(packs)
-        setDesignerId(designer.id ?? null)
-      })
-      .catch((err) => {
-        if (err.name !== "AbortError") {
-          setError(err instanceof Error ? err.message : "Failed to fetch data")
-        }
-      })
-      .finally(() => setIsLoading(false))
-
-    return () => controller.abort()
-  }, [open, auth.user?.access_token])
+  // Use SWR hooks for data fetching
+  const { data: iconPacks = [], isLoading: packsLoading } = useIconPacks()
+  const { data: currentUser, isLoading: userLoading } = useDesignerMe()
+  const isLoading = packsLoading || userLoading
+  const designerId = currentUser?.id || null
 
   const selectedIconPack = iconPacks.find(
     (pack) => pack.id === selectedIconPackId

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useAuth } from "react-oidc-context"
 import { useTranslation } from "react-i18next"
 import { Link, useLocation } from "react-router"
@@ -44,20 +44,20 @@ import { Badge } from "@/components/ui/badge"
 import { SidebarMenuSkeleton } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { extractUserProfile } from "@/types/user"
-import type { IconPackDTO } from "@/types/icon-pack"
-import { getIconPacks } from "@/services/icon-pack"
-import { getDesignerMe } from "@/services/designer"
 import { CreateIconPackDialog } from "./CreateIconPackDialog"
 import { ThemeMenu } from "@/components/theme-menu"
+import { useIconPacks, useDesignerMe } from "@/hooks/swr"
 
 export function DashboardSidebar() {
   const auth = useAuth()
   const location = useLocation()
   const { t } = useTranslation()
-  const [iconPacks, setIconPacks] = useState<IconPackDTO[]>([])
-  const [isLoadingPacks, setIsLoadingPacks] = useState(true)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+
+  // Use SWR hooks for data fetching
+  const { data: iconPacks = [], isLoading: isLoadingPacks, mutate: refreshIconPacks } = useIconPacks()
+  const { data: currentUser } = useDesignerMe()
+  const currentUserId = currentUser?.id || null
 
   const profile = auth.user
     ? extractUserProfile(auth.user.profile as Record<string, unknown>)
@@ -77,41 +77,10 @@ export function DashboardSidebar() {
     auth.signoutRedirect()
   }
 
-  const handleIconPackCreated = (iconPack: IconPackDTO) => {
-    setIconPacks((prev) => [...prev, iconPack])
+  const handleIconPackCreated = async () => {
+    // Refresh icon packs after creation
+    await refreshIconPacks()
   }
-
-  useEffect(() => {
-    async function fetchIconPacks() {
-      if (!auth.user?.access_token) return
-
-      try {
-        const packs = await getIconPacks(auth.user.access_token)
-        setIconPacks(packs)
-      } catch (error) {
-        console.error("Failed to fetch icon packs:", error)
-      } finally {
-        setIsLoadingPacks(false)
-      }
-    }
-
-    fetchIconPacks()
-  }, [auth.user?.access_token])
-
-  useEffect(() => {
-    async function fetchCurrentUser() {
-      if (!auth.user?.access_token) return
-
-      try {
-        const designer = await getDesignerMe(auth.user.access_token)
-        setCurrentUserId(designer.id || null)
-      } catch (error) {
-        console.error("Failed to fetch current user:", error)
-      }
-    }
-
-    fetchCurrentUser()
-  }, [auth.user?.access_token])
 
   return (
     <Sidebar collapsible="icon">

@@ -79,13 +79,6 @@ export async function uploadIconToS3(
   }
 }
 
-export async function getTagsForApp(
-  appInfoId: string,
-  signal?: AbortSignal
-): Promise<Tag[]> {
-  return fetchJson<Tag[]>(`/app-info/${appInfoId}/tags`, { signal })
-}
-
 export async function getAllTags(signal?: AbortSignal): Promise<Tag[]> {
   return fetchJson<Tag[]>("/tags", { signal })
 }

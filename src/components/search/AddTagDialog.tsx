@@ -32,7 +32,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { getAllTags, addTagToApp, getTagsForApp } from "@/services/app-info"
+import { getAllTags, addTagToApp } from "@/services/app-info"
 import type { AppInfo, Tag } from "@/types"
 
 interface AddTagDialogProps {
@@ -40,7 +40,7 @@ interface AddTagDialogProps {
   currentTags: Tag[]
   open: boolean
   onOpenChange: (open: boolean) => void
-  onTagAdded: (newTags: Tag[]) => void
+  onTagAdded: () => void
 }
 
 interface TagListProps {
@@ -131,9 +131,7 @@ export function AddTagDialog({
 
     try {
       await addTagToApp(app.id, selectedTagId, auth.user.access_token)
-      // Refetch tags after adding
-      const updatedTags = await getTagsForApp(app.id)
-      onTagAdded(updatedTags)
+      onTagAdded()
       onOpenChange(false)
       setSelectedTagId("")
     } catch (err) {

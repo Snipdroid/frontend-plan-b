@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Plus, ChevronDown } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { useAuth } from "react-oidc-context"
@@ -23,13 +23,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { useLocalizedName } from "@/hooks"
+import { useLocalizedName, useAppTags } from "@/hooks"
 import { API_BASE_URL } from "@/services/api"
-import { getTagsForApp } from "@/services/app-info"
 import { LocalizedNamesList } from "./LocalizedNamesList"
 import { AddTagDialog } from "./AddTagDialog"
 import { MarkAsAdaptedDialog } from "./MarkAsAdaptedDialog"
-import type { AppInfo, Tag } from "@/types"
+import type { AppInfo } from "@/types"
 
 function getAppIconUrl(packageName: string): string {
   const base = API_BASE_URL || ""
@@ -47,34 +46,13 @@ export function AppDetailSheet({ app, open, onOpenChange }: AppDetailSheetProps)
   const auth = useAuth()
   const displayName = useLocalizedName(app?.localizedNames ?? [])
   const [failedIconPackage, setFailedIconPackage] = useState<string | null>(null)
-  const [tagData, setTagData] = useState<{ appId: string | null; tags: Tag[] }>({ appId: null, tags: [] })
   const [isAddTagDialogOpen, setIsAddTagDialogOpen] = useState(false)
   const [isMarkAsAdaptedDialogOpen, setIsMarkAsAdaptedDialogOpen] = useState(false)
 
+  const { data: tags = [], isLoading: isLoadingTags, mutate: mutateTags } = useAppTags(app?.id)
+
   // Derive iconError - automatically resets when app changes
   const iconError = failedIconPackage === app?.packageName
-
-  // Derive tags and loading state - automatically resets when app changes
-  const tags = tagData.appId === app?.id ? tagData.tags : []
-  const isLoadingTags = !!app?.id && tagData.appId !== app.id
-
-  // Fetch tags when app changes
-  useEffect(() => {
-    if (!app?.id) return
-
-    const appId = app.id
-    const controller = new AbortController()
-    getTagsForApp(appId, controller.signal)
-      .then((fetchedTags) => setTagData({ appId, tags: fetchedTags }))
-      .catch((error) => {
-        if (error.name !== "AbortError") {
-          console.error("Failed to fetch tags:", error)
-          setTagData({ appId, tags: [] })
-        }
-      })
-
-    return () => controller.abort()
-  }, [app?.id])
 
   if (!app) {
     return null
@@ -200,7 +178,7 @@ export function AppDetailSheet({ app, open, onOpenChange }: AppDetailSheetProps)
           currentTags={tags}
           open={isAddTagDialogOpen}
           onOpenChange={setIsAddTagDialogOpen}
-          onTagAdded={(newTags) => setTagData({ appId: app.id, tags: newTags })}
+          onTagAdded={() => mutateTags()}
         />
 
         <MarkAsAdaptedDialog

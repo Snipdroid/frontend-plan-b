@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { X, Plus, ChevronDown } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { useAuth } from "react-oidc-context"
@@ -17,13 +17,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { useLocalizedName } from "@/hooks"
+import { useLocalizedName, useAppTags } from "@/hooks"
 import { API_BASE_URL } from "@/services/api"
-import { getTagsForApp } from "@/services/app-info"
 import { LocalizedNamesList } from "./LocalizedNamesList"
 import { AddTagDialog } from "./AddTagDialog"
 import { MarkAsAdaptedDialog } from "./MarkAsAdaptedDialog"
-import type { AppInfo, Tag } from "@/types"
+import type { AppInfo } from "@/types"
 
 function getAppIconUrl(packageName: string): string {
   const base = API_BASE_URL || ""
@@ -40,36 +39,10 @@ export function AppDetailPanel({ app, onClose }: AppDetailPanelProps) {
   const auth = useAuth()
   const displayName = useLocalizedName(app?.localizedNames ?? [])
   const [iconError, setIconError] = useState(false)
-  const [tagsData, setTagsData] = useState<{ appId: string | null; tags: Tag[] }>({
-    appId: null,
-    tags: [],
-  })
   const [isAddTagDialogOpen, setIsAddTagDialogOpen] = useState(false)
   const [isMarkAsAdaptedDialogOpen, setIsMarkAsAdaptedDialogOpen] = useState(false)
 
-  // Derive loading state: tags are loading if they don't belong to current app
-  const appId = app?.id
-  const isLoadingTags = tagsData.appId !== appId
-  const tags = tagsData.tags
-
-  // Fetch tags on mount (component is keyed by app.id in parent)
-  useEffect(() => {
-    if (!appId) return
-
-    const controller = new AbortController()
-    getTagsForApp(appId, controller.signal)
-      .then((newTags) => {
-        setTagsData({ appId, tags: newTags })
-      })
-      .catch((error) => {
-        if (error.name !== "AbortError") {
-          console.error("Failed to fetch tags:", error)
-          setTagsData({ appId, tags: [] })
-        }
-      })
-
-    return () => controller.abort()
-  }, [appId])
+  const { data: tags = [], isLoading: isLoadingTags, mutate: mutateTags } = useAppTags(app?.id)
 
   if (!app) {
     return null
@@ -203,7 +176,7 @@ export function AppDetailPanel({ app, onClose }: AppDetailPanelProps) {
         currentTags={tags}
         open={isAddTagDialogOpen}
         onOpenChange={setIsAddTagDialogOpen}
-        onTagAdded={(newTags) => setTagsData({ appId: app.id, tags: newTags })}
+        onTagAdded={() => mutateTags()}
       />
 
       <MarkAsAdaptedDialog

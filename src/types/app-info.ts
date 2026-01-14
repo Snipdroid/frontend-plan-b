@@ -57,6 +57,11 @@ export interface AppInfoCreateSingleRequest {
   languageCode: string
 }
 
+export interface AppInfoCandidateSearchRequest {
+  packageNames: string[]
+  mainActivities: string[]
+}
+
 export interface AppInfoDTO {
   id?: string
   packageName: string

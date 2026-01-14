@@ -28,6 +28,28 @@ export async function searchAppInfo(
   return fetchJson<PageAppInfo>(endpoint, { signal })
 }
 
+export async function candidateSearchAppInfo(
+  packageNames: string[],
+  mainActivities: string[]
+): Promise<AppInfoDTO[]> {
+  const response = await fetch(`${API_BASE_URL}/app-info/candidate-search`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      packageNames,
+      mainActivities,
+    }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`)
+  }
+
+  return response.json()
+}
+
 export async function createAppInfo(
   entries: AppInfoCreateSingleRequest[],
   accessToken?: string

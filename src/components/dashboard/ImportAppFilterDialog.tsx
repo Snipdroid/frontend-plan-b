@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/collapsible"
 import { parseAppFilterXml } from "@/lib/appfilter-parser"
 import { getIconPackAdaptedApps, markAppsAsAdapted } from "@/services/icon-pack"
-import { createAppInfo, searchAppInfo } from "@/services/app-info"
+import { createAppInfo, searchAppInfo, candidateSearchAppInfo } from "@/services/app-info"
 import type { AppInfo, AppInfoDTO, AppInfoCreateSingleRequest } from "@/types/app-info"
 import { ChevronDown, ChevronUp, Upload } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -305,62 +305,77 @@ export function ImportAppFilterDialog({
     existing: Map<string, AppInfo>
     failures: FailedApp[]
   }> => {
-    const SEARCH_CONCURRENCY = 10
     const existingMap = new Map<string, AppInfo>()
     const searchFailures: FailedApp[] = []
 
-    for (let i = 0; i < entries.length; i += SEARCH_CONCURRENCY) {
-      const batch = entries.slice(i, i + SEARCH_CONCURRENCY)
+    // Batch size to avoid payload too large errors
+    const BATCH_SIZE = 100
+    const totalBatches = Math.ceil(entries.length / BATCH_SIZE)
 
-      const batchResults = await Promise.all(
-        batch.map(async (entry) => {
-          try {
-            const result = await searchAppInfo({
-              byPackageName: entry.packageName,
-              byMainActivity: entry.mainActivity,
-              sortBy: "count",
-              page: 1,
-              per: 10,
-            })
+    try {
+      setSearchProgress({ current: 0, total: entries.length })
 
-            // Find exact match (ILIKE returns partial matches)
-            const exactMatch = result.items.find(
-              (app) =>
-                app.packageName === entry.packageName &&
-                app.mainActivity === entry.mainActivity
-            )
+      for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+        const batchStart = batchIndex * BATCH_SIZE
+        const batchEnd = Math.min((batchIndex + 1) * BATCH_SIZE, entries.length)
+        const batchEntries = entries.slice(batchStart, batchEnd)
 
-            return { entry, app: exactMatch || null, error: null }
-          } catch (error) {
-            console.warn("Search failed for", entry.packageName, error)
-            return {
-              entry,
-              app: null,
-              error: error instanceof Error ? error.message : t("errors.searchFailed"),
+        // Extract unique packageNames and mainActivities for this batch
+        const packageNames = [...new Set(batchEntries.map(e => e.packageName))]
+        const mainActivities = [...new Set(batchEntries.map(e => e.mainActivity))]
+
+        try {
+          // Single bulk API call per batch
+          const candidates = await candidateSearchAppInfo(packageNames, mainActivities)
+
+          // Build lookup map from candidates
+          const candidateMap = new Map<string, AppInfo>()
+          for (const app of candidates) {
+            const key = `${app.packageName}|${app.mainActivity}`
+            candidateMap.set(key, app)
+          }
+
+          // Match exact pairs from parsed entries in this batch
+          for (const entry of batchEntries) {
+            const key = `${entry.packageName}|${entry.mainActivity}`
+            const exactMatch = candidateMap.get(key)
+            if (exactMatch) {
+              existingMap.set(key, exactMatch)
             }
           }
-        })
-      )
+        } catch (error) {
+          console.error(`Candidate search failed for batch ${batchIndex + 1}`, error)
+          // Mark apps in this batch as failures
+          for (const entry of batchEntries) {
+            searchFailures.push({
+              packageName: entry.packageName,
+              mainActivity: entry.mainActivity,
+              drawableName: entry.drawableName,
+              error: error instanceof Error ? error.message : t("errors.searchFailed"),
+            })
+          }
+        }
 
-      batchResults.forEach(({ entry, app, error }) => {
+        // Update progress after each batch
+        setSearchProgress({ current: batchEnd, total: entries.length })
+      }
+
+    } catch (error) {
+      console.error("Candidate search failed", error)
+      // Mark all remaining as failures if something goes wrong
+      for (const entry of entries) {
         const key = `${entry.packageName}|${entry.mainActivity}`
-        if (app) {
-          existingMap.set(key, app)
-        } else if (error) {
+        if (!existingMap.has(key) && !searchFailures.some(f =>
+          f.packageName === entry.packageName && f.mainActivity === entry.mainActivity
+        )) {
           searchFailures.push({
             packageName: entry.packageName,
             mainActivity: entry.mainActivity,
             drawableName: entry.drawableName,
-            error,
+            error: error instanceof Error ? error.message : t("errors.searchFailed"),
           })
         }
-      })
-
-      // Update progress
-      setSearchProgress({
-        current: Math.min(i + SEARCH_CONCURRENCY, entries.length),
-        total: entries.length,
-      })
+      }
     }
 
     return { existing: existingMap, failures: searchFailures }

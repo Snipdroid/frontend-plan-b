@@ -209,7 +209,7 @@ export async function markAppsAsAdapted(
     categories,
   }
 
-  const response = await fetch(`${API_BASE_URL}/icon-pack/${iconPackId}`, {
+  const response = await fetch(`${API_BASE_URL}/icon-pack/${iconPackId}/mark-as-adapted`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

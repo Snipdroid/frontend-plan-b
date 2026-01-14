@@ -9,8 +9,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
 import {
   Collapsible,
   CollapsibleContent,
@@ -72,6 +72,8 @@ export function ImportAppFilterDialog({
   const [creationFailures, setCreationFailures] = useState<FailedApp[]>([])
   const [foundCount, setFoundCount] = useState(0)
   const [searchProgress, setSearchProgress] = useState({ current: 0, total: 0 })
+  const [createProgress, setCreateProgress] = useState({ current: 0, total: 0 })
+  const [markProgress, setMarkProgress] = useState({ current: 0, total: 0 })
   const [isSearchFailedOpen, setIsSearchFailedOpen] = useState(false)
   const [isCreationFailedOpen, setIsCreationFailedOpen] = useState(false)
   const [currentBatch, setCurrentBatch] = useState(0)
@@ -90,6 +92,8 @@ export function ImportAppFilterDialog({
     setCreationFailures([])
     setFoundCount(0)
     setSearchProgress({ current: 0, total: 0 })
+    setCreateProgress({ current: 0, total: 0 })
+    setMarkProgress({ current: 0, total: 0 })
     setIsSearchFailedOpen(false)
     setIsCreationFailedOpen(false)
     setCurrentBatch(0)
@@ -309,7 +313,7 @@ export function ImportAppFilterDialog({
     const searchFailures: FailedApp[] = []
 
     // Batch size to avoid payload too large errors
-    const BATCH_SIZE = 100
+    const BATCH_SIZE = 500
     const totalBatches = Math.ceil(entries.length / BATCH_SIZE)
 
     try {
@@ -320,9 +324,22 @@ export function ImportAppFilterDialog({
         const batchEnd = Math.min((batchIndex + 1) * BATCH_SIZE, entries.length)
         const batchEntries = entries.slice(batchStart, batchEnd)
 
-        // Extract unique packageNames and mainActivities for this batch
-        const packageNames = [...new Set(batchEntries.map(e => e.packageName))]
-        const mainActivities = [...new Set(batchEntries.map(e => e.mainActivity))]
+        // Extract unique (packageName, mainActivity) pairs for this batch
+        const uniquePairs = new Map<string, { packageName: string, mainActivity: string }>()
+        for (const entry of batchEntries) {
+          const key = `${entry.packageName}|${entry.mainActivity}`
+          if (!uniquePairs.has(key)) {
+            uniquePairs.set(key, {
+              packageName: entry.packageName,
+              mainActivity: entry.mainActivity
+            })
+          }
+        }
+
+        // Convert to parallel arrays (same length, paired at same indices)
+        const pairs = Array.from(uniquePairs.values())
+        const packageNames = pairs.map(p => p.packageName)
+        const mainActivities = pairs.map(p => p.mainActivity)
 
         try {
           // Single bulk API call per batch
@@ -437,6 +454,8 @@ export function ImportAppFilterDialog({
           createRequests.length / createBatchSize
         )
 
+        setCreateProgress({ current: 0, total: createRequests.length })
+
         for (let i = 0; i < createBatches; i++) {
           const batchStart = i * createBatchSize
           const batchEnd = Math.min(
@@ -462,6 +481,8 @@ export function ImportAppFilterDialog({
               })
             }
           }
+
+          setCreateProgress({ current: batchEnd, total: createRequests.length })
         }
       }
 
@@ -479,18 +500,13 @@ export function ImportAppFilterDialog({
 
       // Stage 5: Mark as adapted in batches
       setStage("marking")
-      const markBatchSize = 25
-      const batches: (AppInfo | AppInfoDTO)[][] = []
-      for (let i = 0; i < allApps.length; i += markBatchSize) {
-        batches.push(allApps.slice(i, i + markBatchSize))
-      }
-
-      setTotalBatches(batches.length)
+      const markBatchSize = 100
+      setMarkProgress({ current: 0, total: allApps.length })
 
       let successfulCount = 0
-      for (let i = 0; i < batches.length; i++) {
-        setCurrentBatch(i + 1)
-        const batch = batches[i]
+      for (let i = 0; i < allApps.length; i += markBatchSize) {
+        const batchEnd = Math.min(i + markBatchSize, allApps.length)
+        const batch = allApps.slice(i, batchEnd)
 
         const appInfoIDs = batch.map((app) => app.id!).filter(Boolean)
         const drawables: Record<string, string> = {}
@@ -524,6 +540,7 @@ export function ImportAppFilterDialog({
         )
 
         successfulCount += batch.length
+        setMarkProgress({ current: batchEnd, total: allApps.length })
       }
 
       setSuccessCount(successfulCount)
@@ -626,27 +643,62 @@ export function ImportAppFilterDialog({
       case "searching":
       case "creating":
       case "marking":
+        const getProgress = () => {
+          switch (stage) {
+            case "parsing":
+            case "fetching":
+              return 0
+            case "searching":
+              return searchProgress.total > 0
+                ? (searchProgress.current / searchProgress.total) * 100
+                : 0
+            case "creating":
+              return createProgress.total > 0
+                ? (createProgress.current / createProgress.total) * 100
+                : 0
+            case "marking":
+              return markProgress.total > 0
+                ? (markProgress.current / markProgress.total) * 100
+                : 0
+            default:
+              return 0
+          }
+        }
+
+        const getProgressText = () => {
+          switch (stage) {
+            case "parsing":
+              return t("iconPack.importParsing")
+            case "fetching":
+              return t("iconPack.importChecking")
+            case "searching":
+              return t("iconPack.importSearching", {
+                current: searchProgress.current,
+                total: searchProgress.total,
+              })
+            case "creating":
+              return t("iconPack.importCreating") +
+                (createProgress.total > 0
+                  ? ` (${createProgress.current}/${createProgress.total})`
+                  : "")
+            case "marking":
+              return t("iconPack.importMarking") +
+                (markProgress.total > 0
+                  ? ` (${markProgress.current}/${markProgress.total})`
+                  : "")
+            default:
+              return ""
+          }
+        }
+
         return (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
+              <Progress value={getProgress()} className="h-2" />
+              <p className="text-sm text-muted-foreground">
+                {getProgressText()}
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground">
-              {stage === "parsing" && t("iconPack.importParsing")}
-              {stage === "fetching" && t("iconPack.importChecking")}
-              {stage === "searching" &&
-                t("iconPack.importSearching", {
-                  current: searchProgress.current,
-                  total: searchProgress.total,
-                })}
-              {stage === "creating" && t("iconPack.importCreating")}
-              {stage === "marking" &&
-                t("iconPack.importMarking", {
-                  current: currentBatch,
-                  total: totalBatches,
-                })}
-            </p>
           </div>
         )
 

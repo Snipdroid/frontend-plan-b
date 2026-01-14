@@ -18,8 +18,8 @@ import {
 } from "@/components/ui/collapsible"
 import { parseAppFilterXml } from "@/lib/appfilter-parser"
 import { getIconPackAdaptedApps, markAppsAsAdapted } from "@/services/icon-pack"
-import { createAppInfo, searchAppInfo, candidateSearchAppInfo } from "@/services/app-info"
-import type { AppInfo, AppInfoDTO, AppInfoCreateSingleRequest } from "@/types/app-info"
+import { createAppInfo, candidateSearchAppInfo } from "@/services/app-info"
+import type { AppInfoDTO, AppInfoCreateSingleRequest } from "@/types/app-info"
 import { ChevronDown, ChevronUp, Upload } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { AppFilterPreviewDialog, type ParsedApp } from "./AppFilterPreviewDialog"
@@ -76,8 +76,6 @@ export function ImportAppFilterDialog({
   const [markProgress, setMarkProgress] = useState({ current: 0, total: 0 })
   const [isSearchFailedOpen, setIsSearchFailedOpen] = useState(false)
   const [isCreationFailedOpen, setIsCreationFailedOpen] = useState(false)
-  const [currentBatch, setCurrentBatch] = useState(0)
-  const [totalBatches, setTotalBatches] = useState(0)
   const [isDragOver, setIsDragOver] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -96,8 +94,6 @@ export function ImportAppFilterDialog({
     setMarkProgress({ current: 0, total: 0 })
     setIsSearchFailedOpen(false)
     setIsCreationFailedOpen(false)
-    setCurrentBatch(0)
-    setTotalBatches(0)
   }
 
   const fetchAllAdaptedApps = useCallback(async (): Promise<Set<string>> => {
@@ -306,10 +302,10 @@ export function ImportAppFilterDialog({
   const searchForExistingApps = async (
     entries: ReturnType<typeof parseAppFilterXml>
   ): Promise<{
-    existing: Map<string, AppInfo>
+    existing: Map<string, AppInfoDTO>
     failures: FailedApp[]
   }> => {
-    const existingMap = new Map<string, AppInfo>()
+    const existingMap = new Map<string, AppInfoDTO>()
     const searchFailures: FailedApp[] = []
 
     // Batch size to avoid payload too large errors
@@ -346,7 +342,7 @@ export function ImportAppFilterDialog({
           const candidates = await candidateSearchAppInfo(packageNames, mainActivities)
 
           // Build lookup map from candidates
-          const candidateMap = new Map<string, AppInfo>()
+          const candidateMap = new Map<string, AppInfoDTO>()
           for (const app of candidates) {
             const key = `${app.packageName}|${app.mainActivity}`
             candidateMap.set(key, app)
@@ -419,7 +415,7 @@ export function ImportAppFilterDialog({
       setFoundCount(existingAppsMap.size)
 
       // Separate existing apps from apps that need creation
-      const existingApps: AppInfo[] = []
+      const existingApps: AppInfoDTO[] = []
       const missingApps = validApps.filter((app) => {
         const key = `${app.packageName}|${app.mainActivity}`
         const existing = existingAppsMap.get(key)
@@ -489,7 +485,7 @@ export function ImportAppFilterDialog({
       setCreationFailures(creationFails)
 
       // Combine existing and created apps for marking
-      const allApps: (AppInfo | AppInfoDTO)[] = [...existingApps, ...createdApps]
+      const allApps: AppInfoDTO[] = [...existingApps, ...createdApps]
 
       if (allApps.length === 0) {
         // All searches and creations failed
@@ -642,7 +638,7 @@ export function ImportAppFilterDialog({
       case "fetching":
       case "searching":
       case "creating":
-      case "marking":
+      case "marking": {
         const getProgress = () => {
           switch (stage) {
             case "parsing":
@@ -701,6 +697,7 @@ export function ImportAppFilterDialog({
             </div>
           </div>
         )
+      }
 
       case "complete":
         return (

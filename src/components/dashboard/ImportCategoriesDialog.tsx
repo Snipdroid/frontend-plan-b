@@ -173,44 +173,40 @@ export function ImportCategoriesDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={() => {
-              if (categoryXmlFileName) return
-              fileInputRef.current?.click()
-            }}
-            onKeyDown={(e) => {
-              if (categoryXmlFileName) return
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault()
+          {!categoryXmlFileName && (
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => {
                 fileInputRef.current?.click()
-              }
-            }}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            className={cn(
-              "flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-6 transition-colors",
-              categoryXmlFileName
-                ? "cursor-not-allowed opacity-60"
-                : "cursor-pointer",
-              !categoryXmlFileName &&
-                (isDragOver
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault()
+                  fileInputRef.current?.click()
+                }
+              }}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={cn(
+                "flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-6 transition-colors cursor-pointer",
+                isDragOver
                   ? "border-primary bg-primary/5"
-                  : "border-muted-foreground/25 hover:border-muted-foreground/50")
-            )}
-          >
-            <Upload className="h-8 w-8 text-muted-foreground" />
-            <div className="text-center">
-              <p className="text-sm font-medium">
-                {t("iconPack.importCategoriesSelectFile")}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {t("iconPack.importCategoriesSelectFileDesc")}
-              </p>
+                  : "border-muted-foreground/25 hover:border-muted-foreground/50"
+              )}
+            >
+              <Upload className="h-8 w-8 text-muted-foreground" />
+              <div className="text-center">
+                <p className="text-sm font-medium">
+                  {t("iconPack.importCategoriesSelectFile")}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {t("iconPack.importCategoriesSelectFileDesc")}
+                </p>
+              </div>
             </div>
-          </div>
+          )}
 
           <input
             ref={fileInputRef}
@@ -225,25 +221,24 @@ export function ImportCategoriesDialog({
           />
 
           {categoryXmlFileName && (
-            <div className="flex items-center justify-between gap-3 text-sm">
-              <div className="min-w-0">
-                <span className="text-muted-foreground">
-                  {t("iconPack.importCategoriesAttached")}{" "}
-                </span>
-                <code className="bg-muted px-1.5 py-0.5 rounded text-xs">
-                  {categoryXmlFileName}
-                </code>
-                {categorySourceType && (
-                  <Badge variant="secondary" className="ml-2">
-                    {categorySourceType === "drawable"
-                      ? t("iconPack.importCategoriesSourceDrawable")
-                      : t("iconPack.importCategoriesSourceIconPack")}
-                  </Badge>
-                )}
-              </div>
-              <Button variant="outline" size="sm" onClick={clearCategoryImport}>
-                <X className="h-4 w-4 mr-2" />
-                {t("common.remove")}
+            <div className="flex items-center gap-2 rounded-md border bg-muted/50 px-3 py-2 min-w-0">
+              <code className="text-xs font-medium truncate flex-1">
+                {categoryXmlFileName}
+              </code>
+              {categorySourceType && (
+                <Badge variant="secondary" className="shrink-0">
+                  {categorySourceType === "drawable"
+                    ? t("iconPack.importCategoriesSourceDrawable")
+                    : t("iconPack.importCategoriesSourceIconPack")}
+                </Badge>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-5 w-5 p-0 shrink-0"
+                onClick={clearCategoryImport}
+              >
+                <X className="h-3.5 w-3.5" />
               </Button>
             </div>
           )}

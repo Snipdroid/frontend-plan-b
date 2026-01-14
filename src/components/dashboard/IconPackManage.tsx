@@ -137,7 +137,9 @@ export function IconPackManage() {
   const [createVersionOpen, setCreateVersionOpen] = useState(false)
   const [tokenDialogOpen, setTokenDialogOpen] = useState(false)
   const [deletePackDialogOpen, setDeletePackDialogOpen] = useState(false)
+  const [deletePackDialogKey, setDeletePackDialogKey] = useState(0)
   const [deleteVersionDialogOpen, setDeleteVersionDialogOpen] = useState(false)
+  const [deleteVersionDialogKey, setDeleteVersionDialogKey] = useState(0)
   const [importDialogOpen, setImportDialogOpen] = useState(false)
   const [autocompleteDialogOpen, setAutocompleteDialogOpen] = useState(false)
   const [selectedVersion, setSelectedVersion] =
@@ -369,6 +371,7 @@ export function IconPackManage() {
 
   const handleDeleteVersionClick = (version: IconPackVersionDTO) => {
     setSelectedVersion(version)
+    setDeleteVersionDialogKey(prev => prev + 1)
     setDeleteVersionDialogOpen(true)
   }
 
@@ -896,7 +899,10 @@ export function IconPackManage() {
           {isOwner ? (
             <Button
               variant="destructive"
-              onClick={() => setDeletePackDialogOpen(true)}
+              onClick={() => {
+                setDeletePackDialogKey(prev => prev + 1)
+                setDeletePackDialogOpen(true)
+              }}
               disabled={isDeleting}
             >
               {t("iconPack.deleteIconPack")}
@@ -931,7 +937,7 @@ export function IconPackManage() {
 
       {iconPack?.name && (
         <ConfirmDeleteDialog
-          key={iconPack?.id ?? 'delete-pack'}
+          key={deletePackDialogKey}
           open={deletePackDialogOpen}
           onOpenChange={setDeletePackDialogOpen}
           title={t("iconPack.deleteIconPack")}
@@ -944,7 +950,7 @@ export function IconPackManage() {
 
       {selectedVersion && (
         <ConfirmDeleteDialog
-          key={selectedVersion.id}
+          key={deleteVersionDialogKey}
           open={deleteVersionDialogOpen}
           onOpenChange={setDeleteVersionDialogOpen}
           title={t("iconPack.deleteVersion")}

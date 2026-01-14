@@ -50,19 +50,19 @@ export function AppRequestsTable<T>({
           return (
             <div key={getItemKey(item)} className="border rounded-lg p-4 space-y-3">
               <div className="flex items-start gap-3">
-                <div className="relative flex-shrink-0">
+                <div className="relative flex-shrink-0 h-10 w-10">
                   {iconUrl ? (
                     <img
                       src={iconUrl}
                       alt={`${appName} icon`}
-                      className="h-10 w-10 rounded object-contain"
+                      className="h-full w-full rounded object-cover"
                       onError={(e) => {
                         e.currentTarget.style.display = "none"
                         e.currentTarget.nextElementSibling?.classList.remove("hidden")
                       }}
                     />
                   ) : null}
-                  <div className={`${iconUrl ? "hidden" : ""} flex h-10 w-10 items-center justify-center rounded bg-muted`}>
+                  <div className={`${iconUrl ? "hidden" : ""} absolute inset-0 flex items-center justify-center rounded bg-muted`}>
                     <ImageOff className="h-5 w-5 text-muted-foreground" />
                   </div>
                   {systemApp && (
@@ -121,19 +121,19 @@ export function AppRequestsTable<T>({
               return (
                 <TableRow key={getItemKey(item)}>
                   <TableCell>
-                    <div className="relative inline-block">
+                    <div className="relative inline-block h-8 w-8">
                       {iconUrl ? (
                         <img
                           src={iconUrl}
                           alt={`${appName} icon`}
-                          className="h-8 w-8 rounded object-contain"
+                          className="h-full w-full rounded object-cover"
                           onError={(e) => {
                             e.currentTarget.style.display = "none"
                             e.currentTarget.nextElementSibling?.classList.remove("hidden")
                           }}
                         />
                       ) : null}
-                      <div className={`${iconUrl ? "hidden" : ""} flex h-8 w-8 items-center justify-center rounded bg-muted`}>
+                      <div className={`${iconUrl ? "hidden" : ""} absolute inset-0 flex items-center justify-center rounded bg-muted`}>
                         <ImageOff className="h-4 w-4 text-muted-foreground" />
                       </div>
                       {systemApp && (

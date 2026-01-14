@@ -99,7 +99,7 @@ export function ImportAppFilterDialog({
   const fetchAllAdaptedApps = useCallback(async (): Promise<Set<string>> => {
     const adaptedSet = new Set<string>()
     let page = 1
-    const perPage = 100
+    const perPage = 500
     let hasMore = true
 
     while (hasMore) {
@@ -431,7 +431,7 @@ export function ImportAppFilterDialog({
           const batch = createRequests.slice(batchStart, batchEnd)
 
           try {
-            const batchResult = await createAppInfo(batch, accessToken)
+            const batchResult = await createAppInfo(batch)
             createdApps.push(...batchResult)
           } catch (error) {
             // Record all apps in failed batch as creation failures

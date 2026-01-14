@@ -673,15 +673,15 @@ export function ImportAppFilterDialog({
                 total: searchProgress.total,
               })
             case "creating":
-              return t("iconPack.importCreating") +
-                (createProgress.total > 0
-                  ? ` (${createProgress.current}/${createProgress.total})`
-                  : "")
+              return t("iconPack.importCreating", {
+                current: createProgress.current,
+                total: createProgress.total,
+              })
             case "marking":
-              return t("iconPack.importMarking") +
-                (markProgress.total > 0
-                  ? ` (${markProgress.current}/${markProgress.total})`
-                  : "")
+              return t("iconPack.importMarking", {
+                current: markProgress.current,
+                total: markProgress.total,
+              })
             default:
               return ""
           }

@@ -341,7 +341,7 @@ export function AppFilterPreviewDialog({
             onClick={onConfirm}
             disabled={!canProceed}
           >
-            {t("iconPack.previewConfirm", { count: stats.valid })}
+            {t("iconPack.previewNext", { count: stats.valid })}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -23,11 +23,15 @@ import type { AppInfo, AppInfoDTO, AppInfoCreateSingleRequest } from "@/types/ap
 import { ChevronDown, ChevronUp, Upload } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { AppFilterPreviewDialog, type ParsedApp } from "./AppFilterPreviewDialog"
+import { ImportCategoriesDialog, type CategoryImportResult } from "./ImportCategoriesDialog"
+import { ImportSubmitDialog } from "./ImportSubmitDialog"
 
 type ImportStage =
   | "idle"
   | "parsing"
   | "preview"
+  | "categories"
+  | "submit"
   | "fetching"
   | "searching"
   | "creating"
@@ -63,6 +67,7 @@ export function ImportAppFilterDialog({
   const [error, setError] = useState<string | null>(null)
   const [successCount, setSuccessCount] = useState(0)
   const [parsedApps, setParsedApps] = useState<ParsedApp[]>([])
+  const [categoryImport, setCategoryImport] = useState<CategoryImportResult | undefined>(undefined)
   const [searchFailures, setSearchFailures] = useState<FailedApp[]>([])
   const [creationFailures, setCreationFailures] = useState<FailedApp[]>([])
   const [foundCount, setFoundCount] = useState(0)
@@ -80,6 +85,7 @@ export function ImportAppFilterDialog({
     setError(null)
     setSuccessCount(0)
     setParsedApps([])
+    setCategoryImport(undefined)
     setSearchFailures([])
     setCreationFailures([])
     setFoundCount(0)
@@ -360,7 +366,7 @@ export function ImportAppFilterDialog({
     return { existing: existingMap, failures: searchFailures }
   }
 
-  const handlePreviewConfirm = async () => {
+  const executeImport = async (categoryImport?: CategoryImportResult) => {
     try {
       // Get only valid apps to import
       const validApps = parsedApps.filter((app) => app.status === "valid")
@@ -473,6 +479,7 @@ export function ImportAppFilterDialog({
 
         const appInfoIDs = batch.map((app) => app.id!).filter(Boolean)
         const drawables: Record<string, string> = {}
+        const categories: Record<string, string[]> = {}
 
         // Match drawable names from original valid apps
         for (const app of batch) {
@@ -483,6 +490,12 @@ export function ImportAppFilterDialog({
           )
           if (validApp && app.id) {
             drawables[app.id] = validApp.drawableName
+            const normalizedDrawable = validApp.drawableName.trim().toLowerCase()
+            const importedCategories =
+              categoryImport?.drawableToCategories?.[normalizedDrawable] ?? []
+            if (importedCategories.length > 0) {
+              categories[app.id] = importedCategories
+            }
           }
         }
 
@@ -492,7 +505,7 @@ export function ImportAppFilterDialog({
           appInfoIDs,
           true,
           drawables,
-          {} // Empty categories for XML import
+          categories
         )
 
         successfulCount += batch.length
@@ -516,6 +529,27 @@ export function ImportAppFilterDialog({
       setStage("error")
       toast.error(t("errors.importAppFilter"))
     }
+  }
+
+  const handlePreviewConfirm = () => {
+    setStage("categories")
+  }
+
+  const handleCategoriesBack = () => {
+    setStage("preview")
+  }
+
+  const handleCategoriesConfirm = (result?: CategoryImportResult) => {
+    setCategoryImport(result)
+    setStage("submit")
+  }
+
+  const handleSubmitBack = () => {
+    setStage("categories")
+  }
+
+  const handleSubmitConfirm = async () => {
+    await executeImport(categoryImport)
   }
 
   const handlePreviewCancel = () => {
@@ -728,7 +762,15 @@ export function ImportAppFilterDialog({
 
   return (
     <>
-      <Dialog open={open && stage !== "preview"} onOpenChange={onOpenChange}>
+      <Dialog
+        open={
+          open &&
+          stage !== "preview" &&
+          stage !== "categories" &&
+          stage !== "submit"
+        }
+        onOpenChange={onOpenChange}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t("iconPack.importDialogTitle")}</DialogTitle>
@@ -750,6 +792,31 @@ export function ImportAppFilterDialog({
         apps={parsedApps}
         onConfirm={handlePreviewConfirm}
         onCancel={handlePreviewCancel}
+      />
+
+      <ImportCategoriesDialog
+        open={stage === "categories"}
+        onOpenChange={(open) => {
+          if (!open) {
+            handlePreviewCancel()
+          }
+        }}
+        validApps={parsedApps.filter((a) => a.status === "valid")}
+        onBack={handleCategoriesBack}
+        onConfirm={handleCategoriesConfirm}
+      />
+
+      <ImportSubmitDialog
+        open={stage === "submit"}
+        onOpenChange={(open) => {
+          if (!open) {
+            handlePreviewCancel()
+          }
+        }}
+        validApps={parsedApps.filter((a) => a.status === "valid")}
+        categoryImport={categoryImport}
+        onBack={handleSubmitBack}
+        onSubmit={handleSubmitConfirm}
       />
     </>
   )

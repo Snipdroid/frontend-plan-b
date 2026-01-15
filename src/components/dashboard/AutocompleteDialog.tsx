@@ -481,15 +481,7 @@ export function AutocompleteDialog({
                               const appDrawableName = app.id ? drawableNameMap.get(app.id) : null
                               return (
                                 <TableRow key={app.id} className="bg-muted/30">
-                                  <TableCell></TableCell>
-                                  <TableCell></TableCell>
-                                  <TableCell className="text-sm text-muted-foreground pl-8">
-                                    {app.defaultName}
-                                  </TableCell>
-                                  <TableCell className="text-sm text-muted-foreground">
-                                    {app.packageName}
-                                  </TableCell>
-                                  <TableCell className="text-sm text-muted-foreground font-mono text-xs">
+                                  <TableCell colSpan={5} className="text-sm text-muted-foreground font-mono pl-12">
                                     {app.mainActivity}
                                   </TableCell>
                                   <TableCell>
@@ -612,14 +604,8 @@ export function AutocompleteDialog({
                                   key={app.id}
                                   className="bg-muted/30 rounded-md p-3 space-y-2"
                                 >
-                                  <div className="text-xs space-y-1">
-                                    <div className="font-medium text-muted-foreground">
-                                      {app.defaultName}
-                                    </div>
-                                    <div className="truncate">
-                                      <span className="font-medium">Activity:</span>{" "}
-                                      <span className="font-mono">{app.mainActivity}</span>
-                                    </div>
+                                  <div className="text-xs font-mono break-all">
+                                    {app.mainActivity}
                                   </div>
                                   <div className="flex items-center justify-between gap-2">
                                     <div className="flex items-center gap-2 min-w-0 flex-1">

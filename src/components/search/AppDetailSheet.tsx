@@ -23,17 +23,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { AppIcon } from "@/components/ui/app-icon"
 import { useLocalizedName, useAppTags } from "@/hooks"
-import { API_BASE_URL } from "@/services/api"
 import { LocalizedNamesList } from "./LocalizedNamesList"
 import { AddTagDialog } from "./AddTagDialog"
 import { MarkAsAdaptedDialog } from "./MarkAsAdaptedDialog"
 import type { AppInfo } from "@/types"
-
-function getAppIconUrl(packageName: string): string {
-  const base = API_BASE_URL || ""
-  return `${base}/app-icon?packageName=${encodeURIComponent(packageName)}`
-}
 
 interface AppDetailSheetProps {
   app: AppInfo | null
@@ -45,31 +40,14 @@ export function AppDetailSheet({ app, open, onOpenChange }: AppDetailSheetProps)
   const { t } = useTranslation()
   const auth = useAuth()
   const displayName = useLocalizedName(app?.localizedNames ?? [])
-  const [failedIconPackage, setFailedIconPackage] = useState<string | null>(null)
   const [isAddTagDialogOpen, setIsAddTagDialogOpen] = useState(false)
   const [isMarkAsAdaptedDialogOpen, setIsMarkAsAdaptedDialogOpen] = useState(false)
 
   const { data: tags = [], isLoading: isLoadingTags, mutate: mutateTags } = useAppTags(app?.id)
 
-  // Derive iconError - automatically resets when app changes
-  const iconError = failedIconPackage === app?.packageName
-
   if (!app) {
     return null
   }
-
-  const iconElement = iconError ? (
-    <div className="h-16 w-16 shrink-0 rounded-xl bg-muted flex items-center justify-center text-muted-foreground text-lg">
-      ?
-    </div>
-  ) : (
-    <img
-      src={getAppIconUrl(app.packageName)}
-      alt={`${displayName} icon`}
-      className="h-16 w-16 shrink-0 rounded-xl object-cover"
-      onError={() => setFailedIconPackage(app.packageName)}
-    />
-  )
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -79,7 +57,12 @@ export function AppDetailSheet({ app, open, onOpenChange }: AppDetailSheetProps)
         </SheetHeader>
 
         <div className="space-y-4 px-4 pb-4">
-          {iconElement}
+          <AppIcon
+            packageName={app.packageName}
+            appName={displayName}
+            className="h-16 w-16"
+            rounded="xl"
+          />
 
           {auth.isAuthenticated && (
             <div className="flex w-full">

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { ImageOff, Settings } from "lucide-react"
+import { Settings } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { AppIcon } from "@/components/ui/app-icon"
 
 export interface AppRequestsTableColumn<T> {
   key: string
@@ -22,7 +23,7 @@ export interface AppRequestsTableColumn<T> {
 interface AppRequestsTableProps<T> {
   items: T[]
   columns: AppRequestsTableColumn<T>[]
-  getIconUrl: (item: T) => string | null
+  getPackageName: (item: T) => string | undefined
   getAppName: (item: T) => string
   isSystemApp?: (item: T) => boolean
   renderActions: (item: T) => ReactNode
@@ -32,7 +33,7 @@ interface AppRequestsTableProps<T> {
 export function AppRequestsTable<T>({
   items,
   columns,
-  getIconUrl,
+  getPackageName,
   getAppName,
   isSystemApp,
   renderActions,
@@ -43,28 +44,26 @@ export function AppRequestsTable<T>({
       {/* Mobile Card Layout */}
       <div className="md:hidden space-y-3">
         {items.map((item) => {
-          const iconUrl = getIconUrl(item)
+          const packageName = getPackageName(item)
           const appName = getAppName(item)
           const systemApp = isSystemApp?.(item) ?? false
 
           return (
             <div key={getItemKey(item)} className="border rounded-lg p-4 space-y-3">
               <div className="flex items-start gap-3">
-                <div className="relative flex-shrink-0 h-10 w-10">
-                  {iconUrl ? (
-                    <img
-                      src={iconUrl}
-                      alt={`${appName} icon`}
-                      className="h-full w-full rounded object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none"
-                        e.currentTarget.nextElementSibling?.classList.remove("hidden")
-                      }}
+                <div className="relative flex-shrink-0">
+                  {packageName ? (
+                    <AppIcon
+                      packageName={packageName}
+                      appName={appName}
+                      className="h-10 w-10"
+                      rounded="md"
                     />
-                  ) : null}
-                  <div className={`${iconUrl ? "hidden" : ""} absolute inset-0 flex items-center justify-center rounded bg-muted`}>
-                    <ImageOff className="h-5 w-5 text-muted-foreground" />
-                  </div>
+                  ) : (
+                    <div className="h-10 w-10 flex items-center justify-center rounded-md bg-muted">
+                      <span className="text-muted-foreground text-sm">?</span>
+                    </div>
+                  )}
                   {systemApp && (
                     <div className="absolute -bottom-1 -right-1 bg-background border rounded-full p-0.5">
                       <Settings className="h-3 w-3 text-muted-foreground" />
@@ -114,28 +113,26 @@ export function AppRequestsTable<T>({
           </TableHeader>
           <TableBody>
             {items.map((item) => {
-              const iconUrl = getIconUrl(item)
+              const packageName = getPackageName(item)
               const appName = getAppName(item)
               const systemApp = isSystemApp?.(item) ?? false
 
               return (
                 <TableRow key={getItemKey(item)}>
                   <TableCell>
-                    <div className="relative inline-block h-8 w-8">
-                      {iconUrl ? (
-                        <img
-                          src={iconUrl}
-                          alt={`${appName} icon`}
-                          className="h-full w-full rounded object-cover"
-                          onError={(e) => {
-                            e.currentTarget.style.display = "none"
-                            e.currentTarget.nextElementSibling?.classList.remove("hidden")
-                          }}
+                    <div className="relative inline-block">
+                      {packageName ? (
+                        <AppIcon
+                          packageName={packageName}
+                          appName={appName}
+                          className="h-8 w-8"
+                          rounded="md"
                         />
-                      ) : null}
-                      <div className={`${iconUrl ? "hidden" : ""} absolute inset-0 flex items-center justify-center rounded bg-muted`}>
-                        <ImageOff className="h-4 w-4 text-muted-foreground" />
-                      </div>
+                      ) : (
+                        <div className="h-8 w-8 flex items-center justify-center rounded-md bg-muted">
+                          <span className="text-muted-foreground text-sm">?</span>
+                        </div>
+                      )}
                       {systemApp && (
                         <div className="absolute -bottom-1 -right-1 bg-background border rounded-full p-0.5">
                           <Settings className="h-3 w-3 text-muted-foreground" />

@@ -39,7 +39,6 @@ import {
   markAppsAsAdapted,
   updateAdaptedApp,
 } from "@/services/icon-pack"
-import { API_BASE_URL } from "@/services/api"
 import { CreateVersionDialog } from "./CreateVersionDialog"
 import { CreateAccessTokenDialog } from "./CreateAccessTokenDialog"
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog"
@@ -256,11 +255,6 @@ export function IconPackManage() {
     } finally {
       setIsUpdatingCategories(false)
     }
-  }
-
-  const getIconUrl = (packageName?: string) => {
-    if (!packageName) return null
-    return `${API_BASE_URL}/app-icon?packageName=${encodeURIComponent(packageName)}`
   }
 
   const getVisibleRequestsPages = () => {
@@ -643,8 +637,8 @@ export function IconPackManage() {
               <AppRequestsTable
                 items={requests}
                 columns={requestColumns}
-                getIconUrl={(item: AppInfoWithRequestCount) =>
-                  getIconUrl(item.appInfo?.packageName)
+                getPackageName={(item: AppInfoWithRequestCount) =>
+                  item.appInfo?.packageName
                 }
                 getAppName={(item: AppInfoWithRequestCount) =>
                   item.appInfo?.defaultName ?? "-"
@@ -768,7 +762,7 @@ export function IconPackManage() {
               <AppRequestsTable
                 items={adaptedApps}
                 columns={adaptedColumns}
-                getIconUrl={(item: IconPackAppDTO) => getIconUrl(item.appInfo?.packageName)}
+                getPackageName={(item: IconPackAppDTO) => item.appInfo?.packageName}
                 getAppName={(item: IconPackAppDTO) => item.appInfo?.defaultName ?? "-"}
                 renderActions={(item: IconPackAppDTO) => (
                   <div className="flex items-center gap-2">

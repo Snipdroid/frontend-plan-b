@@ -22,7 +22,6 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { markAppsAsAdapted } from "@/services/icon-pack"
-import { API_BASE_URL } from "@/services/api"
 import { AppRequestsTable, type AppRequestsTableColumn } from "./AppRequestsTable"
 import { AppActionDropdown } from "./AppActionDropdown"
 import { DrawableNameDialog } from "./DrawableNameDialog"
@@ -170,11 +169,6 @@ export function VersionDetail() {
     return new Date(dateString).toLocaleDateString()
   }
 
-  const getIconUrl = (packageName?: string) => {
-    if (!packageName) return null
-    return `${API_BASE_URL}/app-icon?packageName=${encodeURIComponent(packageName)}`
-  }
-
   const columns: AppRequestsTableColumn<IconPackVersionRequestRecordResponse>[] = [
     {
       key: "appName",
@@ -264,8 +258,8 @@ export function VersionDetail() {
               <AppRequestsTable
                 items={requests}
                 columns={columns}
-                getIconUrl={(item: IconPackVersionRequestRecordResponse) =>
-                  getIconUrl(item.requestRecord.appInfo?.packageName)
+                getPackageName={(item: IconPackVersionRequestRecordResponse) =>
+                  item.requestRecord.appInfo?.packageName
                 }
                 getAppName={(item: IconPackVersionRequestRecordResponse) =>
                   item.requestRecord.appInfo?.defaultName ?? "-"

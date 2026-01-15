@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo, useCallback } from "react"
 import JSZip from "jszip"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
-import { ImageOff } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -15,8 +14,8 @@ import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Slider } from "@/components/ui/slider"
+import { AppIcon } from "@/components/ui/app-icon"
 import { getIconPackAdaptedApps } from "@/services/icon-pack"
-import { API_BASE_URL } from "@/services/api"
 import {
   generateAppfilterXml,
   generateDrawableXml,
@@ -229,11 +228,6 @@ function ExportDialogContent({
     })
   }
 
-  const getIconUrl = (packageName?: string) => {
-    if (!packageName) return null
-    return `${API_BASE_URL}/app-icon?packageName=${encodeURIComponent(packageName)}`
-  }
-
   switch (stage) {
     case "fetching":
       return (
@@ -323,31 +317,26 @@ function ExportDialogContent({
             <ScrollArea className="h-[300px] border rounded-md">
               <div className="divide-y">
                 {newApps.map((app) => {
-                  const iconUrl = getIconUrl(app.appInfo?.packageName)
+                  const packageName = app.appInfo?.packageName
+                  const appName = app.appInfo?.defaultName ?? "App"
                   return (
                     <div
                       key={app.id}
                       className="flex items-start gap-3 p-3"
                     >
                       <div className="flex-shrink-0">
-                        {iconUrl ? (
-                          <img
-                            src={iconUrl}
-                            alt={`${app.appInfo?.defaultName ?? "App"} icon`}
-                            className="h-8 w-8 rounded object-contain"
-                            onError={(e) => {
-                              e.currentTarget.style.display = "none"
-                              e.currentTarget.nextElementSibling?.classList.remove(
-                                "hidden"
-                              )
-                            }}
+                        {packageName ? (
+                          <AppIcon
+                            packageName={packageName}
+                            appName={appName}
+                            className="h-8 w-8"
+                            rounded="md"
                           />
-                        ) : null}
-                        <div
-                          className={`${iconUrl ? "hidden" : ""} flex h-8 w-8 items-center justify-center rounded bg-muted`}
-                        >
-                          <ImageOff className="h-4 w-4 text-muted-foreground" />
-                        </div>
+                        ) : (
+                          <div className="h-8 w-8 flex items-center justify-center rounded-md bg-muted">
+                            <span className="text-muted-foreground text-sm">?</span>
+                          </div>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-sm truncate">

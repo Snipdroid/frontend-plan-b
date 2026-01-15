@@ -23,9 +23,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { AppIcon } from "@/components/ui/app-icon"
 import { getMissingApps, markAppsAsAdapted, getIconPackRequests } from "@/services/icon-pack"
-import { API_BASE_URL } from "@/services/api"
 import { DrawableNameDialog } from "./DrawableNameDialog"
 import type { AppInfoDTO } from "@/types/icon-pack"
 
@@ -216,10 +215,6 @@ export function AutocompleteDialog({
 
     // If apps have different drawable names
     return { status: "multiple" }
-  }
-
-  const getIconUrl = (packageName: string) => {
-    return `${API_BASE_URL}/app-icon?packageName=${encodeURIComponent(packageName)}`
   }
 
   const handleSetDrawableNameForGroup = (group: AppGroup) => {
@@ -439,10 +434,12 @@ export function AutocompleteDialog({
                                 </Button>
                               </TableCell>
                               <TableCell>
-                                <Avatar className="h-8 w-8">
-                                  <img src={getIconUrl(group.packageName)} alt={group.defaultName} />
-                                  <AvatarFallback>{group.defaultName[0]}</AvatarFallback>
-                                </Avatar>
+                                <AppIcon
+                                  packageName={group.packageName}
+                                  appName={group.defaultName}
+                                  className="h-8 w-8"
+                                  rounded="full"
+                                />
                               </TableCell>
                               <TableCell className="font-medium">{group.defaultName}</TableCell>
                               <TableCell className="text-sm text-muted-foreground">
@@ -554,10 +551,12 @@ export function AutocompleteDialog({
                               <ChevronRight className="h-4 w-4" />
                             )}
                           </Button>
-                          <Avatar className="h-10 w-10 mt-0.5">
-                            <img src={getIconUrl(group.packageName)} alt={group.defaultName} />
-                            <AvatarFallback>{group.defaultName[0]}</AvatarFallback>
-                          </Avatar>
+                          <AppIcon
+                            packageName={group.packageName}
+                            appName={group.defaultName}
+                            className="h-10 w-10"
+                            rounded="full"
+                          />
                           <div className="flex-1 min-w-0">
                             <div className="font-medium">{group.defaultName}</div>
                             <div className="text-xs text-muted-foreground mt-1 space-y-1">

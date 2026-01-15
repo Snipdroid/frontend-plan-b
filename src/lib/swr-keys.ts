@@ -4,6 +4,7 @@ export const swrKeys = {
   appSearch: (params: URLSearchParams) => `/app-info/search?${params.toString()}`,
   appTags: (appId: string) => `/app-info/${appId}/tags`,
   allTags: () => "/tags",
+  appIcon: (packageName: string) => `/app-icon?packageName=${encodeURIComponent(packageName)}`,
 
   // Icon Pack (authenticated)
   iconPacks: (token: string) => ["/icon-pack", token] as const,

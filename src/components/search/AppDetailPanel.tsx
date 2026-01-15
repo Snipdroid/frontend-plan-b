@@ -5,6 +5,7 @@ import { useAuth } from "react-oidc-context"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { AppIcon } from "@/components/ui/app-icon"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,16 +19,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useLocalizedName, useAppTags } from "@/hooks"
-import { API_BASE_URL } from "@/services/api"
 import { LocalizedNamesList } from "./LocalizedNamesList"
 import { AddTagDialog } from "./AddTagDialog"
 import { MarkAsAdaptedDialog } from "./MarkAsAdaptedDialog"
 import type { AppInfo } from "@/types"
-
-function getAppIconUrl(packageName: string): string {
-  const base = API_BASE_URL || ""
-  return `${base}/app-icon?packageName=${encodeURIComponent(packageName)}`
-}
 
 interface AppDetailPanelProps {
   app: AppInfo | null
@@ -38,7 +33,6 @@ export function AppDetailPanel({ app, onClose }: AppDetailPanelProps) {
   const { t } = useTranslation()
   const auth = useAuth()
   const displayName = useLocalizedName(app?.localizedNames ?? [])
-  const [iconError, setIconError] = useState(false)
   const [isAddTagDialogOpen, setIsAddTagDialogOpen] = useState(false)
   const [isMarkAsAdaptedDialogOpen, setIsMarkAsAdaptedDialogOpen] = useState(false)
 
@@ -47,19 +41,6 @@ export function AppDetailPanel({ app, onClose }: AppDetailPanelProps) {
   if (!app) {
     return null
   }
-
-  const iconElement = iconError ? (
-    <div className="h-16 w-16 shrink-0 rounded-xl bg-muted flex items-center justify-center text-muted-foreground text-lg">
-      ?
-    </div>
-  ) : (
-    <img
-      src={getAppIconUrl(app.packageName)}
-      alt={`${displayName} icon`}
-      className="h-16 w-16 shrink-0 rounded-xl object-cover"
-      onError={() => setIconError(true)}
-    />
-  )
 
   return (
     <div className="sticky top-16 rounded-lg border bg-card p-4 max-h-[calc(100vh-8rem)] overflow-y-auto">
@@ -77,7 +58,12 @@ export function AppDetailPanel({ app, onClose }: AppDetailPanelProps) {
       </div>
 
       <div className="space-y-4">
-        {iconElement}
+        <AppIcon
+          packageName={app.packageName}
+          appName={displayName}
+          className="h-16 w-16"
+          rounded="xl"
+        />
 
         {auth.isAuthenticated && (
           <div className="flex w-full">
@@ -172,7 +158,7 @@ export function AppDetailPanel({ app, onClose }: AppDetailPanelProps) {
       </div>
 
       <AddTagDialog
-        key={app.id}
+        key={`add-tag-${app.id}`}
         app={app}
         currentTags={tags}
         open={isAddTagDialogOpen}
@@ -181,7 +167,7 @@ export function AppDetailPanel({ app, onClose }: AppDetailPanelProps) {
       />
 
       <MarkAsAdaptedDialog
-        key={app.id}
+        key={`mark-adapted-${app.id}`}
         app={app}
         open={isMarkAsAdaptedDialogOpen}
         onOpenChange={setIsMarkAsAdaptedDialogOpen}

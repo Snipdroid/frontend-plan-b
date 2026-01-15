@@ -1,14 +1,8 @@
-import { useState } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
+import { AppIcon } from "@/components/ui/app-icon"
 import { useLocalizedName } from "@/hooks"
-import { API_BASE_URL } from "@/services/api"
 import type { AppInfo } from "@/types"
-
-function getAppIconUrl(packageName: string): string {
-  const base = API_BASE_URL || ""
-  return `${base}/app-icon?packageName=${encodeURIComponent(packageName)}`
-}
 
 interface AppInfoCardProps {
   app: AppInfo
@@ -24,7 +18,6 @@ export function AppInfoCard({
   onClick,
 }: AppInfoCardProps) {
   const displayName = useLocalizedName(app.localizedNames)
-  const [iconError, setIconError] = useState(false)
 
   const handleCheckboxClick = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -34,19 +27,6 @@ export function AppInfoCard({
     e.stopPropagation()
     onToggle()
   }
-
-  const iconElement = iconError ? (
-    <div className="h-10 w-10 shrink-0 rounded-lg bg-muted flex items-center justify-center text-muted-foreground text-xs">
-      ?
-    </div>
-  ) : (
-    <img
-      src={getAppIconUrl(app.packageName)}
-      alt={`${displayName} icon`}
-      className="h-10 w-10 shrink-0 rounded-lg object-cover"
-      onError={() => setIconError(true)}
-    />
-  )
 
   return (
     <div
@@ -73,7 +53,11 @@ export function AppInfoCard({
             aria-label={`Select ${displayName}`}
           />
         </div>
-        {iconElement}
+        <AppIcon
+          packageName={app.packageName}
+          appName={displayName}
+          className="h-10 w-10"
+        />
         <div className="font-medium min-w-0 flex-shrink-0">{displayName}</div>
         <div className="flex flex-col ml-auto text-right min-w-0">
           <span className="font-mono text-sm text-muted-foreground truncate">
@@ -88,7 +72,11 @@ export function AppInfoCard({
       {/* Mobile layout */}
       <div className="flex flex-col gap-2 md:hidden">
         <div className="flex items-center gap-3">
-          {iconElement}
+          <AppIcon
+            packageName={app.packageName}
+            appName={displayName}
+            className="h-10 w-10"
+          />
           <div className="font-medium truncate">{displayName}</div>
         </div>
         <div className="font-mono text-sm text-muted-foreground truncate">

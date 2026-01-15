@@ -1,5 +1,6 @@
+import { useState } from "react"
 import { cn } from "@/lib/utils"
-import { useAppIconUrl } from "@/hooks/swr/useAppIcon"
+import { API_BASE_URL } from "@/services/api"
 import {
   generateColorFromString,
   getAppInitials,
@@ -15,7 +16,7 @@ interface AppIconProps {
 }
 
 /**
- * Generic app icon display component with SWR caching
+ * Generic app icon display component
  * Displays app icons with fallback to colored placeholder with initials
  */
 export function AppIcon({
@@ -25,7 +26,7 @@ export function AppIcon({
   alt,
   rounded = "lg",
 }: AppIconProps) {
-  const { objectUrl, error, isLoading } = useAppIconUrl(packageName)
+  const [errorUrl, setErrorUrl] = useState<string | null>(null)
 
   // Generate fallback data
   const initials = getAppInitials(appName)
@@ -35,27 +36,18 @@ export function AppIcon({
   const roundedClass = `rounded-${rounded}`
   const altText = alt ?? `${appName} icon`
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <div
-        className={cn(
-          "shrink-0 bg-muted animate-pulse",
-          roundedClass,
-          className
-        )}
-        aria-label="Loading icon"
-      />
-    )
-  }
+  const iconUrl = `${API_BASE_URL}/app-icon?packageName=${encodeURIComponent(packageName)}`
+  const hasImageError = errorUrl === iconUrl
 
   // Success state - show image
-  if (objectUrl && !error) {
+  if (!hasImageError) {
     return (
       <img
-        src={objectUrl}
+        src={iconUrl}
         alt={altText}
         className={cn("shrink-0 object-cover", roundedClass, className)}
+        onError={() => setErrorUrl(iconUrl)}
+        loading="lazy"
       />
     )
   }

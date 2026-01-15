@@ -14,17 +14,22 @@ import type {
 export function useIconPacks() {
   const auth = useAuth()
   const token = auth.user?.access_token
+  const isAuthenticated = auth.isAuthenticated
 
-  return useSWR<IconPackDTO[]>(token ? swrKeys.iconPacks(token) : null, authFetcher)
+  return useSWR<IconPackDTO[]>(
+    token && isAuthenticated ? swrKeys.iconPacks(token) : null,
+    authFetcher
+  )
 }
 
 // Fetch single icon pack
 export function useIconPack(packId: string | undefined) {
   const auth = useAuth()
   const token = auth.user?.access_token
+  const isAuthenticated = auth.isAuthenticated
 
   return useSWR<IconPackDTO>(
-    packId && token ? swrKeys.iconPack(packId, token) : null,
+    packId && token && isAuthenticated ? swrKeys.iconPack(packId, token) : null,
     authFetcher
   )
 }
@@ -33,9 +38,10 @@ export function useIconPack(packId: string | undefined) {
 export function useIconPackVersions(packId: string | undefined, page = 1, per = 10) {
   const auth = useAuth()
   const token = auth.user?.access_token
+  const isAuthenticated = auth.isAuthenticated
 
   return useSWR<PageIconPackVersionDTO>(
-    packId && token ? swrKeys.iconPackVersions(packId, token, page, per) : null,
+    packId && token && isAuthenticated ? swrKeys.iconPackVersions(packId, token, page, per) : null,
     authFetcher
   )
 }
@@ -49,9 +55,10 @@ export function useIconPackRequests(
 ) {
   const auth = useAuth()
   const token = auth.user?.access_token
+  const isAuthenticated = auth.isAuthenticated
 
   return useSWR<PageAppInfoWithRequestCount>(
-    packId && token ? swrKeys.iconPackRequests(packId, token, page, per, includingAdapted) : null,
+    packId && token && isAuthenticated ? swrKeys.iconPackRequests(packId, token, page, per, includingAdapted) : null,
     authFetcher,
     {
       keepPreviousData: true,
@@ -68,9 +75,10 @@ export function useIconPackAdaptedApps(
 ) {
   const auth = useAuth()
   const token = auth.user?.access_token
+  const isAuthenticated = auth.isAuthenticated
 
   return useSWR<PageIconPackAppDTO>(
-    packId && token ? swrKeys.iconPackAdaptedApps(packId, token, page, per, query) : null,
+    packId && token && isAuthenticated ? swrKeys.iconPackAdaptedApps(packId, token, page, per, query) : null,
     authFetcher,
     {
       // Keep previous data while loading new query results
@@ -89,9 +97,10 @@ export function useVersionRequests(
 ) {
   const auth = useAuth()
   const token = auth.user?.access_token
+  const isAuthenticated = auth.isAuthenticated
 
   return useSWR<PageIconPackVersionRequestRecordResponse>(
-    packId && versionId && token
+    packId && versionId && token && isAuthenticated
       ? swrKeys.versionRequests(packId, versionId, token, page, per, includingAdapted)
       : null,
     authFetcher,

@@ -9,17 +9,22 @@ import type { DesignerStatisticsResponse } from "@/types/icon-pack"
 export function useDesignerMe() {
   const auth = useAuth()
   const token = auth.user?.access_token
+  const isAuthenticated = auth.isAuthenticated
 
-  return useSWR<DesignerDTO>(token ? swrKeys.designerMe(token) : null, authFetcher)
+  return useSWR<DesignerDTO>(
+    token && isAuthenticated ? swrKeys.designerMe(token) : null,
+    authFetcher
+  )
 }
 
 // Fetch designer statistics
 export function useDesignerStatistics() {
   const auth = useAuth()
   const token = auth.user?.access_token
+  const isAuthenticated = auth.isAuthenticated
 
   return useSWR<DesignerStatisticsResponse>(
-    token ? swrKeys.designerStatistics(token) : null,
+    token && isAuthenticated ? swrKeys.designerStatistics(token) : null,
     authFetcher
   )
 }

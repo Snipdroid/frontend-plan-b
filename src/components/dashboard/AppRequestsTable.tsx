@@ -120,7 +120,7 @@ export function AppRequestsTable<T>({
               return (
                 <TableRow key={getItemKey(item)}>
                   <TableCell>
-                    <div className="relative inline-block">
+                    <div className="relative inline-block align-middle">
                       {packageName ? (
                         <AppIcon
                           packageName={packageName}

@@ -25,8 +25,11 @@ import { markAppsAsAdapted } from "@/services/icon-pack"
 import { AppRequestsTable, type AppRequestsTableColumn } from "./AppRequestsTable"
 import { AppActionDropdown } from "./AppActionDropdown"
 import { DrawableNameDialog } from "./DrawableNameDialog"
+import { DashboardAppDetailSheet } from "./DashboardAppDetailSheet"
+import { convertAppInfoDTOToAppInfo } from "@/lib/copy-utils"
 import { useVersionRequests, useDesignerMe } from "@/hooks"
 import type { IconPackVersionRequestRecordResponse, AppInfoDTO } from "@/types/icon-pack"
+import type { AppInfo } from "@/types"
 
 const PER_PAGE = 10
 
@@ -61,6 +64,10 @@ export function VersionDetail() {
     appInfoId: string
     app: AppInfoDTO
   } | null>(null)
+
+  // App detail sheet state
+  const [detailSheetOpen, setDetailSheetOpen] = useState(false)
+  const [selectedDetailApp, setSelectedDetailApp] = useState<AppInfo | null>(null)
 
   const totalPages = Math.ceil(total / PER_PAGE)
   const error = requestsError?.message
@@ -131,6 +138,12 @@ export function VersionDetail() {
     } finally {
       setIsMarking(false)
     }
+  }
+
+  const handleViewDetails = (appInfoDTO: AppInfoDTO, drawable?: string) => {
+    const appInfo = convertAppInfoDTOToAppInfo(appInfoDTO, drawable)
+    setSelectedDetailApp(appInfo)
+    setDetailSheetOpen(true)
   }
 
   const getVisiblePages = () => {
@@ -282,6 +295,11 @@ export function VersionDetail() {
                       )
                     }
                     disabled={!item.requestRecord.appInfo?.id}
+                    onViewDetails={
+                      item.requestRecord.appInfo
+                        ? () => handleViewDetails(item.requestRecord.appInfo!, item.iconPackApp?.drawable)
+                        : undefined
+                    }
                   />
                 )}
                 getItemKey={(item: IconPackVersionRequestRecordResponse) =>
@@ -345,6 +363,12 @@ export function VersionDetail() {
           isSubmitting={isMarking}
         />
       )}
+
+      <DashboardAppDetailSheet
+        app={selectedDetailApp}
+        open={detailSheetOpen}
+        onOpenChange={setDetailSheetOpen}
+      />
     </div>
   )
 }

@@ -85,6 +85,7 @@
     "copyFailed": "复制到剪贴板失败"
   },
   "actions": {
+    "viewDetails": "查看详情",
     "copyAppfilter": "复制 Appfilter",
     "copyDrawable": "复制 Drawable",
     "copyIconpack": "复制 IconPack",

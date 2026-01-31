@@ -50,7 +50,9 @@ import { ManageCollaboratorsDialog } from "./ManageCollaboratorsDialog"
 import { CategoriesEditDialog } from "./CategoriesEditDialog"
 import { AppRequestsTable, type AppRequestsTableColumn } from "./AppRequestsTable"
 import { AppActionDropdown } from "./AppActionDropdown"
+import { DashboardAppDetailSheet } from "./DashboardAppDetailSheet"
 import { Badge } from "@/components/ui/badge"
+import { convertAppInfoDTOToAppInfo } from "@/lib/copy-utils"
 import {
   useIconPack,
   useIconPackVersions,
@@ -59,6 +61,7 @@ import {
   useDesignerMe,
 } from "@/hooks"
 import type { IconPackVersionDTO, AppInfoWithRequestCount, AppInfoDTO, IconPackAppDTO } from "@/types/icon-pack"
+import type { AppInfo } from "@/types"
 
 const REQUESTS_PER_PAGE = 10
 const ADAPTED_PER_PAGE = 10
@@ -122,6 +125,10 @@ export function IconPackManage() {
   const [categoriesDialogOpen, setCategoriesDialogOpen] = useState(false)
   const [editingAdaptedApp, setEditingAdaptedApp] = useState<IconPackAppDTO | null>(null)
   const [isUpdatingCategories, setIsUpdatingCategories] = useState(false)
+
+  // App detail sheet state
+  const [detailSheetOpen, setDetailSheetOpen] = useState(false)
+  const [selectedDetailApp, setSelectedDetailApp] = useState<AppInfo | null>(null)
 
   // Derive ownership status
   const currentUserId = designer?.id
@@ -234,6 +241,12 @@ export function IconPackManage() {
   const handleEditCategories = (item: IconPackAppDTO) => {
     setEditingAdaptedApp(item)
     setCategoriesDialogOpen(true)
+  }
+
+  const handleViewDetails = (appInfoDTO: AppInfoDTO, drawable?: string) => {
+    const appInfo = convertAppInfoDTOToAppInfo(appInfoDTO, drawable)
+    setSelectedDetailApp(appInfo)
+    setDetailSheetOpen(true)
   }
 
   const handleCategoriesConfirm = async (categories: string[]) => {
@@ -654,6 +667,11 @@ export function IconPackManage() {
                       handleMarkAsAdapted(item.appInfo.id, item.appInfo, adapted)
                     }
                     disabled={!item.appInfo?.id}
+                    onViewDetails={
+                      item.appInfo
+                        ? () => handleViewDetails(item.appInfo!, item.iconPackApp?.drawable)
+                        : undefined
+                    }
                   />
                 )}
                 getItemKey={(item: AppInfoWithRequestCount) =>
@@ -775,6 +793,11 @@ export function IconPackManage() {
                       }
                       disabled={!item.appInfo?.id}
                       onEditCategories={() => handleEditCategories(item)}
+                      onViewDetails={
+                        item.appInfo
+                          ? () => handleViewDetails(item.appInfo!, item.drawable)
+                          : undefined
+                      }
                     />
                   </div>
                 )}
@@ -1029,6 +1052,12 @@ export function IconPackManage() {
           isSubmitting={isUpdatingCategories}
         />
       )}
+
+      <DashboardAppDetailSheet
+        app={selectedDetailApp}
+        open={detailSheetOpen}
+        onOpenChange={setDetailSheetOpen}
+      />
     </div>
   )
 }

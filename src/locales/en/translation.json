@@ -85,6 +85,7 @@
     "copyFailed": "Failed to copy to clipboard"
   },
   "actions": {
+    "viewDetails": "View Details",
     "copyAppfilter": "Copy Appfilter",
     "copyDrawable": "Copy Drawable",
     "copyIconpack": "Copy IconPack",

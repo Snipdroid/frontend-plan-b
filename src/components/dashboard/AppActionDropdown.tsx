@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { Plus, Minus, ChevronDown, Tags } from "lucide-react"
+import { Plus, Minus, ChevronDown, Tags, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -25,6 +25,7 @@ interface AppActionDropdownProps {
   onToggleAdapted: (adapted: boolean) => void
   disabled?: boolean
   onEditCategories?: () => void
+  onViewDetails?: () => void
 }
 
 /**
@@ -61,6 +62,7 @@ export function AppActionDropdown({
   onToggleAdapted,
   disabled,
   onEditCategories,
+  onViewDetails,
 }: AppActionDropdownProps) {
   const { t } = useTranslation()
   const [customDialogOpen, setCustomDialogOpen] = useState(false)
@@ -96,6 +98,12 @@ export function AppActionDropdown({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          {onViewDetails && (
+            <DropdownMenuItem onSelect={onViewDetails}>
+              <Info className="h-4 w-4 mr-2" />
+              {t("actions.viewDetails")}
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem
             onSelect={() => onToggleAdapted(!isAdapted)}
             disabled={disabled || isMarking}
@@ -167,14 +175,20 @@ export function AppActionDropdown({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            {onViewDetails && (
+              <DropdownMenuItem onSelect={onViewDetails}>
+                <Info className="h-4 w-4 mr-2" />
+                {t("actions.viewDetails")}
+              </DropdownMenuItem>
+            )}
             {isAdapted && onEditCategories && (
-              <>
-                <DropdownMenuItem onSelect={onEditCategories}>
-                  <Tags className="h-4 w-4 mr-2" />
-                  {t("iconPack.editCategories")}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-              </>
+              <DropdownMenuItem onSelect={onEditCategories}>
+                <Tags className="h-4 w-4 mr-2" />
+                {t("iconPack.editCategories")}
+              </DropdownMenuItem>
+            )}
+            {(onViewDetails || (isAdapted && onEditCategories)) && (
+              <DropdownMenuSeparator />
             )}
             <DropdownMenuItem onSelect={handleCopyAppfilter}>
               {t("actions.copyAppfilter")}

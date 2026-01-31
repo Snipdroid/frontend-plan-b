@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import { Check, ChevronsUpDown, Edit2, Sparkles, X } from "lucide-react"
+import { useAuth } from "react-oidc-context"
 import {
   Dialog,
   DialogContent,
@@ -41,8 +42,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import { toDrawableName } from "@/lib/drawable"
+import { convertAppInfoDTOToAppInfo } from "@/lib/copy-utils"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { useDrawableNameSuggestions } from "@/hooks/swr"
+import { useDrawableNameSuggestions, useAppTags } from "@/hooks/swr"
+import { AddTagDialog } from "@/components/search/AddTagDialog"
 import type {
   AppInfoDTO,
   DrawableNameSuggestion,
@@ -113,6 +116,7 @@ export function DrawableNameDialog({
   isSubmitting = false,
 }: DrawableNameDialogProps) {
   const { t } = useTranslation()
+  const auth = useAuth()
   const isMobile = useIsMobile()
 
   // Use SWR hook for fetching suggestions (only when dialog is open)
@@ -120,6 +124,15 @@ export function DrawableNameDialog({
     data: rawSuggestions = [],
     isLoading: isLoadingSuggestions,
   } = useDrawableNameSuggestions(open ? app.packageName : undefined, iconPackId, designerId)
+
+  // Fetch app tags for category suggestions
+  const { data: appTags = [], mutate: mutateAppTags } = useAppTags(open ? app.id : undefined)
+
+  // Convert AppInfoDTO to AppInfo for AddTagDialog
+  const appInfoForDialog = convertAppInfoDTOToAppInfo(app)
+
+  // State for AddTagDialog
+  const [addTagDialogOpen, setAddTagDialogOpen] = useState(false)
 
   // Process suggestions: filter, sort, deduplicate (keep in component - UI-specific logic)
   const suggestions = useMemo(() => {
@@ -164,6 +177,9 @@ export function DrawableNameDialog({
   const [categories, setCategories] = useState<string[]>([])
   const [categoryInput, setCategoryInput] = useState("")
   const [categoryError, setCategoryError] = useState<string | null>(null)
+
+  // Filter tag suggestions (exclude already-selected categories)
+  const tagSuggestions = appTags.filter(tag => !categories.includes(tag.name))
 
   // Validation function
   const validateDrawableName = useCallback((name: string): string | null => {
@@ -220,6 +236,12 @@ export function DrawableNameDialog({
 
   const removeCategory = (category: string) => {
     setCategories(categories.filter((c) => c !== category))
+  }
+
+  const addCategoryFromTag = (tagName: string) => {
+    if (!categories.includes(tagName)) {
+      setCategories([...categories, tagName])
+    }
   }
 
   // Handle form submit
@@ -450,6 +472,44 @@ export function DrawableNameDialog({
                 {categoryError && (
                   <p className="text-sm text-destructive">{categoryError}</p>
                 )}
+
+                {/* Tag suggestions */}
+                {tagSuggestions.length > 0 ? (
+                  <div className="space-y-1.5">
+                    <p className="text-sm text-muted-foreground">
+                      {t("iconPack.suggestionsFromTags")}
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {tagSuggestions.map((tag) => (
+                        <Badge
+                          key={tag.id ?? tag.name}
+                          variant="outline"
+                          className="cursor-pointer hover:bg-accent"
+                          onClick={() => addCategoryFromTag(tag.name)}
+                        >
+                          {tag.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ) : appTags.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    {t("iconPack.noTagsForSuggestions")}{" "}
+                    <button
+                      type="button"
+                      className="underline hover:text-foreground"
+                      onClick={() => {
+                        if (!auth.isAuthenticated) {
+                          auth.signinRedirect()
+                          return
+                        }
+                        setAddTagDialogOpen(true)
+                      }}
+                    >
+                      {t("iconPack.addTagsForApp")}
+                    </button>
+                  </p>
+                ) : null}
               </div>
             )}
           </div>
@@ -472,6 +532,14 @@ export function DrawableNameDialog({
           </DialogFooter>
         </form>
       </DialogContent>
+
+      <AddTagDialog
+        app={appInfoForDialog}
+        currentTags={appTags}
+        open={addTagDialogOpen}
+        onOpenChange={setAddTagDialogOpen}
+        onTagAdded={() => mutateAppTags()}
+      />
     </Dialog>
   )
 }

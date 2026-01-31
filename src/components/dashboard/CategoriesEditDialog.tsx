@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { X } from "lucide-react"
+import { useAuth } from "react-oidc-context"
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,10 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
+import { useAppTags } from "@/hooks"
+import { convertAppInfoDTOToAppInfo } from "@/lib/copy-utils"
+import { AddTagDialog } from "@/components/search/AddTagDialog"
+import type { AppInfoDTO } from "@/types/icon-pack"
 
 const MAX_CATEGORY_LENGTH = 50
 
@@ -21,6 +26,7 @@ interface CategoriesEditDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   appName: string
+  appInfo?: AppInfoDTO
   initialCategories: string[]
   onConfirm: (categories: string[]) => void
   isSubmitting?: boolean
@@ -30,16 +36,30 @@ export function CategoriesEditDialog({
   open,
   onOpenChange,
   appName,
+  appInfo,
   initialCategories,
   onConfirm,
   isSubmitting = false,
 }: CategoriesEditDialogProps) {
   const { t } = useTranslation()
+  const auth = useAuth()
+
+  // Fetch app tags for suggestions
+  const { data: tags = [], mutate: mutateTags } = useAppTags(appInfo?.id)
+
+  // Convert AppInfoDTO to AppInfo for AddTagDialog
+  const appInfoForDialog = appInfo ? convertAppInfoDTOToAppInfo(appInfo) : null
+
+  // State for AddTagDialog
+  const [addTagDialogOpen, setAddTagDialogOpen] = useState(false)
 
   // Initialize state directly from props - component remounts with key
   const [categories, setCategories] = useState<string[]>(initialCategories)
   const [categoryInput, setCategoryInput] = useState("")
   const [categoryError, setCategoryError] = useState<string | null>(null)
+
+  // Filter tag suggestions (exclude already-selected categories)
+  const tagSuggestions = tags.filter(tag => !categories.includes(tag.name))
 
   const handleCategoryKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -69,6 +89,12 @@ export function CategoriesEditDialog({
 
   const removeCategory = (category: string) => {
     setCategories(categories.filter((c) => c !== category))
+  }
+
+  const addCategoryFromTag = (tagName: string) => {
+    if (!categories.includes(tagName)) {
+      setCategories([...categories, tagName])
+    }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -132,6 +158,44 @@ export function CategoriesEditDialog({
             {categoryError && (
               <p className="text-sm text-destructive">{categoryError}</p>
             )}
+
+            {/* Tag suggestions */}
+            {tagSuggestions.length > 0 ? (
+              <div className="space-y-1.5">
+                <p className="text-sm text-muted-foreground">
+                  {t("iconPack.suggestionsFromTags")}
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {tagSuggestions.map((tag) => (
+                    <Badge
+                      key={tag.id ?? tag.name}
+                      variant="outline"
+                      className="cursor-pointer hover:bg-accent"
+                      onClick={() => addCategoryFromTag(tag.name)}
+                    >
+                      {tag.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            ) : tags.length === 0 && appInfoForDialog ? (
+              <p className="text-sm text-muted-foreground">
+                {t("iconPack.noTagsForSuggestions")}{" "}
+                <button
+                  type="button"
+                  className="underline hover:text-foreground"
+                  onClick={() => {
+                    if (!auth.isAuthenticated) {
+                      auth.signinRedirect()
+                      return
+                    }
+                    setAddTagDialogOpen(true)
+                  }}
+                >
+                  {t("iconPack.addTagsForApp")}
+                </button>
+              </p>
+            ) : null}
           </div>
 
           <DialogFooter>
@@ -149,6 +213,16 @@ export function CategoriesEditDialog({
           </DialogFooter>
         </form>
       </DialogContent>
+
+      {appInfoForDialog && (
+        <AddTagDialog
+          app={appInfoForDialog}
+          currentTags={tags}
+          open={addTagDialogOpen}
+          onOpenChange={setAddTagDialogOpen}
+          onTagAdded={() => mutateTags()}
+        />
+      )}
     </Dialog>
   )
 }

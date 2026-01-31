@@ -1047,6 +1047,7 @@ export function IconPackManage() {
             if (!open) setEditingAdaptedApp(null)
           }}
           appName={editingAdaptedApp.appInfo?.defaultName ?? "-"}
+          appInfo={editingAdaptedApp.appInfo}
           initialCategories={editingAdaptedApp.categories ?? []}
           onConfirm={handleCategoriesConfirm}
           isSubmitting={isUpdatingCategories}

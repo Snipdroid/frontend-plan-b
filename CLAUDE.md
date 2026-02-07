@@ -23,16 +23,22 @@ It also implemented a simple statistics system for collecting user requests. Cre
 ```
 src/
 ├── components/
-│   └── ui/         # ShadcnUI components
-├── pages/          # Page components
-├── hooks/          # Custom React hooks
-├── lib/
-│   └── utils.ts    # cn() helper and utilities
-├── services/       # API services
-├── types/          # TypeScript type definitions
+│   ├── ui/             # ShadcnUI components
+│   ├── dashboard/      # Icon pack management dashboard components
+│   ├── search/         # App search interface components
+│   ├── upload/         # File upload components
+│   └── theme/          # Theme context and provider
+├── pages/              # Page components (Home, Dashboard, Upload)
+├── hooks/
+│   └── swr/            # SWR data-fetching hooks
+├── lib/                # Utilities, configs, parsers
+├── services/           # API service modules
+├── types/              # TypeScript type definitions
+├── locales/            # i18n translation files (en, zh)
+├── themes/             # CSS theme variants
 ├── App.tsx
 ├── main.tsx
-└── index.css       # Global styles and CSS variables
+└── index.css           # Global styles and CSS variables
 ```
 
 ## Adding Components
@@ -65,3 +71,4 @@ You should include these parameters in the query string:
 - Don't compromise on the code quality, modularity or security. If there is problem implementing a feature, don't hesitate to ask. We prefer to workaround feature problems.
 - Always think about i18n and l10n.
 - Always use context7 when I need code generation, set up or configuration steps, or library/API documentation. This means you should automatically use the Context7 MCP tools to resolve library id and get library docs without me having to explicitly ask.
+- Be caucious about using `useEffect`.

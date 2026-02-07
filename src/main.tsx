@@ -9,6 +9,7 @@ import './index.css'
 import App from './App.tsx'
 import { oidcConfig } from './lib/auth-config'
 import { ThemeProvider } from './components/theme'
+import { AutoSilentRenew } from './components/AutoSilentRenew'
 import { Toaster } from './components/ui/sonner'
 import { isWindows } from './lib/platform'
 import { swrConfig, publicFetcher } from './lib/swr-config'
@@ -22,6 +23,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider defaultColorScheme="system">
       <AuthProvider {...oidcConfig}>
+        <AutoSilentRenew />
         <SWRConfig value={{ ...swrConfig, fetcher: publicFetcher }}>
           <BrowserRouter>
             <App />

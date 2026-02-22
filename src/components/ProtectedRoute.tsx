@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, user, signinSilent } = useAuth()
+  const { isAuthenticated, isLoading, user, signinSilent, removeUser } = useAuth()
   const location = useLocation()
   const [renewalFailed, setRenewalFailed] = useState(false)
   const renewingRef = useRef(false)
@@ -19,9 +19,12 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     if (!needsRenewal || renewingRef.current) return
     renewingRef.current = true
     signinSilent()
-      .catch(() => setRenewalFailed(true))
+      .catch(() => {
+        setRenewalFailed(true)
+        removeUser()
+      })
       .finally(() => { renewingRef.current = false })
-  }, [needsRenewal, signinSilent])
+  }, [needsRenewal, signinSilent, removeUser])
 
   if (isLoading || needsRenewal) {
     return (

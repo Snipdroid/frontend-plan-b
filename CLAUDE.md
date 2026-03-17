@@ -24,7 +24,7 @@ It also implemented a simple statistics system for collecting user requests. Cre
 src/
 ├── components/
 │   ├── ui/             # ShadcnUI components
-│   ├── dashboard/      # Icon pack management dashboard components
+│   ├── dashboard/      # Dashboard views and dialogs (management, version, studio)
 │   ├── search/         # App search interface components
 │   ├── upload/         # File upload components
 │   └── theme/          # Theme context and provider
@@ -40,6 +40,22 @@ src/
 ├── main.tsx
 └── index.css           # Global styles and CSS variables
 ```
+
+### Dashboard Routes (Current)
+
+- `/dashboard` - dashboard overview (`DashboardGeneral`)
+- `/dashboard/icon-pack/:packId` - icon pack management (`IconPackManage`)
+- `/dashboard/icon-pack/:packId/studio` - local IDE-like studio (`IconPackStudio`)
+- `/dashboard/icon-pack/:packId/version/:versionId` - version detail (`VersionDetail`)
+
+### Studio (Current)
+
+- Uses browser File System Access API (`showDirectoryPicker`) to open one local folder.
+- Two-panel IDE layout:
+  - Left: file browser sidebar (tree with folder expand/collapse).
+  - Right: preview panel for selected file.
+- Preview supports text and image files; unsupported types show a fallback message.
+- Page itself is fixed-height and non-scrollable; each panel handles its own scrolling.
 
 ## Adding Components
 

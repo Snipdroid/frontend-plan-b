@@ -11,20 +11,33 @@ import { useAuth } from "react-oidc-context"
  * session so the user can log in again.
  */
 export function AutoSilentRenew() {
-  const { isLoading, user, signinSilent, removeUser, events } = useAuth()
+  const { isLoading, user, signinSilent, removeUser, events, activeNavigator, stopSilentRenew } = useAuth()
   const renewingRef = useRef(false)
   const failedRef = useRef(false)
 
+  const clearExpiredSession = useCallback(() => {
+    stopSilentRenew()
+    void removeUser()
+  }, [stopSilentRenew, removeUser])
+
   const attemptRenew = useCallback(() => {
-    if (renewingRef.current || failedRef.current) return
+    if (renewingRef.current || failedRef.current || activeNavigator === "signinSilent") return
+
+    const refreshToken = user?.refresh_token
+    if (isJwtExpired(refreshToken)) {
+      failedRef.current = true
+      clearExpiredSession()
+      return
+    }
+
     renewingRef.current = true
     signinSilent()
       .catch(() => {
         failedRef.current = true
-        removeUser()
+        clearExpiredSession()
       })
       .finally(() => { renewingRef.current = false })
-  }, [signinSilent, removeUser])
+  }, [activeNavigator, clearExpiredSession, signinSilent, user?.refresh_token])
 
   // User returned to page with an expired access token
   useEffect(() => {
@@ -37,9 +50,27 @@ export function AutoSilentRenew() {
   useEffect(() => {
     return events.addSilentRenewError(() => {
       failedRef.current = true
-      removeUser()
+      clearExpiredSession()
     })
-  }, [events, removeUser])
+  }, [clearExpiredSession, events])
 
   return null
+}
+
+function isJwtExpired(token?: string) {
+  if (!token) return false
+  const parts = token.split(".")
+  if (parts.length !== 3) return false
+
+  try {
+    const payloadSegment = parts[1]
+    const normalized = payloadSegment.replace(/-/g, "+").replace(/_/g, "/")
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")
+    const payload = JSON.parse(
+      atob(padded)
+    ) as { exp?: number }
+    return typeof payload.exp === "number" && payload.exp <= Math.floor(Date.now() / 1000)
+  } catch {
+    return false
+  }
 }

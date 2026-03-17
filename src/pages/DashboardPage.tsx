@@ -3,6 +3,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/s
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
 import { DashboardGeneral } from "@/components/dashboard/DashboardGeneral"
 import { IconPackManage } from "@/components/dashboard/IconPackManage"
+import { IconPackStudio } from "@/components/dashboard/IconPackStudio"
 import { VersionDetail } from "@/components/dashboard/VersionDetail"
 import { DashboardBreadcrumb } from "@/components/dashboard/DashboardBreadcrumb"
 import { Separator } from "@/components/ui/separator"
@@ -21,6 +22,7 @@ export function DashboardPage() {
           <Routes>
             <Route index element={<DashboardGeneral />} />
             <Route path="icon-pack/:packId" element={<IconPackManage />} />
+            <Route path="icon-pack/:packId/studio" element={<IconPackStudio />} />
             <Route path="icon-pack/:packId/version/:versionId" element={<VersionDetail />} />
           </Routes>
         </div>

@@ -536,11 +536,20 @@ export function IconPackManage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-2xl font-bold tracking-tight">
           {iconPack?.name || t("iconPack.management")}
         </h2>
-        <p className="text-muted-foreground">{t("iconPack.manageDesc", { id: packId })}</p>
+        {packId && (
+          <Button asChild variant="outline">
+            <Link
+              to={`/dashboard/icon-pack/${packId}/studio`}
+              state={{ iconPackName: iconPack?.name }}
+            >
+              {t("iconPack.studio")}
+            </Link>
+          </Button>
+        )}
       </div>
 
       <Card>

@@ -173,6 +173,8 @@
   "iconPack": {
     "management": "Icon Pack Management",
     "manageDesc": "Manage icon pack: {{id}}",
+    "studio": "Studio",
+    "studioDesc": "Studio page is ready for the next build step.",
     "versions": "Versions",
     "versionsDesc": "Manage versions and access tokens for this icon pack.",
     "newVersion": "New Version",

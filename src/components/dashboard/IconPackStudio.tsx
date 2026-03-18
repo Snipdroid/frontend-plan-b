@@ -728,33 +728,35 @@ export function IconPackStudio() {
 
   return (
     <div className="mx-[-1rem] my-[-1rem] flex h-[calc(100dvh-4rem)] overflow-hidden flex-col md:mx-[-1.5rem] md:my-[-1.5rem]">
-      <div className="flex h-12 shrink-0 items-center justify-between border-b px-3 md:px-4">
-        <div className="flex min-w-0 items-center gap-2">
-          <Tabs
-            value={viewMode}
-            onValueChange={(value) => setViewMode(value as StudioViewMode)}
-            className="gap-0"
-          >
-            <TabsList className="h-8">
-              <TabsTrigger value="apps" className="px-3 text-xs">
-                {t("iconPack.studioEditorModeApps")}
-              </TabsTrigger>
-              <TabsTrigger value="drawable" className="px-3 text-xs">
-                {t("iconPack.studioEditorModeDrawable")}
-              </TabsTrigger>
-              <TabsTrigger value="appfilter" className="px-3 text-xs">
-                {t("iconPack.studioEditorModeAppfilter")}
-              </TabsTrigger>
-              <TabsTrigger value="browse" className="px-3 text-xs">
-                {t("iconPack.studioTabBrowse")}
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <p className="hidden truncate text-sm text-muted-foreground md:block">{rootNode?.name ?? "-"}</p>
+      <div className="grid h-12 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center border-b px-3 md:px-4">
+        <p className="hidden min-w-0 truncate text-sm text-muted-foreground md:block">{rootNode?.name ?? "-"}</p>
+
+        <Tabs
+          value={viewMode}
+          onValueChange={(value) => setViewMode(value as StudioViewMode)}
+          className="justify-self-center gap-0"
+        >
+          <TabsList className="h-8">
+            <TabsTrigger value="apps" className="px-3 text-xs">
+              {t("iconPack.studioEditorModeApps")}
+            </TabsTrigger>
+            <TabsTrigger value="drawable" className="px-3 text-xs">
+              {t("iconPack.studioEditorModeDrawable")}
+            </TabsTrigger>
+            <TabsTrigger value="appfilter" className="px-3 text-xs">
+              {t("iconPack.studioEditorModeAppfilter")}
+            </TabsTrigger>
+            <TabsTrigger value="browse" className="px-3 text-xs">
+              {t("iconPack.studioTabBrowse")}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        <div className="justify-self-end">
+          <Button size="sm" variant="outline" onClick={handleOpenFolder}>
+            {t("iconPack.studioChangeFolder")}
+          </Button>
         </div>
-        <Button size="sm" variant="outline" onClick={handleOpenFolder}>
-          {t("iconPack.studioChangeFolder")}
-        </Button>
       </div>
 
       {studioError && (
@@ -916,21 +918,30 @@ export function IconPackStudio() {
                       ) : filteredDrawableEntries.length === 0 ? (
                         <p className="text-sm text-muted-foreground">{t("iconPack.studioAppsNoSearchResults")}</p>
                       ) : (
-                        filteredDrawableEntries.map((entry) => (
-                          <button
-                            key={entry.fileName}
-                            type="button"
-                            className={cn(
-                              "mb-1 flex w-full flex-col rounded-md px-2 py-1.5 text-left hover:bg-accent hover:text-accent-foreground",
-                              selectedDrawableEntry?.drawableName === entry.drawableName &&
-                                "bg-accent text-accent-foreground"
-                            )}
-                            onClick={() => setSelectedAppDrawableName(entry.drawableName)}
-                          >
-                            <span className="truncate text-sm font-medium">{entry.drawableName}</span>
-                            <span className="truncate text-xs text-muted-foreground">{entry.fileName}</span>
-                          </button>
-                        ))
+                        filteredDrawableEntries.map((entry) => {
+                          const isSelected = selectedDrawableEntry?.drawableName === entry.drawableName
+                          return (
+                            <button
+                              key={entry.fileName}
+                              type="button"
+                              className={cn(
+                                "group mb-1 flex w-full flex-col rounded-md px-2 py-1.5 text-left hover:bg-accent hover:text-accent-foreground",
+                                isSelected && "bg-accent text-accent-foreground"
+                              )}
+                              onClick={() => setSelectedAppDrawableName(entry.drawableName)}
+                            >
+                              <span className="truncate text-sm font-medium">{entry.drawableName}</span>
+                              <span
+                                className={cn(
+                                  "truncate text-xs text-muted-foreground group-hover:text-accent-foreground/80",
+                                  isSelected && "text-accent-foreground/80"
+                                )}
+                              >
+                                {entry.fileName}
+                              </span>
+                            </button>
+                          )
+                        })
                       )}
                     </div>
                   </aside>

@@ -46,6 +46,12 @@ import type {
   StructureScanState,
 } from "@/types/studio"
 
+const isDirectoryHandle = (handle: FileSystemHandle): handle is FileSystemDirectoryHandle =>
+  handle.kind === "directory"
+
+const isFileHandle = (handle: FileSystemHandle): handle is FileSystemFileHandle =>
+  handle.kind === "file"
+
 function CategoryAddChip({ onAdd }: { onAdd: (category: string) => void }) {
   const { t } = useTranslation()
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -190,7 +196,7 @@ export function IconPackStudio() {
         const childPath = joinPath(directoryPath, entryName)
         childPaths.push(childPath)
 
-        if (entryHandle.kind === "directory") {
+        if (isDirectoryHandle(entryHandle)) {
           nextNodes[childPath] = {
             path: childPath,
             name: entryName,
@@ -201,11 +207,13 @@ export function IconPackStudio() {
           continue
         }
 
-        nextNodes[childPath] = {
-          path: childPath,
-          name: entryName,
-          kind: "file",
-          handle: entryHandle,
+        if (isFileHandle(entryHandle)) {
+          nextNodes[childPath] = {
+            path: childPath,
+            name: entryName,
+            kind: "file",
+            handle: entryHandle,
+          }
         }
       }
 

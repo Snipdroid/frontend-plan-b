@@ -1,3 +1,4 @@
+import { Fragment } from "react"
 import { Link, useLocation, matchPath } from "react-router"
 import { useTranslation } from "react-i18next"
 import {
@@ -85,18 +86,20 @@ export function DashboardBreadcrumb() {
           const key = `${crumb.label}-${index}`
 
           return (
-            <BreadcrumbItem key={key}>
+            <Fragment key={key}>
               {index > 0 && <BreadcrumbSeparator />}
-              {isLast || !crumb.to ? (
-                <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-              ) : (
-                <BreadcrumbLink asChild>
-                  <Link to={crumb.to} state={crumb.state}>
-                    {crumb.label}
-                  </Link>
-                </BreadcrumbLink>
-              )}
-            </BreadcrumbItem>
+              <BreadcrumbItem>
+                {isLast || !crumb.to ? (
+                  <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                ) : (
+                  <BreadcrumbLink asChild>
+                    <Link to={crumb.to} state={crumb.state}>
+                      {crumb.label}
+                    </Link>
+                  </BreadcrumbLink>
+                )}
+              </BreadcrumbItem>
+            </Fragment>
           )
         })}
       </BreadcrumbList>

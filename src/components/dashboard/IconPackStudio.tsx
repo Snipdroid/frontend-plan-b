@@ -9,121 +9,87 @@ import {
   FolderOpen,
   ImageIcon,
   Loader2,
+  Pencil,
+  Plus,
+  RefreshCw,
+  X,
 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  isImageFileName,
+  isTextFile,
+  isTextFileName,
+  joinPath,
+  getFileHandleAtRelativePath,
+} from "@/lib/fs-access"
+import {
+  STRUCTURE_DRAWABLE_DIRECTORY,
+  createMappingDraft,
+  formatCategoryString,
+  parseCategoryString,
+  scanStructure,
+} from "@/lib/studio-structure"
 import { cn } from "@/lib/utils"
+import type {
+  AppDetailDraft,
+  DirectoryPickerWindow,
+  DrawableEntry,
+  PreviewState,
+  StudioDirectoryNode,
+  StudioNode,
+  StudioViewMode,
+  StructureScanState,
+} from "@/types/studio"
 
-type WellKnownDirectory =
-  | "desktop"
-  | "documents"
-  | "downloads"
-  | "music"
-  | "pictures"
-  | "videos"
+function CategoryAddInput({ onAdd }: { onAdd: (category: string) => void }) {
+  const { t } = useTranslation()
+  const [value, setValue] = useState("")
 
-interface DirectoryPickerOptions {
-  id?: string
-  mode?: "read" | "readwrite"
-  startIn?: FileSystemHandle | WellKnownDirectory
-}
+  const handleAdd = () => {
+    const trimmed = value.trim()
+    if (trimmed) {
+      onAdd(trimmed)
+      setValue("")
+    }
+  }
 
-type DirectoryPickerWindow = Window & {
-  showDirectoryPicker?: (options?: DirectoryPickerOptions) => Promise<FileSystemDirectoryHandle>
-}
-
-interface StudioNodeBase {
-  path: string
-  name: string
-}
-
-interface StudioDirectoryNode extends StudioNodeBase {
-  kind: "directory"
-  handle: FileSystemDirectoryHandle
-  loaded: boolean
-}
-
-interface StudioFileNode extends StudioNodeBase {
-  kind: "file"
-  handle: FileSystemFileHandle
-}
-
-type StudioNode = StudioDirectoryNode | StudioFileNode
-
-type PreviewState =
-  | { kind: "empty" }
-  | { kind: "loading" }
-  | { kind: "text"; content: string }
-  | { kind: "image"; url: string; mimeType: string }
-  | { kind: "unsupported"; mimeType: string }
-  | { kind: "error"; message: string }
-
-const TEXT_FILE_EXTENSIONS = new Set([
-  "txt",
-  "md",
-  "json",
-  "xml",
-  "js",
-  "jsx",
-  "ts",
-  "tsx",
-  "css",
-  "scss",
-  "sass",
-  "less",
-  "html",
-  "htm",
-  "yaml",
-  "yml",
-  "toml",
-  "ini",
-  "conf",
-  "properties",
-  "java",
-  "kt",
-  "kts",
-  "c",
-  "cpp",
-  "h",
-  "hpp",
-  "go",
-  "rs",
-  "py",
-  "rb",
-  "sh",
-  "bat",
-  "ps1",
-  "svg",
-])
-
-const IMAGE_FILE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "ico", "svg", "avif"])
-
-const TEXT_MIME_HINTS = ["json", "xml", "javascript", "typescript", "yaml", "toml", "x-sh", "shellscript"]
-
-const getFileExtension = (fileName: string) => {
-  const lastDotIndex = fileName.lastIndexOf(".")
-  if (lastDotIndex < 0) return ""
-  return fileName.slice(lastDotIndex + 1).toLowerCase()
-}
-
-const joinPath = (parentPath: string, childName: string) => {
-  if (!parentPath) return childName
-  return `${parentPath}/${childName}`
-}
-
-const isTextFileName = (fileName: string) => TEXT_FILE_EXTENSIONS.has(getFileExtension(fileName))
-
-const isImageFileName = (fileName: string) => IMAGE_FILE_EXTENSIONS.has(getFileExtension(fileName))
-
-const isTextFile = (file: File) => {
-  const mimeType = file.type.toLowerCase()
-  if (mimeType.startsWith("text/")) return true
-  if (TEXT_MIME_HINTS.some((hint) => mimeType.includes(hint))) return true
-  return isTextFileName(file.name)
+  return (
+    <div className="flex items-center gap-1">
+      <Input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault()
+            handleAdd()
+          }
+        }}
+        placeholder={t("iconPack.studioCategoryInputPlaceholder")}
+        className="h-6 w-28 px-2 text-xs"
+      />
+      <Button
+        type="button"
+        size="icon"
+        variant="outline"
+        onClick={handleAdd}
+        className="size-6"
+        aria-label={t("common.add")}
+      >
+        <Plus className="size-3" />
+      </Button>
+    </div>
+  )
 }
 
 export function IconPackStudio() {
   const { t } = useTranslation()
+  const [viewMode, setViewMode] = useState<StudioViewMode>("apps")
   const [rootPath, setRootPath] = useState<string | null>(null)
   const [nodes, setNodes] = useState<Record<string, StudioNode>>({})
   const [childrenByPath, setChildrenByPath] = useState<Record<string, string[]>>({})
@@ -132,9 +98,26 @@ export function IconPackStudio() {
   const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null)
   const [previewState, setPreviewState] = useState<PreviewState>({ kind: "empty" })
   const [studioError, setStudioError] = useState<string | null>(null)
+  const [appsSearchQuery, setAppsSearchQuery] = useState("")
+  const [selectedAppDrawableName, setSelectedAppDrawableName] = useState<string | null>(null)
+  const [selectedAppDrafts, setSelectedAppDrafts] = useState<Record<string, AppDetailDraft>>({})
+  const [editingFields, setEditingFields] = useState<Set<string>>(new Set())
+  const [selectedAppIconPreviewUrl, setSelectedAppIconPreviewUrl] = useState<string | null>(null)
+  const [isSelectedAppIconLoading, setIsSelectedAppIconLoading] = useState(false)
+  const [structureScan, setStructureScan] = useState<StructureScanState>({
+    status: "idle",
+    requiredChecks: [],
+    optionalChecks: [],
+    drawablePngCount: 0,
+    drawableEntries: [],
+    appMappingsByDrawable: {},
+    categoriesByDrawable: {},
+  })
 
   const imageUrlRef = useRef<string | null>(null)
+  const selectedAppIconUrlRef = useRef<string | null>(null)
   const loadingDirectorySetRef = useRef<Set<string>>(new Set())
+  const structureScanSessionRef = useRef(0)
   const expandedPathSet = useMemo(() => new Set(expandedPaths), [expandedPaths])
   const isFileSystemAccessSupported =
     typeof window !== "undefined" && "showDirectoryPicker" in (window as DirectoryPickerWindow)
@@ -143,6 +126,9 @@ export function IconPackStudio() {
     return () => {
       if (imageUrlRef.current) {
         URL.revokeObjectURL(imageUrlRef.current)
+      }
+      if (selectedAppIconUrlRef.current) {
+        URL.revokeObjectURL(selectedAppIconUrlRef.current)
       }
     }
   }, [])
@@ -205,12 +191,21 @@ export function IconPackStudio() {
 
       setNodes((previous) => {
         const currentDirectoryNode = previous[directoryPath]
-        if (!currentDirectoryNode || currentDirectoryNode.kind !== "directory") return previous
+        // If the directory node doesn't exist in state yet (e.g., during initial load),
+        // create it from the handle we have
+        const directoryNodeToUpdate = currentDirectoryNode ?? {
+          path: directoryPath,
+          name: directoryHandle.name,
+          kind: "directory" as const,
+          handle: directoryHandle,
+          loaded: false,
+        }
+        if (directoryNodeToUpdate.kind !== "directory") return previous
         return {
           ...previous,
           ...nextNodes,
           [directoryPath]: {
-            ...currentDirectoryNode,
+            ...directoryNodeToUpdate,
             loaded: true,
           },
         }
@@ -229,6 +224,54 @@ export function IconPackStudio() {
         const next = { ...previous }
         delete next[directoryPath]
         return next
+      })
+    }
+  }, [t])
+
+  const runStructureScan = useCallback(async (selectedRootDirectoryHandle: FileSystemDirectoryHandle) => {
+    const currentSessionId = structureScanSessionRef.current + 1
+    structureScanSessionRef.current = currentSessionId
+
+    setStructureScan({
+      status: "scanning",
+      requiredChecks: [],
+      optionalChecks: [],
+      drawablePngCount: 0,
+      drawableEntries: [],
+      appMappingsByDrawable: {},
+      categoriesByDrawable: {},
+    })
+
+    try {
+      const result = await scanStructure(selectedRootDirectoryHandle)
+
+      if (structureScanSessionRef.current !== currentSessionId) {
+        return
+      }
+
+      setSelectedAppDrawableName((previous) => {
+        if (result.drawableEntries.length === 0) return null
+        if (previous && result.drawableEntries.some((entry) => entry.drawableName === previous)) {
+          return previous
+        }
+        return result.drawableEntries[0]?.drawableName ?? null
+      })
+
+      setStructureScan({
+        status: "done",
+        ...result,
+      })
+    } catch (error) {
+      console.error(t("iconPack.studioStructureScanFailed"), error)
+      setStructureScan({
+        status: "error",
+        requiredChecks: [],
+        optionalChecks: [],
+        drawablePngCount: 0,
+        drawableEntries: [],
+        appMappingsByDrawable: {},
+        categoriesByDrawable: {},
+        errorMessage: t("iconPack.studioStructureScanFailed"),
       })
     }
   }, [t])
@@ -263,11 +306,23 @@ export function IconPackStudio() {
       setChildrenByPath({})
       setExpandedPaths([])
       setRootPath("")
+      setViewMode("apps")
       setSelectedFilePath(null)
+      setAppsSearchQuery("")
+      setSelectedAppDrawableName(null)
+      setSelectedAppDrafts({})
+      setEditingFields(new Set())
+      if (selectedAppIconUrlRef.current) {
+        URL.revokeObjectURL(selectedAppIconUrlRef.current)
+        selectedAppIconUrlRef.current = null
+      }
+      setSelectedAppIconPreviewUrl(null)
+      setIsSelectedAppIconLoading(false)
       setStudioError(null)
       setPreview({ kind: "empty" })
 
       await loadDirectory("", directoryHandle)
+      void runStructureScan(directoryHandle)
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         return
@@ -275,7 +330,7 @@ export function IconPackStudio() {
       console.error(t("iconPack.studioErrorOpenFolder"), error)
       setStudioError(t("iconPack.studioErrorOpenFolder"))
     }
-  }, [isFileSystemAccessSupported, loadDirectory, setPreview, t])
+  }, [isFileSystemAccessSupported, loadDirectory, runStructureScan, setPreview, t])
 
   const handleToggleDirectory = useCallback(
     async (directoryPath: string, directoryHandle: FileSystemDirectoryHandle, isLoaded: boolean) => {
@@ -411,6 +466,163 @@ export function IconPackStudio() {
     )
   }, [childrenByPath, expandedPathSet, handleOpenFile, handleToggleDirectory, loadingDirectories, nodes, selectedFilePath, t])
 
+  const handleStructureRescan = useCallback(() => {
+    const selectedRootDirectory = nodes[""]
+    if (!selectedRootDirectory || selectedRootDirectory.kind !== "directory") return
+    void runStructureScan(selectedRootDirectory.handle)
+  }, [nodes, runStructureScan])
+
+  const appsSearchQueryNormalized = appsSearchQuery.trim().toLowerCase()
+  const filteredDrawableEntries = appsSearchQueryNormalized
+    ? structureScan.drawableEntries.filter((entry) => {
+      return (
+        entry.drawableName.toLowerCase().includes(appsSearchQueryNormalized) ||
+        entry.fileName.toLowerCase().includes(appsSearchQueryNormalized)
+      )
+    })
+    : structureScan.drawableEntries
+  const selectedDrawableEntry = filteredDrawableEntries.length === 0
+    ? null
+    : selectedAppDrawableName
+      ? filteredDrawableEntries.find((entry) => entry.drawableName === selectedAppDrawableName) || filteredDrawableEntries[0]
+      : filteredDrawableEntries[0]
+
+  const createDefaultAppDraft = useCallback((entry: DrawableEntry): AppDetailDraft => {
+    const mappings = structureScan.appMappingsByDrawable[entry.drawableName] || []
+    const categories = structureScan.categoriesByDrawable[entry.drawableName] || []
+    const mappingDrafts = mappings.length > 0
+      ? mappings.map((mapping, index) =>
+        createMappingDraft(
+          mapping.packageName || "",
+          mapping.activityName || "",
+          `${entry.drawableName}-${index}`
+        )
+      )
+      : [createMappingDraft("", "", `${entry.drawableName}-0`)]
+
+    return {
+      drawableName: entry.drawableName,
+      fileName: entry.fileName,
+      mappings: mappingDrafts,
+      categories: categories.join(", "),
+      notes: "",
+      isDirty: false,
+    }
+  }, [structureScan.appMappingsByDrawable, structureScan.categoriesByDrawable])
+
+  useEffect(() => {
+    if (!selectedDrawableEntry) return
+
+    setSelectedAppDrafts((previous) => {
+      if (previous[selectedDrawableEntry.drawableName]) return previous
+      return {
+        ...previous,
+        [selectedDrawableEntry.drawableName]: createDefaultAppDraft(selectedDrawableEntry),
+      }
+    })
+  }, [createDefaultAppDraft, selectedDrawableEntry])
+
+  useEffect(() => {
+    setSelectedAppDrafts((previous) => {
+      let changed = false
+      const next = { ...previous }
+
+      for (const entry of structureScan.drawableEntries) {
+        const existing = next[entry.drawableName]
+        if (!existing || existing.isDirty) continue
+
+        const refreshed = createDefaultAppDraft(entry)
+        const existingSignature = JSON.stringify({
+          mappings: existing.mappings,
+          categories: existing.categories,
+          notes: existing.notes,
+        })
+        const refreshedSignature = JSON.stringify({
+          mappings: refreshed.mappings,
+          categories: refreshed.categories,
+          notes: refreshed.notes,
+        })
+
+        if (existingSignature !== refreshedSignature) {
+          next[entry.drawableName] = refreshed
+          changed = true
+        }
+      }
+
+      return changed ? next : previous
+    })
+  }, [createDefaultAppDraft, structureScan.drawableEntries])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadSelectedAppIconPreview = async () => {
+      const rootDirectory = nodes[""]
+      if (!selectedDrawableEntry || !rootDirectory || rootDirectory.kind !== "directory") {
+        if (selectedAppIconUrlRef.current) {
+          URL.revokeObjectURL(selectedAppIconUrlRef.current)
+          selectedAppIconUrlRef.current = null
+        }
+        setSelectedAppIconPreviewUrl(null)
+        setIsSelectedAppIconLoading(false)
+        return
+      }
+
+      setIsSelectedAppIconLoading(true)
+      try {
+        const relativePath = `${STRUCTURE_DRAWABLE_DIRECTORY}/${selectedDrawableEntry.fileName}`
+        const fileHandle = await getFileHandleAtRelativePath(rootDirectory.handle, relativePath)
+        if (!fileHandle) {
+          if (!cancelled) {
+            if (selectedAppIconUrlRef.current) {
+              URL.revokeObjectURL(selectedAppIconUrlRef.current)
+              selectedAppIconUrlRef.current = null
+            }
+            setSelectedAppIconPreviewUrl(null)
+          }
+          return
+        }
+
+        const file = await fileHandle.getFile()
+        const nextUrl = URL.createObjectURL(file)
+
+        if (cancelled) {
+          URL.revokeObjectURL(nextUrl)
+          return
+        }
+
+        if (selectedAppIconUrlRef.current) {
+          URL.revokeObjectURL(selectedAppIconUrlRef.current)
+        }
+        selectedAppIconUrlRef.current = nextUrl
+        setSelectedAppIconPreviewUrl(nextUrl)
+      } catch (error) {
+        console.error(t("iconPack.studioErrorLoadFile"), error)
+        if (!cancelled) {
+          if (selectedAppIconUrlRef.current) {
+            URL.revokeObjectURL(selectedAppIconUrlRef.current)
+            selectedAppIconUrlRef.current = null
+          }
+          setSelectedAppIconPreviewUrl(null)
+        }
+      } finally {
+        if (!cancelled) {
+          setIsSelectedAppIconLoading(false)
+        }
+      }
+    }
+
+    void loadSelectedAppIconPreview()
+
+    return () => {
+      cancelled = true
+    }
+  }, [nodes, selectedDrawableEntry, t])
+
+  useEffect(() => {
+    setEditingFields(new Set())
+  }, [selectedDrawableEntry?.drawableName])
+
   if (rootPath === null) {
     return (
       <div className="mx-[-1rem] my-[-1rem] flex h-[calc(100dvh-4rem)] overflow-hidden flex-col items-center justify-center gap-4 px-4 text-center md:mx-[-1.5rem] md:my-[-1.5rem]">
@@ -433,12 +645,89 @@ export function IconPackStudio() {
   const rootChildren = childrenByPath[rootPath] ?? []
   const isRootLoading = !!loadingDirectories[rootPath]
   const selectedNode = selectedFilePath ? nodes[selectedFilePath] : undefined
+  const selectedAppDraft = selectedDrawableEntry
+    ? selectedAppDrafts[selectedDrawableEntry.drawableName] ?? createDefaultAppDraft(selectedDrawableEntry)
+    : null
+  const selectedAppDraftCategories = selectedAppDraft
+    ? parseCategoryString(selectedAppDraft.categories)
+    : []
+  const isFieldEditing = (field: string) => editingFields.has(field)
+  const handleFieldEditToggle = (field: string) => {
+    setEditingFields((previous) => {
+      const next = new Set(previous)
+      if (next.has(field)) {
+        next.delete(field)
+      } else {
+        next.add(field)
+      }
+      return next
+    })
+  }
+  const handleSelectedAppDraftChange = (patch: Partial<AppDetailDraft>) => {
+    if (!selectedDrawableEntry) return
+
+    setSelectedAppDrafts((previous) => {
+      const base = previous[selectedDrawableEntry.drawableName] ?? createDefaultAppDraft(selectedDrawableEntry)
+      return {
+        ...previous,
+        [selectedDrawableEntry.drawableName]: {
+          ...base,
+          ...patch,
+          isDirty: true,
+        },
+      }
+    })
+  }
+  const handleSelectedAppDraftMappingRemove = (mappingId: string) => {
+    if (!selectedAppDraft) return
+    handleSelectedAppDraftChange({
+      mappings: selectedAppDraft.mappings.filter((mapping) => mapping.id !== mappingId),
+    })
+  }
+
+  const handleSelectedAppDraftCategoryRemove = (categoryToRemove: string) => {
+    if (!selectedAppDraft) return
+
+    const nextCategories = parseCategoryString(selectedAppDraft.categories).filter(
+      (category) => category !== categoryToRemove
+    )
+    handleSelectedAppDraftChange({
+      categories: formatCategoryString(nextCategories),
+    })
+  }
+
+  const requiredMatchedCount = structureScan.requiredChecks.filter((item) => item.exists).length
+  const isStructureReady =
+    structureScan.status === "done" &&
+    structureScan.requiredChecks.length > 0 &&
+    requiredMatchedCount === structureScan.requiredChecks.length
+  const showStructureStatusHeader = structureScan.status !== "done" || !isStructureReady
 
   return (
     <div className="mx-[-1rem] my-[-1rem] flex h-[calc(100dvh-4rem)] overflow-hidden flex-col md:mx-[-1.5rem] md:my-[-1.5rem]">
       <div className="flex h-12 shrink-0 items-center justify-between border-b px-3 md:px-4">
-        <div className="min-w-0">
-          <p className="truncate text-sm text-muted-foreground">{rootNode?.name ?? "-"}</p>
+        <div className="flex min-w-0 items-center gap-2">
+          <Tabs
+            value={viewMode}
+            onValueChange={(value) => setViewMode(value as StudioViewMode)}
+            className="gap-0"
+          >
+            <TabsList className="h-8">
+              <TabsTrigger value="apps" className="px-3 text-xs">
+                {t("iconPack.studioEditorModeApps")}
+              </TabsTrigger>
+              <TabsTrigger value="drawable" className="px-3 text-xs">
+                {t("iconPack.studioEditorModeDrawable")}
+              </TabsTrigger>
+              <TabsTrigger value="appfilter" className="px-3 text-xs">
+                {t("iconPack.studioEditorModeAppfilter")}
+              </TabsTrigger>
+              <TabsTrigger value="browse" className="px-3 text-xs">
+                {t("iconPack.studioTabBrowse")}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <p className="hidden truncate text-sm text-muted-foreground md:block">{rootNode?.name ?? "-"}</p>
         </div>
         <Button size="sm" variant="outline" onClick={handleOpenFolder}>
           {t("iconPack.studioChangeFolder")}
@@ -449,81 +738,360 @@ export function IconPackStudio() {
         <div className="border-b px-3 py-2 text-sm text-destructive md:px-4">{studioError}</div>
       )}
 
-      <div className="grid min-h-0 flex-1 overflow-hidden grid-rows-[40%_60%] md:grid-cols-[320px_1fr] md:grid-rows-1">
-        <aside className="flex min-h-0 overflow-hidden flex-col border-b md:border-r md:border-b-0">
-          <div className="flex h-10 shrink-0 items-center border-b px-3 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            {t("iconPack.studioFiles")}
-          </div>
-          <div className="min-h-0 flex-1 overflow-auto p-2">
-            {isRootLoading && (
-              <div className="flex items-center gap-2 py-1.5 text-xs text-muted-foreground">
-                <Loader2 className="size-3 animate-spin" />
-                <span>{t("iconPack.studioLoadingFolder")}</span>
-              </div>
-            )}
-
-            {!isRootLoading && rootNode?.kind === "directory" && rootNode.loaded && rootChildren.length === 0 && (
-              <p className="py-1.5 text-xs text-muted-foreground">{t("iconPack.studioEmptyFolder")}</p>
-            )}
-
-            {!isRootLoading && rootChildren.map((childPath) => renderTreeNode(childPath, 0))}
-          </div>
-        </aside>
-
-        <section className="flex min-h-0 overflow-hidden flex-col">
-          <div className="flex h-10 shrink-0 items-center border-b px-3 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            <span className="truncate">
-              {selectedNode?.name ?? t("iconPack.studioNoFileSelected")}
-            </span>
-          </div>
-          <div className="min-h-0 flex-1 overflow-hidden">
-            {previewState.kind === "loading" && (
-              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                <Loader2 className="mr-2 size-4 animate-spin" />
-                {t("iconPack.studioLoadingFile")}
-              </div>
-            )}
-
-            {previewState.kind === "empty" && (
-              <div className="flex h-full items-center justify-center px-6 text-sm text-muted-foreground">
-                {t("iconPack.studioNoFileSelected")}
-              </div>
-            )}
-
-            {previewState.kind === "text" && (
-              <ScrollArea className="h-full">
-                <pre className="px-4 py-3 font-mono text-xs leading-5 whitespace-pre-wrap break-words">
-                  {previewState.content}
-                </pre>
-              </ScrollArea>
-            )}
-
-            {previewState.kind === "image" && (
-              <ScrollArea className="h-full">
-                <div className="flex min-h-full items-center justify-center p-4">
-                  <img
-                    src={previewState.url}
-                    alt={selectedNode?.name ?? "preview"}
-                    className="max-h-full w-auto max-w-full object-contain"
-                  />
+      {viewMode === "browse" ? (
+        <div className="grid min-h-0 flex-1 overflow-hidden grid-rows-[40%_60%] md:grid-cols-[320px_1fr] md:grid-rows-1">
+          <aside className="flex min-h-0 overflow-hidden flex-col border-b md:border-r md:border-b-0">
+            <div className="flex h-10 shrink-0 items-center border-b px-3 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+              {t("iconPack.studioFiles")}
+            </div>
+            <div className="min-h-0 flex-1 overflow-auto p-2">
+              {isRootLoading && (
+                <div className="flex items-center gap-2 py-1.5 text-xs text-muted-foreground">
+                  <Loader2 className="size-3 animate-spin" />
+                  <span>{t("iconPack.studioLoadingFolder")}</span>
                 </div>
-              </ScrollArea>
-            )}
+              )}
 
-            {previewState.kind === "unsupported" && (
-              <div className="flex h-full items-center justify-center px-6 text-center text-sm text-muted-foreground">
-                {t("iconPack.studioUnsupportedFile")} ({previewState.mimeType})
-              </div>
-            )}
+              {!isRootLoading && rootNode?.kind === "directory" && rootNode.loaded && rootChildren.length === 0 && (
+                <p className="py-1.5 text-xs text-muted-foreground">{t("iconPack.studioEmptyFolder")}</p>
+              )}
 
-            {previewState.kind === "error" && (
-              <div className="flex h-full items-center justify-center px-6 text-center text-sm text-destructive">
-                {previewState.message}
+              {!isRootLoading && rootChildren.map((childPath) => renderTreeNode(childPath, 0))}
+            </div>
+          </aside>
+
+          <section className="flex min-h-0 overflow-hidden flex-col">
+            <div className="flex h-10 shrink-0 items-center border-b px-3 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+              <span className="truncate">
+                {selectedNode?.name ?? t("iconPack.studioNoFileSelected")}
+              </span>
+            </div>
+            <div className="min-h-0 flex-1 overflow-hidden">
+              {previewState.kind === "loading" && (
+                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  {t("iconPack.studioLoadingFile")}
+                </div>
+              )}
+
+              {previewState.kind === "empty" && (
+                <div className="flex h-full items-center justify-center px-6 text-sm text-muted-foreground">
+                  {t("iconPack.studioNoFileSelected")}
+                </div>
+              )}
+
+              {previewState.kind === "text" && (
+                <ScrollArea className="h-full">
+                  <pre className="px-4 py-3 font-mono text-xs leading-5 whitespace-pre-wrap break-words">
+                    {previewState.content}
+                  </pre>
+                </ScrollArea>
+              )}
+
+              {previewState.kind === "image" && (
+                <ScrollArea className="h-full">
+                  <div className="flex min-h-full items-center justify-center p-4">
+                    <img
+                      src={previewState.url}
+                      alt={selectedNode?.name ?? "preview"}
+                      className="max-h-full w-auto max-w-full object-contain"
+                    />
+                  </div>
+                </ScrollArea>
+              )}
+
+              {previewState.kind === "unsupported" && (
+                <div className="flex h-full items-center justify-center px-6 text-center text-sm text-muted-foreground">
+                  {t("iconPack.studioUnsupportedFile")} ({previewState.mimeType})
+                </div>
+              )}
+
+              {previewState.kind === "error" && (
+                <div className="flex h-full items-center justify-center px-6 text-center text-sm text-destructive">
+                  {previewState.message}
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+      ) : (
+        <section className="flex min-h-0 flex-1 overflow-hidden flex-col">
+          {showStructureStatusHeader && (
+            <div className="flex h-10 shrink-0 items-center justify-between border-b px-3">
+              <p className="truncate text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {t("iconPack.studioStructureStatus")}
+              </p>
+              <div className="flex items-center gap-2">
+                {structureScan.status === "done" && (
+                  <p className="hidden text-xs text-muted-foreground lg:block">
+                    {t("iconPack.studioStructureRequired")} ({requiredMatchedCount}/{structureScan.requiredChecks.length})
+                  </p>
+                )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleStructureRescan}
+                  disabled={structureScan.status === "scanning"}
+                >
+                  <RefreshCw
+                    className={cn(
+                      "mr-1 size-3.5",
+                      structureScan.status === "scanning" && "animate-spin"
+                    )}
+                  />
+                  {t("iconPack.studioStructureRescan")}
+                </Button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {structureScan.status === "scanning" && (
+            <div className="flex min-h-0 flex-1 items-center justify-center p-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Loader2 className="size-4 animate-spin" />
+                <span>{t("iconPack.studioStructureScanning")}</span>
+              </div>
+            </div>
+          )}
+
+          {structureScan.status === "error" && (
+            <div className="flex min-h-0 flex-1 items-center justify-center p-4">
+              <p className="text-sm text-destructive">
+                {structureScan.errorMessage || t("iconPack.studioStructureScanFailed")}
+              </p>
+            </div>
+          )}
+
+          {structureScan.status === "done" && (
+            <>
+              {!isStructureReady && (
+                <div className="flex shrink-0 flex-col gap-1 border-b px-3 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm text-amber-600">{t("iconPack.studioStructureNeedsFix")}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("iconPack.studioStructureDrawableCount", { count: structureScan.drawablePngCount })}
+                    </p>
+                  </div>
+                  <p className="truncate text-xs text-muted-foreground">{t("iconPack.studioStructureRootHint")}</p>
+                </div>
+              )}
+
+              {viewMode === "apps" ? (
+                <div className="grid min-h-0 flex-1 overflow-hidden grid-rows-[45%_55%] md:grid-cols-[280px_1fr] md:grid-rows-1">
+                  <aside className="flex min-h-0 flex-col border-b md:border-r md:border-b-0">
+                    <div className="flex h-10 shrink-0 items-center border-b px-3 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                      {t("iconPack.studioAppsListTitle", { count: structureScan.drawablePngCount })}
+                    </div>
+                    <div className="shrink-0 border-b p-2">
+                      <Input
+                        value={appsSearchQuery}
+                        onChange={(event) => setAppsSearchQuery(event.target.value)}
+                        placeholder={t("iconPack.studioAppsSearchPlaceholder")}
+                        className="h-8"
+                      />
+                    </div>
+                    <div className="min-h-0 flex-1 overflow-auto p-2">
+                      {structureScan.drawableEntries.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">{t("iconPack.studioNoDrawableIcons")}</p>
+                      ) : filteredDrawableEntries.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">{t("iconPack.studioAppsNoSearchResults")}</p>
+                      ) : (
+                        filteredDrawableEntries.map((entry) => (
+                          <button
+                            key={entry.fileName}
+                            type="button"
+                            className={cn(
+                              "mb-1 flex w-full flex-col rounded-md px-2 py-1.5 text-left hover:bg-accent hover:text-accent-foreground",
+                              selectedDrawableEntry?.drawableName === entry.drawableName &&
+                                "bg-accent text-accent-foreground"
+                            )}
+                            onClick={() => setSelectedAppDrawableName(entry.drawableName)}
+                          >
+                            <span className="truncate text-sm font-medium">{entry.drawableName}</span>
+                            <span className="truncate text-xs text-muted-foreground">{entry.fileName}</span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </aside>
+
+                  <section className="flex min-h-0 flex-col">
+                    <div className="flex h-10 shrink-0 items-center border-b px-3 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                      {selectedDrawableEntry
+                        ? selectedDrawableEntry.drawableName
+                        : t("iconPack.studioAppsDetailTitle")}
+                    </div>
+                    <div className="min-h-0 flex-1 overflow-auto p-4">
+                      {selectedDrawableEntry && selectedAppDraft ? (
+                        <div className="space-y-5">
+                          <div className="grid gap-4 lg:grid-cols-[180px_1fr]">
+                            <div className="space-y-2">
+                              <div className="bg-muted flex aspect-square w-full max-w-[180px] items-center justify-center overflow-hidden rounded-md border">
+                                {isSelectedAppIconLoading ? (
+                                  <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                                ) : selectedAppIconPreviewUrl ? (
+                                  <img
+                                    src={selectedAppIconPreviewUrl}
+                                    alt={selectedDrawableEntry.drawableName}
+                                    className="h-full w-full object-contain p-2"
+                                  />
+                                ) : (
+                                  <p className="px-3 text-center text-xs text-muted-foreground">
+                                    {t("iconPack.studioPreviewUnavailable")}
+                                  </p>
+                                )}
+                              </div>
+                              <p className="truncate font-mono text-xs text-muted-foreground">
+                                {selectedDrawableEntry.fileName}
+                              </p>
+                            </div>
+
+                            <div className="grid gap-3">
+                              <div className="grid gap-1.5">
+                                <div className="flex items-center justify-between">
+                                  <Label htmlFor="studio-drawable-name">{t("iconPack.studioFieldDrawableName")}</Label>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 gap-1 px-1.5 text-xs text-muted-foreground"
+                                    onClick={() => handleFieldEditToggle("drawableName")}
+                                  >
+                                    {isFieldEditing("drawableName") ? t("common.save") : <Pencil className="size-3" />}
+                                  </Button>
+                                </div>
+                                <Input
+                                  id="studio-drawable-name"
+                                  value={selectedAppDraft.drawableName}
+                                  readOnly={!isFieldEditing("drawableName")}
+                                  onChange={(event) => handleSelectedAppDraftChange({ drawableName: event.target.value })}
+                                />
+                              </div>
+
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between gap-2">
+                                  <Label>{t("iconPack.studioFieldMappings")}</Label>
+                                </div>
+
+                                <div className="space-y-2">
+                                  {selectedAppDraft.mappings.length > 0 ? (
+                                    selectedAppDraft.mappings.map((mapping) => (
+                                      <div key={mapping.id} className="rounded-md border p-3">
+                                        <div className="flex items-start justify-between gap-2">
+                                          <div className="min-w-0 flex-1 space-y-1">
+                                            <p className="font-mono text-xs break-all">
+                                              {mapping.packageName || "-"}
+                                            </p>
+                                            <p className="font-mono text-xs break-all text-muted-foreground">
+                                              {mapping.activityName || "-"}
+                                            </p>
+                                          </div>
+                                          <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="ghost"
+                                            className="shrink-0 text-xs text-muted-foreground hover:text-destructive"
+                                            onClick={() => handleSelectedAppDraftMappingRemove(mapping.id)}
+                                          >
+                                            {t("common.remove")}
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <div className="rounded-md border border-dashed p-4">
+                                      <p className="text-center text-sm text-muted-foreground">{t("iconPack.studioNoMappingsConfigured")}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <Label>{t("iconPack.studioFieldCategories")}</Label>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 gap-1 px-1.5 text-xs text-muted-foreground"
+                                    onClick={() => handleFieldEditToggle("categories")}
+                                  >
+                                    {isFieldEditing("categories") ? t("common.save") : <Pencil className="size-3" />}
+                                  </Button>
+                                </div>
+                                <div className="flex min-h-[22px] flex-wrap items-center gap-1">
+                                  {selectedAppDraftCategories.map((category) => (
+                                    <Badge key={category} variant="secondary" className={isFieldEditing("categories") ? "gap-1 pr-1 text-xs" : "text-xs"}>
+                                      {category}
+                                      {isFieldEditing("categories") && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleSelectedAppDraftCategoryRemove(category)}
+                                          className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20"
+                                          aria-label={`${t("common.delete")} ${category}`}
+                                        >
+                                          <X className="size-3" />
+                                        </button>
+                                      )}
+                                    </Badge>
+                                  ))}
+                                  {isFieldEditing("categories") && (
+                                    <CategoryAddInput onAdd={(category) => handleSelectedAppDraftChange({ categories: formatCategoryString([...selectedAppDraftCategories, category]) })} />
+                                  )}
+                                </div>
+                                {selectedAppDraftCategories.length === 0 && (
+                                  <p className="text-sm text-muted-foreground">{t("iconPack.studioNoCategoriesConfigured")}</p>
+                                )}
+                              </div>
+
+                              <div className="grid gap-1.5">
+                                <div className="flex items-center justify-between">
+                                  <Label htmlFor="studio-notes">{t("iconPack.studioFieldNotes")}</Label>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 gap-1 px-1.5 text-xs text-muted-foreground"
+                                    onClick={() => handleFieldEditToggle("notes")}
+                                  >
+                                    {isFieldEditing("notes") ? t("common.save") : <Pencil className="size-3" />}
+                                  </Button>
+                                </div>
+                                <Textarea
+                                  id="studio-notes"
+                                  value={selectedAppDraft.notes}
+                                  readOnly={!isFieldEditing("notes")}
+                                  onChange={(event) => handleSelectedAppDraftChange({ notes: event.target.value })}
+                                  placeholder={isFieldEditing("notes") ? t("iconPack.studioNotesPlaceholder") : undefined}
+                                  className="min-h-24"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-center">
+                          <p className="text-sm text-muted-foreground">{t("iconPack.studioAppsSelectHint")}</p>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                </div>
+              ) : (
+                <div className="flex min-h-0 flex-1 items-center justify-center p-4 text-sm text-muted-foreground">
+                  {t("iconPack.studioEditorModePlaceholder", {
+                    mode: t(
+                      viewMode === "drawable"
+                        ? "iconPack.studioEditorModeDrawable"
+                        : "iconPack.studioEditorModeAppfilter"
+                    ),
+                  })}
+                </div>
+              )}
+            </>
+          )}
         </section>
+      )}
       </div>
-    </div>
-  )
-}
+    )
+  }

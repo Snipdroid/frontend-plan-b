@@ -45,6 +45,7 @@ export default defineConfig({
             '@radix-ui/react-collapsible',
             '@radix-ui/react-popover',
             '@radix-ui/react-progress',
+            '@radix-ui/react-tabs',
             '@radix-ui/react-tooltip',
           ],
 
@@ -60,8 +61,8 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        // target: "https://apptracker.sg.butanediol.me",
-        target: "http://127.0.0.1:8080",
+        target: "https://apptracker.sg.butanediol.me",
+        // target: "http://127.0.0.1:8080",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },

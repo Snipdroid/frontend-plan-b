@@ -226,8 +226,6 @@
     "studioNoMappingsConfigured": "尚未配置组件映射。",
     "studioCategoryInputPlaceholder": "添加分类...",
     "studioFieldCategories": "分类",
-    "studioFieldNotes": "备注",
-    "studioNotesPlaceholder": "为此图标映射添加备注...",
     "studioSelectedFolder": "（已选择文件夹）",
     "versions": "版本",
     "versionsDesc": "管理此图标包的版本和访问令牌。",

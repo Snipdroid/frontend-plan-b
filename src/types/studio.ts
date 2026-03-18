@@ -73,7 +73,6 @@ export interface AppDetailDraft {
   fileName: string
   mappings: AppMappingDraft[]
   categories: string
-  notes: string
   isDirty: boolean
 }
 

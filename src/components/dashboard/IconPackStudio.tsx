@@ -20,7 +20,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Textarea } from "@/components/ui/textarea"
 import {
   isImageFileName,
   isTextFile,
@@ -526,7 +525,6 @@ export function IconPackStudio() {
       fileName: entry.fileName,
       mappings: mappingDrafts,
       categories: categories.join(", "),
-      notes: "",
       isDirty: false,
     }
   }, [structureScan.appMappingsByDrawable, structureScan.categoriesByDrawable])
@@ -556,12 +554,10 @@ export function IconPackStudio() {
         const existingSignature = JSON.stringify({
           mappings: existing.mappings,
           categories: existing.categories,
-          notes: existing.notes,
         })
         const refreshedSignature = JSON.stringify({
           mappings: refreshed.mappings,
           categories: refreshed.categories,
-          notes: refreshed.notes,
         })
 
         if (existingSignature !== refreshedSignature) {
@@ -1047,28 +1043,6 @@ export function IconPackStudio() {
                                 </div>
                               </div>
 
-                              <div className="grid gap-1.5">
-                                <div className="flex items-center justify-between">
-                                  <Label htmlFor="studio-notes">{t("iconPack.studioFieldNotes")}</Label>
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-6 gap-1 px-1.5 text-xs text-muted-foreground"
-                                    onClick={() => handleFieldEditToggle("notes")}
-                                  >
-                                    {isFieldEditing("notes") ? t("common.save") : <Pencil className="size-3" />}
-                                  </Button>
-                                </div>
-                                <Textarea
-                                  id="studio-notes"
-                                  value={selectedAppDraft.notes}
-                                  readOnly={!isFieldEditing("notes")}
-                                  onChange={(event) => handleSelectedAppDraftChange({ notes: event.target.value })}
-                                  placeholder={isFieldEditing("notes") ? t("iconPack.studioNotesPlaceholder") : undefined}
-                                  className="min-h-24"
-                                />
-                              </div>
                             </div>
                           </div>
                         </div>

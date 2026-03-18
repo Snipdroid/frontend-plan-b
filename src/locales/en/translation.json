@@ -226,8 +226,6 @@
     "studioNoMappingsConfigured": "No component mappings configured.",
     "studioCategoryInputPlaceholder": "Add category...",
     "studioFieldCategories": "Categories",
-    "studioFieldNotes": "Notes",
-    "studioNotesPlaceholder": "Add notes for this icon mapping...",
     "studioSelectedFolder": "(selected folder)",
     "versions": "Versions",
     "versionsDesc": "Manage versions and access tokens for this icon pack.",

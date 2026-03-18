@@ -224,7 +224,6 @@
     "studioAddMapping": "新增映射",
     "studioRemoveMapping": "移除",
     "studioNoMappingsConfigured": "尚未配置组件映射。",
-    "studioNoCategoriesConfigured": "尚未配置分类。",
     "studioCategoryInputPlaceholder": "添加分类...",
     "studioFieldCategories": "分类",
     "studioFieldNotes": "备注",

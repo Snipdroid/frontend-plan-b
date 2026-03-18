@@ -224,7 +224,6 @@
     "studioAddMapping": "Add Mapping",
     "studioRemoveMapping": "Remove",
     "studioNoMappingsConfigured": "No component mappings configured.",
-    "studioNoCategoriesConfigured": "No categories configured.",
     "studioCategoryInputPlaceholder": "Add category...",
     "studioFieldCategories": "Categories",
     "studioFieldNotes": "Notes",

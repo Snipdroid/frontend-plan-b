@@ -47,43 +47,64 @@ import type {
   StructureScanState,
 } from "@/types/studio"
 
-function CategoryAddInput({ onAdd }: { onAdd: (category: string) => void }) {
+function CategoryAddChip({ onAdd }: { onAdd: (category: string) => void }) {
   const { t } = useTranslation()
+  const inputRef = useRef<HTMLInputElement | null>(null)
+  const [isInputVisible, setIsInputVisible] = useState(false)
   const [value, setValue] = useState("")
+
+  useEffect(() => {
+    if (isInputVisible) {
+      inputRef.current?.focus()
+    }
+  }, [isInputVisible])
+
+  const reset = () => {
+    setValue("")
+    setIsInputVisible(false)
+  }
 
   const handleAdd = () => {
     const trimmed = value.trim()
     if (trimmed) {
       onAdd(trimmed)
-      setValue("")
     }
+    reset()
+  }
+
+  if (!isInputVisible) {
+    return (
+      <Badge asChild variant="outline" className="h-[22px] cursor-pointer border-dashed hover:bg-accent">
+        <button
+          type="button"
+          onClick={() => setIsInputVisible(true)}
+          aria-label={t("common.add")}
+        >
+          <Plus className="h-3 w-3" />
+        </button>
+      </Badge>
+    )
   }
 
   return (
-    <div className="flex items-center gap-1">
-      <Input
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault()
-            handleAdd()
-          }
-        }}
-        placeholder={t("iconPack.studioCategoryInputPlaceholder")}
-        className="h-6 w-28 px-2 text-xs"
-      />
-      <Button
-        type="button"
-        size="icon"
-        variant="outline"
-        onClick={handleAdd}
-        className="size-6"
-        aria-label={t("common.add")}
-      >
-        <Plus className="size-3" />
-      </Button>
-    </div>
+    <Input
+      ref={inputRef}
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={reset}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault()
+          handleAdd()
+        }
+        if (e.key === "Escape") {
+          e.preventDefault()
+          reset()
+        }
+      }}
+      placeholder={t("iconPack.studioCategoryInputPlaceholder")}
+      className="h-[22px] w-28 border-dashed px-2 text-xs"
+    />
   )
 }
 
@@ -1007,41 +1028,23 @@ export function IconPackStudio() {
                               </div>
 
                               <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                  <Label>{t("iconPack.studioFieldCategories")}</Label>
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-6 gap-1 px-1.5 text-xs text-muted-foreground"
-                                    onClick={() => handleFieldEditToggle("categories")}
-                                  >
-                                    {isFieldEditing("categories") ? t("common.save") : <Pencil className="size-3" />}
-                                  </Button>
-                                </div>
+                                <Label>{t("iconPack.studioFieldCategories")}</Label>
                                 <div className="flex min-h-[22px] flex-wrap items-center gap-1">
                                   {selectedAppDraftCategories.map((category) => (
-                                    <Badge key={category} variant="secondary" className={isFieldEditing("categories") ? "gap-1 pr-1 text-xs" : "text-xs"}>
+                                    <Badge key={category} variant="secondary" className="gap-1 pr-1 text-xs">
                                       {category}
-                                      {isFieldEditing("categories") && (
-                                        <button
-                                          type="button"
-                                          onClick={() => handleSelectedAppDraftCategoryRemove(category)}
-                                          className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20"
-                                          aria-label={`${t("common.delete")} ${category}`}
-                                        >
-                                          <X className="size-3" />
-                                        </button>
-                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSelectedAppDraftCategoryRemove(category)}
+                                        className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20"
+                                        aria-label={`${t("common.delete")} ${category}`}
+                                      >
+                                        <X className="size-3" />
+                                      </button>
                                     </Badge>
                                   ))}
-                                  {isFieldEditing("categories") && (
-                                    <CategoryAddInput onAdd={(category) => handleSelectedAppDraftChange({ categories: formatCategoryString([...selectedAppDraftCategories, category]) })} />
-                                  )}
+                                  <CategoryAddChip onAdd={(category) => handleSelectedAppDraftChange({ categories: formatCategoryString([...selectedAppDraftCategories, category]) })} />
                                 </div>
-                                {selectedAppDraftCategories.length === 0 && (
-                                  <p className="text-sm text-muted-foreground">{t("iconPack.studioNoCategoriesConfigured")}</p>
-                                )}
                               </div>
 
                               <div className="grid gap-1.5">

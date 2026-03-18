@@ -362,21 +362,19 @@ export function IconPackStudio() {
 
   const handleToggleDirectory = useCallback(
     async (directoryPath: string, directoryHandle: FileSystemDirectoryHandle, isLoaded: boolean) => {
-      let shouldExpand = false
+      const shouldExpand = !expandedPathSet.has(directoryPath)
 
-      setExpandedPaths((previous) => {
-        if (previous.includes(directoryPath)) {
-          return previous.filter((path) => path !== directoryPath)
-        }
-        shouldExpand = true
-        return [...previous, directoryPath]
-      })
+      setExpandedPaths((previous) =>
+        shouldExpand
+          ? [...previous, directoryPath]
+          : previous.filter((path) => path !== directoryPath)
+      )
 
       if (shouldExpand && !isLoaded) {
         await loadDirectory(directoryPath, directoryHandle)
       }
     },
-    [loadDirectory]
+    [expandedPathSet, loadDirectory]
   )
 
   const handleOpenFile = useCallback(async (filePath: string, fileHandle: FileSystemFileHandle) => {

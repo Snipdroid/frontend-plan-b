@@ -904,14 +904,11 @@ export function IconPackStudio() {
               {viewMode === "apps" ? (
                 <div className="grid min-h-0 flex-1 overflow-hidden grid-rows-[45%_55%] md:grid-cols-[280px_1fr] md:grid-rows-1">
                   <aside className="flex min-h-0 flex-col border-b md:border-r md:border-b-0">
-                    <div className="flex h-10 shrink-0 items-center border-b px-3 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                      {t("iconPack.studioAppsListTitle", { count: structureScan.drawablePngCount })}
-                    </div>
                     <div className="shrink-0 border-b p-2">
                       <Input
                         value={appsSearchQuery}
                         onChange={(event) => setAppsSearchQuery(event.target.value)}
-                        placeholder={t("iconPack.studioAppsSearchPlaceholder")}
+                        placeholder={t("iconPack.studioAppsSearchPlaceholder", { count: structureScan.drawablePngCount })}
                         className="h-8"
                       />
                     </div>
@@ -941,11 +938,6 @@ export function IconPackStudio() {
                   </aside>
 
                   <section className="flex min-h-0 flex-col">
-                    <div className="flex h-10 shrink-0 items-center border-b px-3 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                      {selectedDrawableEntry
-                        ? selectedDrawableEntry.drawableName
-                        : t("iconPack.studioAppsDetailTitle")}
-                    </div>
                     <div className="min-h-0 flex-1 overflow-auto p-4">
                       {selectedDrawableEntry && selectedAppDraft ? (
                         <div className="space-y-5">

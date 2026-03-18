@@ -210,7 +210,7 @@
     "studioAppsListTitle": "drawable-nodpi 中 {{count}} 个图标",
     "studioAppsListTitle_other": "drawable-nodpi 中 {{count}} 个图标",
     "studioNoDrawableIcons": "在 app/src/main/res/drawable-nodpi 中未找到 PNG 图标。",
-    "studioAppsSearchPlaceholder": "搜索图标...",
+    "studioAppsSearchPlaceholder": "在 {{count}} 个图标中搜索...",
     "studioAppsNoSearchResults": "没有匹配的图标。",
     "studioAppsDetailTitle": "应用详情",
     "studioAppsDetailPlaceholder": "\"{{name}}\" 的详情编辑器占位。",

@@ -210,7 +210,7 @@
     "studioAppsListTitle": "{{count}} icon in drawable-nodpi",
     "studioAppsListTitle_other": "{{count}} icons in drawable-nodpi",
     "studioNoDrawableIcons": "No PNG icons found in app/src/main/res/drawable-nodpi.",
-    "studioAppsSearchPlaceholder": "Search icons...",
+    "studioAppsSearchPlaceholder": "Search in {{count}} icons...",
     "studioAppsNoSearchResults": "No icons match your search.",
     "studioAppsDetailTitle": "App Detail",
     "studioAppsDetailPlaceholder": "Detail editor placeholder for \"{{name}}\".",
